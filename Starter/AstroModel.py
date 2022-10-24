@@ -1,10 +1,12 @@
 import math
 import numpy as np
+import Getting_Started.py as GS
 from scipy.integrate import quad
+from astropy.cosmology import Planck15
 
 class Astromodel:
 
-    def __init__(self, cat_name = None, duration = 1,  original_cat_path = None, sep_cat = None, index_column = None, flags ={}):
+    def __init__(self, cat_name = None, duration = 1,  original_cat_path = None, sep_cat = None, index_column = None, flags ={'':''}):
         """Create an instance of your model.
          Parameters
          ----------
@@ -54,22 +56,13 @@ class Astromodel:
         Cat = pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, columns = header)
         Cat.to_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, header = True)
 
-    def makeCat(self):
+    def makeCat(self, flag = {}):
         """Create the catalogue(s).
         Parameters
         ----------
-        header : list of str
-             Names of your columns in the original file. Some names are important and should be labeled with specific names.
-             zm: Redshift of merger
-             m1,m2: Mass of the compact objects in solar masses
-             Mc: Chirp mass in solar masses
-             q: Mass ratio (q<=1)
-             e: Eccentricity at the formation of the first compact object
-             Dl: Luminosity distance in Mpc
-             inc: Inclination of the source in rad
-             Xeff: Effective spin of the binary
-             chi1, chi2: Individual spins of the two CO.
-             theta1,theta2: Angle between individual spins and the angular momentum of the binary
+        flag: dict
+            Dictionary of the flag ids in the original catalogue
+
         """
         Cat= pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column)
         Col = list(Cat.columns)
@@ -82,14 +75,14 @@ class Astromodel:
         if 'Xeff' not in Col:
             if model[1] == 'BBH':
                 Cat['Xsi'] = BF.Xsi_compil(Cat['m1'], Cat['m2'], Cat['theta1'], Cat['theta2'], Cat['chi1'],
-                                            Cat['chi2'])  # Add differend spin model
+                                            Cat['chi2'])
             else:
                 Cat['Xsi'] = np.zeros(len(Cat['m1']))
         if 'Dl' not in Col:
             zm = np.array(Cat['zm'], float)
             dl = np.array([])
             for z in zm:
-                dl = np.append(dl, cosmo.Planck15.luminosity_distance(z).value)
+                dl = np.append(dl, Planck15.luminosity_distance(z).value)
             Cat['Dl'] = dl
         if GS.orbit_evo == False:
             OutCat = pd.DataFrame(
@@ -99,11 +92,25 @@ class Astromodel:
                 {'m1': Cat['m1'], 'm2': Cat['m2'], 'spinz1': Cat['spinz1'], 'zm': Cat['zm'],
                  'spinz2': Cat['spinz2'], 'a0': Cat['a0'],
                  'e0': Cat['e0']})
-        if 'inc' in Col:
-            OutCat['inc'] = Cat['inc']
-        OutCat.to_csv('Catalogs/' + outname, sep='\t', index=False)
-        truc = OutCat.describe()
-        truc.to_csv('Catalogs/Ana_' + outname, sep='\t')
+        if GS.IncAndPos in Col:
+            if 'inc' not in Col:
+                OutCat['inc'] = np.random.uniform(0,2*math.pi, len(OutCat['m1']))
+            else :
+                OutCat['inc'] = Cat['inc']
+            if 'ra' not in Col:
+                OutCat['ra'] = np.random.uniform(0,2*math.pi, len(OutCat['m1']))
+            else :
+                OutCat['ra'] = Cat['ra']
+            if 'dec' not in Col:
+                OutCat['dec'] = np.random.uniform(0,2*math.pi, len(OutCat['m1']))
+            else :
+                OutCat['dec'] = Cat['dec']
+        if flag=! {} :
+            for key in flag.keys():
+                flagCat = OutCat[OutCat['flag'] = key]
+                flagCat.to_csv('Catalogs/' + cat_name + '_' + flag[key] + '.dat', sep='\t', index=False)
+                truc = flagCat.describe()
+                truc.to_csv('Catalogs/Ana_' + cat_name + '_' + flag[key] + '.dat', sep='\t')
 
 
 
