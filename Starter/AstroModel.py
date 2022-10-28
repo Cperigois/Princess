@@ -1,7 +1,6 @@
 import math
 import numpy as np
 import Getting_Started.py as GS
-from scipy.integrate import quad
 from astropy.cosmology import Planck15
 
 class Astromodel:
