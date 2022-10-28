@@ -33,6 +33,7 @@ class Astromodel:
         self.index_column = index_column
         self.flags = flags
 
+
     def make_header(self, header):
         """Create or modify the header of your original catalogue. Careful this function WILL MODIFY your original file.
         Parameters
@@ -85,12 +86,12 @@ class Astromodel:
             Cat['Dl'] = dl
         if GS.orbit_evo == False:
             OutCat = pd.DataFrame(
-                {'Mc': Cat['Mc'], 'q': Cat['q'], 'Xsi': Cat['Xsi'], 'zm': Cat['zm']})
+                {'Mc': Cat['Mc'], 'q': Cat['q'], 'Xsi': Cat['Xsi'],'spinz1': np.zeros(len(Cat['Mc'])),'spinz2': np.zeros(len(Cat['Mc'])), 'zm': Cat['zm'],'Dl': Cat['Dl']})
         else:
             OutCat = pd.DataFrame(
                 {'m1': Cat['m1'], 'm2': Cat['m2'], 'spinz1': Cat['spinz1'], 'zm': Cat['zm'],
                  'spinz2': Cat['spinz2'], 'a0': Cat['a0'],
-                 'e0': Cat['e0']})
+                 'e0': Cat['e0'],'Dl': Cat['Dl']})
         if GS.IncAndPos in Col:
             if 'inc' not in Col:
                 OutCat['inc'] = np.random.uniform(0,2*math.pi, len(OutCat['m1']))
@@ -108,6 +109,7 @@ class Astromodel:
             for key in flag.keys():
                 flagCat = OutCat[OutCat['flag'] = key]
                 flagCat.to_csv('Catalogs/' + cat_name + '_' + flag[key] + '.dat', sep='\t', index=False)
+                self.calalogs = self.catalogs.append(self.catalogs,'Catalogs/' + cat_name + '_' + flag[key] + '.dat' )
                 truc = flagCat.describe()
                 truc.to_csv('Catalogs/Ana_' + cat_name + '_' + flag[key] + '.dat', sep='\t')
 
