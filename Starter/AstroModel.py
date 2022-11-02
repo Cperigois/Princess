@@ -1,6 +1,6 @@
 import math
 import numpy as np
-import Getting_Started.py as GS
+import Getting_Started as GS
 from astropy.cosmology import Planck15
 
 class Astromodel:

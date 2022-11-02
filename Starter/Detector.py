@@ -1,7 +1,4 @@
-import math
 import numpy as np
-import Getting_Started.py as GS
-from astropy.cosmology import Planck15
 
 
 class Detector:
@@ -62,7 +59,7 @@ class Detector:
 
 class Network:
 
-    def __init__(self, net_name = None, compo = None ,pic_file = None, freq = np.arange(500)+1 ):
+    def __init__(self, net_name = None, compo = None ,pic_file = None, freq = np.arange(500)+1, efficiency = 1. ):
         """Create an instance of your model.
          Parameters
          ----------
@@ -78,6 +75,7 @@ class Network:
         self.compo = compo
         self.pic_file = pic_file
         self.freq = freq
+        self.efficiency = efficiency
 
     def reshape_pic(self, delimiter='\t', Header=None, index=None):
         """Reshape your psd to fit the Make psd function and write it in a new file in AuxiliaryFiles/PSDs.

@@ -9,10 +9,11 @@
 
 import os
 import numpy as np
+import Starter as start
 
 
 '''
-    1) Choose and check your basic catalogues : 
+    1) Prepare you model(s) : 
     -------
      In the Following code the parameters are referenced as and must have these names in your initial catalogue : 
      
@@ -20,7 +21,7 @@ import numpy as np
      q : mass ratio in the source frame
      m1 : mass of the first component (m1>m2) in the source frame [Msun]
      m2 : mass of the secondary component (m2<m1) in the source frame [Msun]
-     Xsi : Chieff
+     Xsi : Chieff effective spin
      Chi1 : individual spin factor of the first component
      Chi2 : individual spin factor of the second component
      
@@ -32,7 +33,7 @@ import numpy as np
      zm : redshift of merger
      zf : redshift of formation
      
-     flag : this colums cam contain a flag to differenciate sources
+     flag : this columns cam contain a flag to differenciate sources
      
      and set up all the links :
     -------
@@ -53,20 +54,59 @@ import numpy as np
             Can be used to randomly take the spins contributions chi1 and chi2.
 '''
 
-Models = ['Field', 'YSCs']
-#Flags = [1, 2, 3]
-#Flags_str = ['Orig', 'Exch','Iso']
-co_object = ['BBH']#, 'BNS'] # 'BHNS'
 path_2_cat_folder =  '/home/perigois/Documents/GreatWizardOz/'
-IDD = ['iso','dyn']
 Flags = {'1': 'Orig', '2':'Exch', '3':'Iso'}
-Cat_list = dict({})
-for co in range(len(co_object)) :
-    for m in range(len(Models)) :
-        name = co_object[co]+'_'+Models[m]
-        #Cat_list[name] = [path_2_cat_folder+'cat_'+co_object[co]+'_'+IDD[m]+'.dat', co_object[co] , Models[m], IDD[m]]
-        Cat_list[name] = [path_2_cat_folder + 'Cat_stochastic_' + IDD[m] +'_'+ co_object[co] +   's.dat', co_object[co], Models[m],
-                          IDD[m]]
+Cat = 'Cat_stochastic_dyn_BBHs.dat'
+Model = 'YSCs'
+astromodel1 = start.AstroModel(cat_name= 'BBH_YSCs', path = path_2_cat_folder+Cat, sep = "\t", index_col = None)
+astromodel1.makeHeader(['Mc','q','zm','zf','t_del','Z','a0','e','flag'])
+astromodel1.makeCat(flags = Flags)
+
+print('Astromodel loaded and ready :)')
+
+'''
+    2) Calculate the corresponding background:
+'''
+Freq = np.linspace(5, 250, 244)
+
+for sub_cat in Flags.keys :
+    name_cat = 'Catalogues/'+astromodel1.name+'_'+Flags[sub_cat]+'.dat'
+    Stocastic.princess(cat = name_cat, frange = Freqs)
+
+
+'''
+    3) Analysis :
+    in addition to the files containing the energy density spectrum this code will write a file with useful stats : 
+    specific values of omega, number of non-resolved sources...
+    -------
+    ANA_Values : list of str
+        Names of the values you need
+    Ref_values : list of floats
+        Reference frequencies for the energy density. 
+        Ususal values are: 0.001 for LISA, 1Hz and 10 Hz for 3G and 25Hz for 2G. 
+        These values have to belong to your Freq range!
+
+'''
+
+Omega_ana_freq = [1., 10., 25.]
+
+
+'''
+    4) Set up the detectors:
+    Define the detectors and Networks you want to use for your analysis
+'''
+
+H = Detector.Detector(det_name = 'H', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
+L = Detector.Detector(det_name = 'L', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
+V = Detector.Detector(det_name = 'V', Pycbc = True, psd_file = 'AdVDesignSensitivityP1200087', freq = Freq )
+
+
+HLV = Detector.Network(net_name = 'HLV',compo=[H,L,V], pic_file = , efficiency = 0.5 )
+
+'''
+    4) Dectecability of the background:
+    Run the SNR for the correspondig background.
+'''
 
 
 '''
