@@ -90,6 +90,10 @@ V = Detector.Detector(det_name = 'V', Pycbc = True, psd_file = 'AdVDesignSensiti
 
 HLV = Detector.Network(net_name = 'HLV',compo=[H,L,V], pic_file = , efficiency = 0.5 )
 
+Networks = ['HLV']
+
+astromodel1.compute_SNR(Networks)
+
 
 '''
     3) Calculate the corresponding background:
@@ -100,6 +104,9 @@ Freq = np.linspace(5, 250, 244)
 
 # Waveform you would like to use from Pycbc, write Ajith for analytical ones (longer computation)
 WF_approx = 'IMRPhenomD'
+
+# Threshold you choose for a source to be detectable, default is 12 \cite.
+SNR_thrs = 12
 
 for sub_cat in Flags.keys :
     name_cat = astromodel1.name+'_'+Flags[sub_cat]+'.dat'
