@@ -1,7 +1,5 @@
 import os
-import numpy as np
-import GreatWizard
-import pandas as pd
+from Stochastic import GreatWizard
 import Oz.Setup_Function as SF
 import Oz.Getting_Started_Coba as GS
 

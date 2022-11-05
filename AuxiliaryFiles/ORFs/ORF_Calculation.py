@@ -3,13 +3,7 @@ import pandas as pd
 import Oz.Kst as K # Constants, in CGS
 import math
 import matplotlib.pyplot as plt
-import itertools as iterT
-import GreatWizard as GW
-import pycbc.psd
-import sklearn as skl
-import joblib
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeRegressor
+
 
 def theta1(a,b):
     return(math.pow(math.cos(b/2.),4.)*g1(a))

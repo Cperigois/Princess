@@ -108,6 +108,9 @@ HLV = Detector.Network(net_name = 'HLV',compo=[H,L,V], pic_file = , efficiency =
     Run the SNR for the correspondig background.
 '''
 
+ SNR_Omega()
+
+
 
 '''
     2) Context of the study, choose the Network and the frequency range you want :

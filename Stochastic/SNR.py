@@ -3,15 +3,10 @@ import pandas as pd
 import Oz.Getting_Started_Coba as GS
 import math
 import itertools as iterT
-import GreatWizard as GW
 import pycbc.psd
 import pycbc.waveform
 import pycbc.filter
-import sklearn as skl
 import joblib
-from scipy.interpolate import InterpolatedUnivariateSpline
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeRegressor
 
 
 def SNR_Omega(Omega,N = None):

@@ -1,7 +1,5 @@
 import os
-import numpy as np
-import GreatWizard
-import pandas as pd
+from Stochastic import GreatWizard
 import Starter as Start
 import Getting_Started as GS
 
