@@ -10,6 +10,8 @@
 import os
 import numpy as np
 import Starter as start
+import Stochastic.Princess as SP
+
 
 
 '''
@@ -60,22 +62,52 @@ Cat = 'Cat_stochastic_dyn_BBHs.dat'
 Model = 'YSCs'
 astromodel1 = start.AstroModel(cat_name= 'BBH_YSCs', path = path_2_cat_folder+Cat, sep = "\t", index_col = None)
 astromodel1.makeHeader(['Mc','q','zm','zf','t_del','Z','a0','e','flag'])
+
+
+# Set spin option:
+#   True if you want to include spin in your calculations of the waveforms and background and you have the spin in your catalogue
+#   False if you don't want to use the spin
+#   Model if you want Princess to generate spin values - Option available later -
+spin_option = False
+IncAndPos = False
+orbit_evo = False
+
+# Prepare the spin
 astromodel1.makeCat(flags = Flags)
 
 print('Astromodel loaded and ready :)')
 
+
 '''
-    2) Calculate the corresponding background:
+    2) Set up the detectors:
+    Define the detectors and Networks you want to use for your analysis
 '''
+
+H = Detector.Detector(det_name = 'H', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
+L = Detector.Detector(det_name = 'L', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
+V = Detector.Detector(det_name = 'V', Pycbc = True, psd_file = 'AdVDesignSensitivityP1200087', freq = Freq )
+
+
+HLV = Detector.Network(net_name = 'HLV',compo=[H,L,V], pic_file = , efficiency = 0.5 )
+
+
+'''
+    3) Calculate the corresponding background:
+'''
+
+# Frequency range for the calculation
 Freq = np.linspace(5, 250, 244)
 
+# Waveform you would like to use from Pycbc, write Ajith for analytical ones (longer computation)
+WF_approx = 'IMRPhenomD'
+
 for sub_cat in Flags.keys :
-    name_cat = 'Catalogues/'+astromodel1.name+'_'+Flags[sub_cat]+'.dat'
-    Stocastic.princess(cat = name_cat, frange = Freqs)
+    name_cat = astromodel1.name+'_'+Flags[sub_cat]+'.dat'
+    SP.Omega(cat = name_cat, frange = Freqs)
 
 
 '''
-    3) Analysis :
+    4) Analysis :
     in addition to the files containing the energy density spectrum this code will write a file with useful stats : 
     specific values of omega, number of non-resolved sources...
     -------
@@ -91,17 +123,6 @@ for sub_cat in Flags.keys :
 Omega_ana_freq = [1., 10., 25.]
 
 
-'''
-    4) Set up the detectors:
-    Define the detectors and Networks you want to use for your analysis
-'''
-
-H = Detector.Detector(det_name = 'H', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
-L = Detector.Detector(det_name = 'L', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
-V = Detector.Detector(det_name = 'V', Pycbc = True, psd_file = 'AdVDesignSensitivityP1200087', freq = Freq )
-
-
-HLV = Detector.Network(net_name = 'HLV',compo=[H,L,V], pic_file = , efficiency = 0.5 )
 
 '''
     4) Dectecability of the background:
@@ -174,25 +195,7 @@ Detectors = {'H' : ['PyCBC','aLIGODesignSensitivityP1200087',2490, 1, 10],
              'EL2': ['Coba','EinsteinTelescopeP1600143', 2490, 1, 1]
              #'LISA' : ['file','AuxiliaryFiles/PSDs/LISA_Des/', 2490, 1, 1]
              }
-#Composition for Desined sensitivities
-# Detectors = {'H' : ['PyCBC','aLIGODesignSensitivityP1200087',2490, 1, 10],
-#              'L' : ['PyCBC','aLIGODesignSensitivityP1200087',2490, 1, 10],
-#              'V' : ['PyCBC','AdVDesignSensitivityP1200087',2490, 1, 10],
-#              'I' : ['PyCBC','aLIGODesignSensitivityP1200087',2490, 1, 10],
-#              'K': ['PyCBC','KAGRADesignSensitivityT1600593', 2490, 1, 10],
-#              'ET': ['PyCBC','EinsteinTelescopeP1600143', 2490, 1, 1],
-#              'E1': ['PyCBC','EinsteinTelescopeP1600143', 2490, 1, 1],
-#              'E2': ['PyCBC','EinsteinTelescopeP1600143', 2490, 1, 1],
-#              'E3': ['PyCBC','EinsteinTelescopeP1600143', 2490, 1, 1],
-#              'CE': ['PyCBC','CosmicExplorerP1600143', 2490, 1, 1],
-#              'CE1': ['PyCBC','CosmicExplorerP1600143', 2490, 1, 1],
-#              'CE2': ['PyCBC','CosmicExplorerP1600143', 2490, 1, 1],
-#              'EL1': ['Coba','EinsteinTelescopeP1600143', 2490, 1, 1],
-#              'EL2': ['Coba','EinsteinTelescopeP1600143', 2490, 1, 1]
-#              #'LISA' : ['file','AuxiliaryFiles/PSDs/LISA_Des/', 2490, 1, 1]
-#              }
 
-#ORF_path =
 
 
 

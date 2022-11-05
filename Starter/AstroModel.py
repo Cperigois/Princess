@@ -56,43 +56,42 @@ class Astromodel:
         Cat = pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, columns = header)
         Cat.to_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, header = True)
 
-    def makeCat(self, flag = {}):
+    def makeCat(self, flag = {}, spin_opt = None):
         """Create the catalogue(s).
         Parameters
         ----------
         flag: dict
             Dictionary of the flag ids in the original catalogue
+        spin_opt
 
         """
         Cat= pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column)
+        OutCat = pd.DataFrame()
         Col = list(Cat.columns)
-        if 'zm' not in Col:
-            Cat['zm'] = Cat['z']
+
+        OutCat['zm'] = Cat['zm']
+
+        # Check the masses calculations
         if 'Mc' not in Col:
-            Cat['Mc'], Cat['q'] = BF.m1_m2_to_mc_q(Cat['m1'], Cat['m2'])
+            OutCat['Mc'], OutCat['q'] = BF.m1_m2_to_mc_q(Cat['m1'], Cat['m2'])
         if 'm1' not in Col:
-            Cat['m1'], Cat['m2'] = BF.mc_q_to_m1_m2(Cat['Mc'], Cat['q'])
-        if 'Xeff' not in Col:
-            if model[1] == 'BBH':
-                Cat['Xsi'] = BF.Xsi_compil(Cat['m1'], Cat['m2'], Cat['theta1'], Cat['theta2'], Cat['chi1'],
-                                            Cat['chi2'])
-            else:
-                Cat['Xsi'] = np.zeros(len(Cat['m1']))
+            OutCat['m1'], OutCat['m2'] = BF.mc_q_to_m1_m2(Cat['Mc'], Cat['q'])
+
+        # Compute luminosity distance
         if 'Dl' not in Col:
             zm = np.array(Cat['zm'], float)
             dl = np.array([])
             for z in zm:
                 dl = np.append(dl, Planck15.luminosity_distance(z).value)
-            Cat['Dl'] = dl
-        if GS.orbit_evo == False:
-            OutCat = pd.DataFrame(
-                {'Mc': Cat['Mc'], 'q': Cat['q'], 'Xsi': Cat['Xsi'],'spinz1': np.zeros(len(Cat['Mc'])),'spinz2': np.zeros(len(Cat['Mc'])), 'zm': Cat['zm'],'Dl': Cat['Dl']})
-        else:
-            OutCat = pd.DataFrame(
-                {'m1': Cat['m1'], 'm2': Cat['m2'], 'spinz1': Cat['spinz1'], 'zm': Cat['zm'],
-                 'spinz2': Cat['spinz2'], 'a0': Cat['a0'],
-                 'e0': Cat['e0'],'Dl': Cat['Dl']})
-        if GS.IncAndPos in Col:
+            OutCat['Dl'] = dl
+        # Generate the spin
+        OutCat['s1'], OutCat['s2'] = makeSpin(self, spin_opt)
+
+        if GS.orbit_evo == True:
+            OutCat['a0'] = Cat['a0']
+            OutCat['e0'] = Cat['e0']
+
+        if GS.IncAndPos == True:
             if 'inc' not in Col:
                 OutCat['inc'] = np.random.uniform(0,2*math.pi, len(OutCat['m1']))
             else :
@@ -112,6 +111,14 @@ class Astromodel:
                 self.calalogs = self.catalogs.append(self.catalogs,'Catalogs/' + cat_name + '_' + flag[key] + '.dat' )
                 truc = flagCat.describe()
                 truc.to_csv('Catalogs/Ana_' + cat_name + '_' + flag[key] + '.dat', sep='\t')
+
+    def makeSpin(self, option):
+
+        # Available models : zeros, Maxwellian (in prep.), Maxwellian_dynamics (in prep.)
+        if option == False:
+            s1 = np.zeros(len(Cat['zm']))
+            s2 = np.zeros(len(Cat['zm']))
+        return s1, s2
 
 
 
