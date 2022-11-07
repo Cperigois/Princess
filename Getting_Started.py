@@ -72,8 +72,8 @@ spin_option = 'Zero'
 IncAndPos = False
 orbit_evo = False
 
-# Prepare the spin
-astromodel1.makeCat(flags = Flags)
+# Prepare the catalogue
+#astromodel1.makeCat(flags = Flags)
 
 print('Astromodel loaded and ready :)')
 
@@ -93,9 +93,9 @@ V = Detector(det_name = 'V', Pycbc = True, psd_file = 'AdVDesignSensitivityP1200
 
 HLV = Network(net_name = 'HLV',compo=[H,L,V], pic_file = 'AuxiliaryFiles/PICs/Design_HLV_flow_10.txt' , efficiency = 0.5 )
 
-Networks = ['HLV']
+Networks = [HLV]
 
-astromodel1.compute_SNR(Networks)
+astromodel1.compute_SNR()
 
 
 '''

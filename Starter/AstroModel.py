@@ -4,6 +4,7 @@ import Getting_Started as GS
 import pandas as pd
 from astropy.cosmology import Planck15
 from Stochastic import Basic_Functions as BF
+from Stochastic import Princess as Princess
 
 class Astromodel:
 
@@ -133,25 +134,16 @@ class Astromodel:
     def compute_SNR(self):
         for cat in self.catalogs :
             Cat = pd.read_csv(cat, sep='\t', index_col=False)
-            for N in GS.Networks :
+            for N in GS.Networks:
                 Cat[N.net_name] = np.zeros(len(Cat.zm))
-                hp,hc = pycbc.waveform.get_fd_waveform(approximant=approximant,
-                                                                                mass1=m1 * (1. + z),
-                                                                                mass2=m2 * (1. + z),
-                                                                                spin1x=0., spin1y=0., spin1z=0.,
-                                                                                spin2x=0., spin2y=0., spin2z=0.,
-                                                                                delta_f=det_info[3],
-                                                                                f_lower=det_info[4],
-                                                                                distance=ld,
-                                                                                inclination=i, f_ref=20.)
-                for d in N.compo :
-                    Cat[N.net_name]+= np.power((pycbc.filter.matchedfilter.sigma(hp,
-                                                 psd=PSD,
-                                                 low_frequency_cutoff=det_info[4],
-                                                 high_frequency_cutoff=det_info[4] + det_info[3] * det_info[
-                                                     2] - 10) for m1, m2, ld, z, i in zip(df["m1"], df["m2"], df["Dl"], df["zm"], df['inc'])),2)
+                for evt in range(len(Cat.zm)):
+                    event = Cat.iloc(evt)
+                    htildsq = GWk_noEcc_Pycbcwf(event)
+                    for N in GS.Networks :
+                        for d in N.compo :
+                            Cat[N.net_name][event]+= np.sum(4.*htildsq/d.Make_psd())
                 Cat[N.net_name] = np.sqrt(Cat[N.net_name])
-            Cat.to_csv('Catalogs/' + self.cat_name + '_.dat', sep='\t', index=False)
+            Cat.to_csv(cat, sep='\t', index=False)
 
 
 

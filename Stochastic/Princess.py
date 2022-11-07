@@ -239,7 +239,7 @@ def GWk_noEcc(evt, type, inc = None) :
             i+=1
     return Omg_e0
 
-def GWk_noEcc_Pycbcwf(evt, type, inc = None) :
+def GWk_noEcc_Pycbcwf(evt) :
     """This function calculate the contribution of a binary
         Parameters
         ----------
@@ -253,32 +253,36 @@ def GWk_noEcc_Pycbcwf(evt, type, inc = None) :
         Omg : numpy array
             Size of f with the contribution of the source for each observed frequency
         """
-    flow = 1
+    flow = np.min(GS.Freq)
     fsize = len(GS.Freq)
-    m1 = evt[0]
-    m2 = evt[1]
-    z = evt[2]
-    Dl = evt[3]
-    if type == 'BBH' :
-        spin1z = evt[4]
-        spin2z = evt[5]
-    else :
-        spin1z = 0.
-        spin2z = 0.
-    #M_chirp = np.power((m1 * m2), 0.6) / (np.power(m1 + m2, 0.2))
-    mtot = m1 + m2
-    #eta = m1 * m2 / (math.pow(mtot, 2.))
-    #Dl = float(D) * Mpc
-    approximant = "IMRPhenomPv2"
-    hptild, hctild = wf.get_fd_waveform(approximant=approximant,
-                                        mass1=m1 * (1. + z),
-                                        mass2=m2 * (1. + z),
-                                        spin1x=0., spin1y=0., spin1z=spin1z,
-                                        spin2x=0., spin2y=0., spin2z=spin2z,
-                                        delta_f=1,
+    deltaf = GS.Freq[1]-GS.Freq[0]
+    m1 = evt.m1
+    m2 = evt.m2
+    z = evt.zm
+    Dl = evt.Dl
+    spin1z =  evt.s1
+    spin2z = evt.s2
+    approximant = GS.WF_approx
+    if 'inc' in col :
+        hptild, hctild = wf.get_fd_waveform(approximant=approximant,
+                                        mass1=evt.m1 * (1. + evt.zm),
+                                        mass2=evt.m2 * (1. + evt.zm),
+                                        spin1x=0., spin1y=0., spin1z=evt.s1,
+                                        spin2x=0., spin2y=0., spin2z=evt.s2,
+                                        delta_f= deltaf,
                                         f_lower=flow,
-                                        distance=Dl,
-                                        inclination=np.random.uniform(0, 2. * math.pi), f_ref=20.)
+                                        distance=evt.Dl,
+                                        inclination= evt.inc, f_ref=20.)
+    else :
+        hptild, hctild = wf.get_fd_waveform(approximant=approximant,
+                                            mass1=evt.m1 * (1. + evt.zm),
+                                            mass2=evt.m2 * (1. + evt.zm),
+                                            spin1x=0., spin1y=0., spin1z=evt.s1,
+                                            spin2x=0., spin2y=0., spin2z=evt.s2,
+                                            delta_f=deltaf,
+                                            f_lower=flow,
+                                            distance=evt.Dl,
+                                            f_ref=20.)
     hptild = hptild[flow:]
     hctild = hctild[flow:]
     if len(hptild) < fsize:
