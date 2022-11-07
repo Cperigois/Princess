@@ -1,11 +1,11 @@
 import pandas as pd
 import os
-import Oz.Getting_Started_Coba as GS
-import Oz.SNR as SNR
+import Getting_Started as GS
+import Stochastic.SNR as SNR
 from astropy.cosmology import Planck15
-import Oz.Kst as K
+import Stochastic.Kst as K
 import numpy as np
-import Oz.Basic_Functions as BF
+import Stochastic.Basic_Functions as BF
 import math
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.special import jv

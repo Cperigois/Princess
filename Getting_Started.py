@@ -9,8 +9,9 @@
 
 import os
 import numpy as np
-import Starter as start
-import Stochastic.Princess as SP
+from Starter.Detector import Detector,Network
+from Stochastic import Princess as SP
+from Starter.AstroModel import Astromodel
 
 
 
@@ -59,16 +60,15 @@ import Stochastic.Princess as SP
 path_2_cat_folder =  '/home/perigois/Documents/GreatWizardOz/'
 Flags = {'1': 'Orig', '2':'Exch', '3':'Iso'}
 Cat = 'Cat_stochastic_dyn_BBHs.dat'
-Model = 'YSCs'
-astromodel1 = start.AstroModel(cat_name= 'BBH_YSCs', path = path_2_cat_folder+Cat, sep = "\t", index_col = None)
-astromodel1.makeHeader(['Mc','q','zm','zf','t_del','Z','a0','e','flag'])
+astromodel1 = Astromodel(cat_name= 'BBH_YSCs', original_cat_path = path_2_cat_folder+Cat, cat_sep = "\t", index_column = None, flags = Flags)
+#astromodel1.makeHeader(['Mc','q','zm','zf','t_del','Z','a0','e','flag'])
 
 
 # Set spin option:
 #   True if you want to include spin in your calculations of the waveforms and background and you have the spin in your catalogue
 #   False if you don't want to use the spin
 #   Model if you want Princess to generate spin values - Option available later -
-spin_option = False
+spin_option = 'Zero'
 IncAndPos = False
 orbit_evo = False
 
@@ -83,12 +83,15 @@ print('Astromodel loaded and ready :)')
     Define the detectors and Networks you want to use for your analysis
 '''
 
-H = Detector.Detector(det_name = 'H', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
-L = Detector.Detector(det_name = 'L', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
-V = Detector.Detector(det_name = 'V', Pycbc = True, psd_file = 'AdVDesignSensitivityP1200087', freq = Freq )
+# Frequency range for the calculation
+Freq = np.linspace(5, 250, 244)
+
+H = Detector(det_name = 'H', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
+L = Detector(det_name = 'L', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
+V = Detector(det_name = 'V', Pycbc = True, psd_file = 'AdVDesignSensitivityP1200087', freq = Freq )
 
 
-HLV = Detector.Network(net_name = 'HLV',compo=[H,L,V], pic_file = , efficiency = 0.5 )
+HLV = Network(net_name = 'HLV',compo=[H,L,V], pic_file = 'AuxiliaryFiles/PICs/Design_HLV_flow_10.txt' , efficiency = 0.5 )
 
 Networks = ['HLV']
 
@@ -99,8 +102,7 @@ astromodel1.compute_SNR(Networks)
     3) Calculate the corresponding background:
 '''
 
-# Frequency range for the calculation
-Freq = np.linspace(5, 250, 244)
+
 
 # Waveform you would like to use from Pycbc, write Ajith for analytical ones (longer computation)
 WF_approx = 'IMRPhenomD'
@@ -135,9 +137,6 @@ Omega_ana_freq = [1., 10., 25.]
     4) Dectecability of the background:
     Run the SNR for the correspondig background.
 '''
-
- SNR_Omega()
-
 
 
 '''

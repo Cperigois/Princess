@@ -1,11 +1,13 @@
 import math
 import numpy as np
 import Getting_Started as GS
+import pandas as pd
 from astropy.cosmology import Planck15
+from Stochastic import Basic_Functions as BF
 
 class Astromodel:
 
-    def __init__(self, cat_name = None, duration = 1,  original_cat_path = None, sep_cat = None, index_column = None, flags ={'':''}):
+    def __init__(self, cat_name = None, duration = 1,  original_cat_path = None, cat_sep = None, index_column = None, flags ={'':''}):
         """Create an instance of your model.
          Parameters
          ----------
@@ -29,12 +31,12 @@ class Astromodel:
         self.original_cat_path = original_cat_path
         self.cat_name = cat_name
         self.duration = duration
-        self.sep_cat = sep_cat
+        self.sep_cat = cat_sep
         self.index_column = index_column
         self.flags = flags
 
 
-    def make_header(self, header):
+    def makeHeader(self, header):
         """Create or modify the header of your original catalogue. Careful this function WILL MODIFY your original file.
         Parameters
         ----------
@@ -53,10 +55,10 @@ class Astromodel:
              theta1,theta2: Angle between individual spins and the angular momentum of the binary
              flag: ID for the binary type/formation channel or more.
         """
-        Cat = pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, columns = header)
-        Cat.to_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, header = True)
+        Cat = pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, names = header)
+        Cat.to_csv(self.original_cat_path, sep = self.sep_cat, index = None, header = True)
 
-    def makeCat(self, flag = {}, spin_opt = None):
+    def makeCat(self, flags = {}):
         """Create the catalogue(s).
         Parameters
         ----------
@@ -65,7 +67,8 @@ class Astromodel:
         spin_opt
 
         """
-        Cat= pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column)
+        Cat = pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, dtype = float)
+        print(Cat.describe())
         OutCat = pd.DataFrame()
         Col = list(Cat.columns)
 
@@ -85,7 +88,7 @@ class Astromodel:
                 dl = np.append(dl, Planck15.luminosity_distance(z).value)
             OutCat['Dl'] = dl
         # Generate the spin
-        OutCat['s1'], OutCat['s2'] = makeSpin(self, spin_opt)
+        OutCat['s1'], OutCat['s2'] = self.makeSpin(GS.spin_option, len(Cat['zm']))
 
         if GS.orbit_evo == True:
             OutCat['a0'] = Cat['a0']
@@ -104,23 +107,29 @@ class Astromodel:
                 OutCat['dec'] = np.random.uniform(0,2*math.pi, len(OutCat['m1']))
             else :
                 OutCat['dec'] = Cat['dec']
-        if flag=! {} :
-            for key in flag.keys():
-                flagCat = OutCat[OutCat['flag'] = key]
-                flagCat.to_csv('Catalogs/' + cat_name + '_' + flag[key] + '.dat', sep='\t', index=False)
-                self.calalogs = self.catalogs.append(self.catalogs,'Catalogs/' + cat_name + '_' + flag[key] + '.dat' )
+        if flags != {} :
+            for key in flags.keys():
+                print(key)
+                flagCat = OutCat[Cat['flag'] == int(key)]
+                flagCat.to_csv('Catalogs/' + self.cat_name + '_' + flags[key] + '.dat', sep='\t', index=False)
+                #self.catalogs = self.catalogs.append(self.catalogs,'Catalogs/' + self.cat_name + '_' + flags[key] + '.dat' )
                 truc = flagCat.describe()
-                truc.to_csv('Catalogs/Ana_' + cat_name + '_' + flag[key] + '.dat', sep='\t')
+                truc.to_csv('Catalogs/Ana_' + self.cat_name + '_' + flags[key] + '.dat', sep='\t')
+        else :
+            OutCat.to_csv('Catalogs/' + self.cat_name + '_.dat', sep='\t', index=False)
 
-    def makeSpin(self, option):
+
+    def makeSpin(self, option, size):
 
         # Available models : zeros, Maxwellian (in prep.), Maxwellian_dynamics (in prep.)
-        if option == False:
-            s1 = np.zeros(len(Cat['zm']))
-            s2 = np.zeros(len(Cat['zm']))
+        if option == 'Zero':
+            s1 = np.zeros(size)
+            s2 = np.zeros(size)
         return s1, s2
 
-    def compute_SNR(self, Network)
+
+    def compute_SNR(self, Networks):
+
 
 
 

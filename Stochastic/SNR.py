@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import Oz.Getting_Started_Coba as GS
 import math
 import itertools as iterT
 import pycbc.psd
