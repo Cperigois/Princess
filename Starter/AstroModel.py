@@ -120,6 +120,8 @@ class Astromodel:
             s2 = np.zeros(len(Cat['zm']))
         return s1, s2
 
+    def compute_SNR(self, Network)
+
 
 
 
