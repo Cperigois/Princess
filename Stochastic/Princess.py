@@ -13,11 +13,9 @@ from scipy.optimize import fsolve
 import pycbc.waveform as wf
 
 
-
-
 class Princess:
 
-    def __init__(self, Freq, Networks, Omega_ana_freq = [10,25]):
+    def __init__(self, Freq, approx, Omega_ana_freq = [10,25]):
         """Create an instance of your calculations parameters.
         Parameters
         ----------
@@ -29,8 +27,13 @@ class Princess:
             For which Network is done the calculation
         """
         self.Freq = Freq
-        self.Networks = Networks
+        #self.dict_Networks = {  }
+        #for key in Neworks.keys() :
+        #    self.dict_Networks[key] = Detection.Network(net_name = key, compo = Networks[key][0] , pic_file = Networks[key][1], freq = Networks[key][2], efficiency = Networks[key][3], SNR_thrs =Networks[key][4] )
+
+        #self.Networks = Networks
         self.Omega_ana_freq = Omega_ana_freq
+        self.approx = approx
 
 
 
@@ -74,7 +77,7 @@ class Princess:
                 print(Ana[N])
             Ana.to_csv('Results/Ana/'+path, sep = '\t')
 
-    def Ana(self, path) :
+    def Ana(self, path, Networks) :
         Omega_e0 = pd.read_csv('Results/Omega_e0/' + path, index_col=False, sep='\t')
         output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq] + ['SNR_Total']+ ['SNR_Residual']
         Ana = pd.DataFrame(index=output_index, columns=['Total'] + self.Networks)
@@ -97,14 +100,14 @@ class Princess:
         Ana.to_csv('Results/Ana/' + path, sep='\t')
 
 
-    def Omega(cat, Freq, Networks, SNR_thrs):
+    def Omega(self, cat, Freq, Networks):
 
         df = pd.read_csv('Catalogs/'+cat, delimiter = '\t', index_col = None )
         check_file = os.path.exists('Results/Omega_e0/' + cat)
         if check_file == False:
             Omega_e0 = pd.DataFrame({'f':Freq, 'Total': np.zeros(len(Freq))})
-            for n in Networks :
-                Omega_e0[n] = np.zeros(len(Freq))
+            for n in range(len(Networks)) :
+                Omega_e0[Networks[n].net_name] = np.zeros(len(Freq))
             if orbit_evo == False :
                 for i in range(len(df['Mc'])):
                     evt = df.iloc[i]
@@ -114,64 +117,22 @@ class Princess:
                     for N in Networks:
                         if evt[N] < SNR_thrs[N]:
                             Omega_e0[N] += Omg_e0
-            Omega_e0.to_csv('Results/Omega_e0/' + path, index=False, sep='\t')
-
-        else :
-            Omega_e0 = pd.read_csv('Results/Omega_e0/'+path, index_col = False, sep = '\t')
-
-        check_file = os.path.exists('Results/Ana/' + path)
-        if check_file == False:
-            output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in Omega_ana_freq] + ['SNR']
-            Ana = pd.DataFrame(index=output_index, columns=['Total'] + Networks)
-            Ana['Total']['N_source'] = 0
-            Ana['Total'][['Omg_'+str(i)+'_Hz' for i in Omega_ana_freq]] = BF.Search_Omg(Omega_e0['Total'], Omega_ana_freq)
-            Ana['Total']['SNR'] = SNR.SNR_Omega(Omega_e0['Total'])
-            print(Ana['Total'])
-            for N in GS.Networks:
-                Ana[N][['Omg_' + str(i) + '_Hz' for i in Omega_ana_freq]] = BF.Search_Omg(Omega_e0[N], Omega_ana_freq)
-                Ana[N]['SNR'] = SNR.SNR_Omega(Omega_e0[N],N)
-                residual = df[df[N]<self.SNR_thrs[N]]
-                Ana[N]['Nsource'] = len(residual[N])
-                print(Ana[N])
-            Ana.to_csv('Results/Ana/'+path, sep = '\t')
+            Omega_e0.to_csv('Results/Omega_e0/' + cat, index=False, sep='\t')
 
 
-    def Omega_pycbc(path, model):
-
-        cat = GS.Cat_list_df.loc[model]
-
-        check_file = os.path.exists('Results/Omega_e0/' + path)
-        if check_file == False:
-            df = pd.read_csv('Catalogs/' + path, delimiter='\t', index_col=None)
-            Omega_e0 = pd.DataFrame({'f':GS.Freq, 'Total': np.zeros(len(GS.Freq))})
-            for n in GS.Networks :
-                Omega_e0[n] = np.zeros(len(GS.Freq))
-            if GS.orbit_evo ==False :
-                for i in range(len(df['m1'])):
-                    evt = df.iloc[i]
-                    args = [evt['m1'], evt['m2'], evt['zm'], evt['Dl'], evt['s1'], evt['s2']]
-                    Omg_e0 = GWk_noEcc_Pycbcwf(args, cat.co_type, 0)* np.power(GS.Freq,3.) * K.C / cat.Duration
-                    Omega_e0['Total'] += Omg_e0
-                    for N in GS.Networks:
-                        if evt[N] < GS.SNR_thrs[N]:
-                            Omega_e0[N] += Omg_e0
-                Omega_e0.to_csv('Results/Omega_e0/' + path, index=False, sep='\t')
-
-
-        check_file = os.path.exists('Results/Ana/' + path)
-        if check_file == False:
-            output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in GS.Omega_ana_freq] + ['SNR']
-            Ana = pd.DataFrame(index=output_index, columns=['Total'] + GS.Networks)
-            Ana['Total']['N_source'] = 0
-            Ana['Total'][['Omg_'+str(i)+'_Hz' for i in GS.Omega_ana_freq]] = BF.Search_Omg(Omega_e0['Total'], GS.Omega_ana_freq)
-            Ana['Total']['SNR'] = SNR.SNR_Omega(Omega_e0['Total'])
-            print(Ana['Total'])
-            for N in GS.Networks:
-                Ana[N][['Omg_' + str(i) + '_Hz' for i in GS.Omega_ana_freq]] = BF.Search_Omg(Omega_e0[N], GS.Omega_ana_freq)
-                Ana[N]['SNR'] = SNR.SNR_Omega(Omega_e0[N],N)
-                residual = df[df[N]<GS.SNR_thrs[N]]
-                Ana[N]['Nsource'] = len(residual[N])
-                print(Ana[N])
-            Ana.to_csv('Results/Ana/'+path, sep = '\t')
+    def Omega_pycbc(self, astromodel):
+        for cat in range(len(astromodel.catalogs)) :
+            Cat = pd.read_csv(astromodel.catalogs[cat], delimiter='\t', index_col=None)
+            Omega_e0 = pd.DataFrame({'f':Freq, 'Total': np.zeros(len(Freq))})
+            for N in range(len(Networks)) :
+                Omega_e0[Networks[N].net_name] = np.zeros(len(Freq))
+            for evt in range(len(Cat['m1'])):
+                event = Cat.iloc[[evt]]
+                Omg_e0 = GWk_noEcc_Pycbcwf(event, Freq, self.approx, evt, len(Cat.zm))* np.power(self.Freq,3.) * K.C / astromodel.duration
+                Omega_e0['Total'] += Omg_e0
+                for N in range(len(self.Networks)):
+                    if evt[N] < self.Networks[N].SNR_thrs:
+                        Omega_e0[self.Networks[N].net_name] += Omg_e0
+            Omega_e0.to_csv('Results/Omega_e0/' + astromodel.catalogs[cat], index=False, sep='\t')
 
 

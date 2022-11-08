@@ -38,9 +38,9 @@ class Astromodel:
         self.catalogs = []
         for x in flags.keys() :
             if x == '':
-                self.catalogs.append('Catalogs/' + self.cat_name + '.dat')
+                self.catalogs.append(self.cat_name + '.dat')
             else :
-                self.catalogs.append('Catalogs/' + self.cat_name + '_' + flags[x] + '.dat')
+                self.catalogs.append(self.cat_name + '_' + flags[x] + '.dat')
 
 
     def makeHeader(self, header):
@@ -136,7 +136,7 @@ class Astromodel:
         flow = int(np.min(freq))
         fsize = int(np.max(freq))-int(np.min(freq)) + 1
         for cat in self.catalogs :
-            Cat = pd.read_csv(cat, sep='\t', index_col=False)
+            Cat = pd.read_csv('Catalogs/'+cat, sep='\t', index_col=False)
             ntot = len(Cat.zm)
             for N in Networks:
                 SNR_N = np.zeros(len(Cat.zm))

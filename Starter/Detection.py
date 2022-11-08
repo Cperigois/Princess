@@ -60,7 +60,7 @@ class Detector:
 
 class Network:
 
-    def __init__(self, net_name = None, compo = None ,pic_file = None, freq = np.arange(500)+1, efficiency = 1., SNR_thrs = 8 ):
+    def __init__(self, net_name = None, compo = None ,pic_file = None, freq = np.arange(500)+1, efficiency = 1., SNR_thrs = 12 ):
         """Create an instance of your model.
          Parameters
          ----------
