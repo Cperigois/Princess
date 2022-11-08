@@ -131,6 +131,10 @@ for sub_cat in astromodel1.catalogs :
 
 '''
 
+for sub_cat in astromodel1.catalogs :
+    Omega_name = 'Results/Omega_e0/'+sub_cat
+    SP.Ana
+
 Omega_ana_freq = [1., 10., 25.]
 
 

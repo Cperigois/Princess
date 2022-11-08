@@ -11,6 +11,10 @@ from scipy.integrate import quad
 from scipy.optimize import fsolve
 import pycbc.waveform as wf
 
+import Stochastic.Pix
+import warnings
+
+
 
 
 def GWk(evt, type, inc = None) :
@@ -239,7 +243,7 @@ def GWk_noEcc(evt, type, inc = None) :
     return Omg_e0
 
 
-def GWk_noEcc_Pycbcwf(evt, freq, approx) :
+def GWk_noEcc_Pycbcwf(evt, freq, approx, n, ntot) :
     """This function calculate the contribution of a binary
         Parameters
         ----------
@@ -253,6 +257,7 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx) :
         Omg : numpy array
             Size of f with the contribution of the source for each observed frequency
         """
+    warnings.filterwarnings("ignore")
     flow = int(np.min(freq))
     fsize = len(freq)
     deltaf = int(freq[1]-freq[0])
@@ -289,6 +294,7 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx) :
         hptild = hptild[:fmax]
         hctild = hctild[:fmax]
     htildSQ = np.array(hptild * np.conjugate(hptild) + hctild * np.conjugate(hctild), dtype=float)
+    Stochastic.Pix.bar(n,ntot)
 
     return htildSQ
 

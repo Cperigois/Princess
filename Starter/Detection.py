@@ -79,7 +79,6 @@ class Network:
         self.pic_file = pic_file
         self.freq = freq
         self.efficiency = efficiency
-        self.fref = fref
         self.SNR_thrs = SNR_thrs
 
     def reshape_pic(self, delimiter='\t', Header=None, index=None):

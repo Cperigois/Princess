@@ -146,3 +146,10 @@ def fcut_f(m1,m2,xsi,zm) :
 	fcut_mu0 = 0.3236+0.04894*xsi+0.01346*xsi*xsi
 	fcut_y = -0.1331*eta -0.2714*eta*eta +4.922*eta*eta*eta - 0.08172*eta*xsi +0.1451*eta*xsi*xsi +0.1279*eta*eta*xsi
 	return (fcut_mu0+fcut_y)/(math.pi*mtot)
+
+def Search_Omg(Omega, freq_ref):
+    interp = InterpolatedUnivariateSpline(GS.Freq, Omega)
+    out = np.zeros(len(freq_ref))
+    for i in range(len(freq_ref)) :
+        out[i] = interp(freq_ref[i])
+    return out

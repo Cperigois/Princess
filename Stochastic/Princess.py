@@ -12,12 +12,12 @@ from scipy.integrate import quad
 from scipy.optimize import fsolve
 import pycbc.waveform as wf
 
-from Getting_Started import Networks
+
 
 
 class Princess:
 
-    def __init__(self, Freq, Omega_ana_freq = [10,25], Networks):
+    def __init__(self, Freq, Networks, Omega_ana_freq = [10,25]):
         """Create an instance of your calculations parameters.
         Parameters
         ----------
@@ -79,14 +79,15 @@ class Princess:
         output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq] + ['SNR_Total']+ ['SNR_Residual']
         Ana = pd.DataFrame(index=output_index, columns=['Total'] + self.Networks)
         Ana['Total']['N_source'] = 0
-        Ana['Total'][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = Search_Omg(Omega_e0['Total'],
+        Ana['Total'][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = BF.Search_Omg(Omega_e0['Total'],
                                                                                               self.Omega_ana_freq)
         Ana['Total']['SNR_Total'] = SNR.SNR_Omega(Omega_e0['Total'])
         Ana['Total']['SNR_Residual'] = 0
         print(Ana['Total'])
         for N in range(len(self.Networks)):
-            Ana[self.Networks[N].net_name][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = Search_Omg(
-                Omega_e0[Networks[N].net_name], self.Omega_ana_freq)
+            Ana[self.Networks[N].net_name][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = 0
+            for i in self.Omega_ana_freq:
+                Ana[self.Networks[N].net_name]['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Omega_e0[Networks[N].net_name], self.Omega_ana_freq)
             Ana[self.Networks[N].net_name]['SNR_residual'] = SNR.SNR_Omega(Omega_e0[self.Networks[N].net_name], self.Networks[N].pic_file)
             Ana[self.Networks[N].net_name]['SNR_total'] = SNR.SNR_Omega(Omega_e0['Total'],
                                                                            self.Networks[N].pic_file)
@@ -123,11 +124,11 @@ class Princess:
             output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in Omega_ana_freq] + ['SNR']
             Ana = pd.DataFrame(index=output_index, columns=['Total'] + Networks)
             Ana['Total']['N_source'] = 0
-            Ana['Total'][['Omg_'+str(i)+'_Hz' for i in Omega_ana_freq]] = Search_Omg(Omega_e0['Total'], Omega_ana_freq)
+            Ana['Total'][['Omg_'+str(i)+'_Hz' for i in Omega_ana_freq]] = BF.Search_Omg(Omega_e0['Total'], Omega_ana_freq)
             Ana['Total']['SNR'] = SNR.SNR_Omega(Omega_e0['Total'])
             print(Ana['Total'])
             for N in GS.Networks:
-                Ana[N][['Omg_' + str(i) + '_Hz' for i in Omega_ana_freq]] = Search_Omg(Omega_e0[N], Omega_ana_freq)
+                Ana[N][['Omg_' + str(i) + '_Hz' for i in Omega_ana_freq]] = BF.Search_Omg(Omega_e0[N], Omega_ana_freq)
                 Ana[N]['SNR'] = SNR.SNR_Omega(Omega_e0[N],N)
                 residual = df[df[N]<self.SNR_thrs[N]]
                 Ana[N]['Nsource'] = len(residual[N])
@@ -162,20 +163,15 @@ class Princess:
             output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in GS.Omega_ana_freq] + ['SNR']
             Ana = pd.DataFrame(index=output_index, columns=['Total'] + GS.Networks)
             Ana['Total']['N_source'] = 0
-            Ana['Total'][['Omg_'+str(i)+'_Hz' for i in GS.Omega_ana_freq]] = Search_Omg(Omega_e0['Total'], GS.Omega_ana_freq)
+            Ana['Total'][['Omg_'+str(i)+'_Hz' for i in GS.Omega_ana_freq]] = BF.Search_Omg(Omega_e0['Total'], GS.Omega_ana_freq)
             Ana['Total']['SNR'] = SNR.SNR_Omega(Omega_e0['Total'])
             print(Ana['Total'])
             for N in GS.Networks:
-                Ana[N][['Omg_' + str(i) + '_Hz' for i in GS.Omega_ana_freq]] = Search_Omg(Omega_e0[N], GS.Omega_ana_freq)
+                Ana[N][['Omg_' + str(i) + '_Hz' for i in GS.Omega_ana_freq]] = BF.Search_Omg(Omega_e0[N], GS.Omega_ana_freq)
                 Ana[N]['SNR'] = SNR.SNR_Omega(Omega_e0[N],N)
                 residual = df[df[N]<GS.SNR_thrs[N]]
                 Ana[N]['Nsource'] = len(residual[N])
                 print(Ana[N])
             Ana.to_csv('Results/Ana/'+path, sep = '\t')
 
-def Search_Omg(Omega, freq_ref):
-    interp = InterpolatedUnivariateSpline(GS.Freq, Omega)
-    out = np.zeros(len(freq_ref))
-    for i in range(len(freq_ref)) :
-        out[i] = interp(freq_ref[i])
-    return out
+

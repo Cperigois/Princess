@@ -1,7 +1,6 @@
 import math
 import os
 import numpy as np
-import Getting_Started as GS
 import pandas as pd
 from astropy.cosmology import Planck15
 from Stochastic import Basic_Functions as BF
@@ -138,6 +137,7 @@ class Astromodel:
         fsize = int(np.max(freq))-int(np.min(freq)) + 1
         for cat in self.catalogs :
             Cat = pd.read_csv(cat, sep='\t', index_col=False)
+            ntot = len(Cat.zm)
             for N in Networks:
                 SNR_N = np.zeros(len(Cat.zm))
                 psd_compo = np.empty((len(N.compo), len(freq)+1))
@@ -145,7 +145,7 @@ class Astromodel:
                     psd_compo[d] = N.compo[d].Make_psd()
                 for evt in range(len(Cat.zm)):
                     event = Cat.iloc[[evt]]
-                    htildsq = GWk_noEcc_Pycbcwf(event, freq = freq, approx=approx)
+                    htildsq = GWk_noEcc_Pycbcwf(event, freq = freq, approx=approx,n = evt, ntot = ntot)
                     for d in range(len(N.compo)) :
                         Sn = psd_compo[d]
                         SNR = np.sum(4.*htildsq/Sn[flow:fsize])
