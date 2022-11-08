@@ -285,15 +285,14 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, ntot) :
                                                        distance=evt.Dl, f_ref=20.)
     hptild = hptild[flow:]
     hctild = hctild[flow:]
-    fmax = fsize - flow
-    if len(hptild) < fmax:
-        hptild = np.concatenate((hptild, np.zeros(fmax - len(hptild))))
-        hctild = np.concatenate((hctild, np.zeros(fmax - len(hctild))))
-    elif len(hptild) > fmax:
-        hptild = hptild[:fmax]
-        hctild = hctild[:fmax]
+    if len(hptild) < len(freq):
+        hptild = np.concatenate((hptild, np.zeros(len(freq) - len(hptild))))
+        hctild = np.concatenate((hctild, np.zeros(len(freq) - len(hctild))))
+    elif len(hptild) > len(freq):
+        hptild = hptild[:len(freq)]
+        hctild = hctild[:len(freq)]
     htildSQ = np.array(hptild * np.conjugate(hptild) + hctild * np.conjugate(hctild), dtype=float)
-    Stochastic.Pix.bar(n,ntot)
+    Stochastic.Pix.bar_peach(n,ntot)
 
     return htildSQ
 

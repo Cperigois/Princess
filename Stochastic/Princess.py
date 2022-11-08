@@ -132,7 +132,8 @@ class Princess:
                 Omg_e0 = GWk_noEcc_Pycbcwf(event, self.Freq, self.approx, evt, len(Cat.zm))* np.power(self.Freq,3.) * K.C / astromodel.duration
                 Omega_e0['Total'] += Omg_e0
                 for N in range(len(Networks)):
-                    if evt[N] < Networks[N].SNR_thrs:
+                    a = event[str(Networks[N].net_name)]
+                    if float(a) < Networks[N].SNR_thrs:
                         Omega_e0[Networks[N].net_name] += Omg_e0
             Omega_e0.to_csv('Results/Omega_e0/' + astromodel.catalogs[cat], index=False, sep='\t')
 
