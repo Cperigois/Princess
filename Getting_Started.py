@@ -10,7 +10,7 @@
 import os
 import numpy as np
 #from Starter.Detection import Detector, Network
-from Stochastic import Princess as princess
+from Stochastic import Princess as SP
 from Starter.AstroModel import Astromodel
 from Starter import Detection
 
@@ -99,7 +99,7 @@ HLV = Detection.Network(net_name = 'HLV',compo=[H,L,V], pic_file = 'AuxiliaryFil
 
 Networks = [HLV]
 
-astromodel1.compute_SNR(Networks, Freq, approx = WF_approx)
+#astromodel1.compute_SNR(Networks, Freq, approx = WF_approx)
 
 
 '''
@@ -108,7 +108,7 @@ astromodel1.compute_SNR(Networks, Freq, approx = WF_approx)
 
 # Threshold you choose for a source to be detectable, default is 12 \cite.
 
-Zelda = princess(Freq, approx = WF_approx)
+Zelda = SP.Princess(Freq, approx = WF_approx)
 Zelda.Omega_pycbc(astromodel1, Networks)
 
 

@@ -5,6 +5,7 @@ from astropy.cosmology import Planck15
 import Stochastic.Kst as K
 import numpy as np
 import Stochastic.Basic_Functions as BF
+from Stochastic.Htild import GWk_noEcc_Pycbcwf
 import math
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.special import jv
@@ -120,19 +121,19 @@ class Princess:
             Omega_e0.to_csv('Results/Omega_e0/' + cat, index=False, sep='\t')
 
 
-    def Omega_pycbc(self, astromodel):
+    def Omega_pycbc(self, astromodel, Networks):
         for cat in range(len(astromodel.catalogs)) :
             Cat = pd.read_csv(astromodel.catalogs[cat], delimiter='\t', index_col=None)
-            Omega_e0 = pd.DataFrame({'f':Freq, 'Total': np.zeros(len(Freq))})
+            Omega_e0 = pd.DataFrame({'f':self.Freq, 'Total': np.zeros(len(self.Freq))})
             for N in range(len(Networks)) :
-                Omega_e0[Networks[N].net_name] = np.zeros(len(Freq))
+                Omega_e0[Networks[N].net_name] = np.zeros(len(self.Freq))
             for evt in range(len(Cat['m1'])):
                 event = Cat.iloc[[evt]]
-                Omg_e0 = GWk_noEcc_Pycbcwf(event, Freq, self.approx, evt, len(Cat.zm))* np.power(self.Freq,3.) * K.C / astromodel.duration
+                Omg_e0 = GWk_noEcc_Pycbcwf(event, self.Freq, self.approx, evt, len(Cat.zm))* np.power(self.Freq,3.) * K.C / astromodel.duration
                 Omega_e0['Total'] += Omg_e0
-                for N in range(len(self.Networks)):
-                    if evt[N] < self.Networks[N].SNR_thrs:
-                        Omega_e0[self.Networks[N].net_name] += Omg_e0
+                for N in range(len(Networks)):
+                    if evt[N] < Networks[N].SNR_thrs:
+                        Omega_e0[Networks[N].net_name] += Omg_e0
             Omega_e0.to_csv('Results/Omega_e0/' + astromodel.catalogs[cat], index=False, sep='\t')
 
 

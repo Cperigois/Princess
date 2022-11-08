@@ -262,7 +262,6 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, ntot) :
     fsize = len(freq)
     deltaf = int(freq[1]-freq[0])
     col = list(evt.columns)
-    approximant = "IMRPhenomD"
 
 
     if 'inc' in col :
