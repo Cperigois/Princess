@@ -1,24 +1,20 @@
 import os
-from Stochastic import GreatWizard
-import Starter as Start
-import Getting_Started as GS
+import numpy as np
+from Starter.Detection import Detector, Network
+from Stochastic import Princess as SP
+from Starter.AstroModel import Astromodel
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    # Read Catalog and check the columns
-    os.system("mkdir Results/")
-    os.system("mkdir Catalogs")
-    os.system("mkdir Results/Omega")
-    os.system("mkdir Results/Omega_e0")
-    os.system("mkdir Results/Ana")
-    print(GS.Cat_list.keys())
-    for cat in GS.Cat_list.keys() :
-        model = GS.Cat_list[cat]
-        Cat_paths = Start.MakeCat(model = cat)
-        Cat_paths = Start.MakeCat(cat)
-        print(Cat_paths)
-        for c in Cat_paths :
-            GreatWizard.Oz_pycbc(path = c, model = cat)#, co_type = model[1])
+    #Setup and load astro model
+    astromodel1 = Astromodel(cat_name='BBH_YSCs', original_cat_path=GS.path_2_cat_folder + GS.Cat, cat_sep="\t",
+                             index_column=None, flags=GS.Flags)
+    # astromodel1.makeHeader(['Mc','q','zm','zf','t_del','Z','a0','e','flag'])
+    # astromodel1.makeCat(flags = Flags)
+
+    print('Astromodel loaded and ready :)')
+
+    astromodel1.compute_SNR()
 

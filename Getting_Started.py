@@ -9,7 +9,7 @@
 
 import os
 import numpy as np
-from Starter.Detector import Detector,Network
+from Starter.Detection import Detector, Network
 from Stochastic import Princess as SP
 from Starter.AstroModel import Astromodel
 
@@ -85,6 +85,10 @@ print('Astromodel loaded and ready :)')
 
 # Frequency range for the calculation
 Freq = np.linspace(5, 250, 244)
+Freq = np.arange(240)+10
+
+# Waveform you would like to use from Pycbc, write Ajith for analytical ones (longer computation)
+WF_approx = "IMRPhenomD"
 
 H = Detector(det_name = 'H', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
 L = Detector(det_name = 'L', Pycbc = True, psd_file = 'aLIGODesignSensitivityP1200087', freq = Freq )
@@ -95,7 +99,7 @@ HLV = Network(net_name = 'HLV',compo=[H,L,V], pic_file = 'AuxiliaryFiles/PICs/De
 
 Networks = [HLV]
 
-astromodel1.compute_SNR()
+astromodel1.compute_SNR(Networks, Freq, approx = WF_approx)
 
 
 '''
@@ -104,15 +108,13 @@ astromodel1.compute_SNR()
 
 
 
-# Waveform you would like to use from Pycbc, write Ajith for analytical ones (longer computation)
-WF_approx = 'IMRPhenomD'
+
 
 # Threshold you choose for a source to be detectable, default is 12 \cite.
 SNR_thrs = 12
 
-for sub_cat in Flags.keys :
-    name_cat = astromodel1.name+'_'+Flags[sub_cat]+'.dat'
-    SP.Omega(cat = name_cat, frange = Freqs)
+for sub_cat in astromodel1.catalogs :
+    SP.Omega(cat = sub_cat)
 
 
 '''

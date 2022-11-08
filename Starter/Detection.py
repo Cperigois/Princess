@@ -1,9 +1,10 @@
 import numpy as np
+import pycbc.psd
 
 
 class Detector:
 
-    def __init__(self, det_name, Pycbc = True, psd_file = None):
+    def __init__(self, det_name, freq, Pycbc = True, psd_file = None):
         """Define a single detector.
          Parameters
          ----------
@@ -21,6 +22,7 @@ class Detector:
         self.det_name = det_name
         self.psd_file = psd_file
         self.Pycbc = Pycbc
+        self.freq = freq
 
     def Make_psd(self):
         """Load or calculate the psd of a detector.
@@ -31,11 +33,11 @@ class Detector:
         ----------
         self.psd
         """
-        if Pycbc == True :
-            self.psd = pycbc.psd.from_string(psd_name=psd_file, length=len(GS.Freq), delta_f=GS.Freq[1]-GS.Freq[0],
-                                    low_freq_cutoff=GS.Freq[0])
+        if self.Pycbc == True :
+            self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq)+1, delta_f=int(self.freq[1]-self.freq[0]),
+                                    low_freq_cutoff=int(self.freq[0]))
         else :
-            self.psd = pycbc.psd.read.from_txt(psd_file, length=len(GS.Freq),  delta_f=GS.Freq[1]-GS.Freq[0], low_freq_cutoff=GS.Freq[0], is_asd_file=self.asd)
+            self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq)+1,  delta_f=int(self.freq[1]-self.freq[0]), low_freq_cutoff=int(self.freq[0]), is_asd_file=self.asd)
         return self.psd
 
     def reshape_psd(self, delimiter = '\t', Header = None, index  = None):

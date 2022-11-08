@@ -1,10 +1,11 @@
 import math
+import os
 import numpy as np
 import Getting_Started as GS
 import pandas as pd
 from astropy.cosmology import Planck15
 from Stochastic import Basic_Functions as BF
-from Stochastic import Princess as Princess
+from Stochastic.Htild import GWk_noEcc_Pycbcwf
 
 class Astromodel:
 
@@ -36,6 +37,11 @@ class Astromodel:
         self.index_column = index_column
         self.flags = flags
         self.catalogs = []
+        for x in flags.keys() :
+            if x == '':
+                self.catalogs.append('Catalogs/' + self.cat_name + '.dat')
+            else :
+                self.catalogs.append('Catalogs/' + self.cat_name + '_' + flags[x] + '.dat')
 
 
     def makeHeader(self, header):
@@ -69,11 +75,11 @@ class Astromodel:
         spin_opt
 
         """
+
         Cat = pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, dtype = float)
         print(Cat.describe())
         OutCat = pd.DataFrame()
         Col = list(Cat.columns)
-
         OutCat['zm'] = Cat['zm']
 
         # Check the masses calculations
@@ -81,7 +87,6 @@ class Astromodel:
             OutCat['Mc'], OutCat['q'] = BF.m1_m2_to_mc_q(Cat['m1'], Cat['m2'])
         if 'm1' not in Col:
             OutCat['m1'], OutCat['m2'] = BF.mc_q_to_m1_m2(Cat['Mc'], Cat['q'])
-
         # Compute luminosity distance
         if 'Dl' not in Col:
             zm = np.array(Cat['zm'], float)
@@ -91,7 +96,6 @@ class Astromodel:
             OutCat['Dl'] = dl
         # Generate the spin
         OutCat['s1'], OutCat['s2'] = self.makeSpin(GS.spin_option, len(Cat['zm']))
-
         if GS.orbit_evo == True:
             OutCat['a0'] = Cat['a0']
             OutCat['e0'] = Cat['e0']
@@ -114,12 +118,10 @@ class Astromodel:
                 print(key)
                 flagCat = OutCat[Cat['flag'] == int(key)]
                 flagCat.to_csv('Catalogs/' + self.cat_name + '_' + flags[key] + '.dat', sep='\t', index=False)
-                self.catalogs = self.catalogs.append(self.catalogs,'Catalogs/' + self.cat_name + '_' + flags[key] + '.dat' )
                 truc = flagCat.describe()
                 truc.to_csv('Catalogs/Ana_' + self.cat_name + '_' + flags[key] + '.dat', sep='\t')
         else :
             OutCat.to_csv('Catalogs/' + self.cat_name + '.dat', sep='\t', index=False)
-            self.catalogs = ['Catalogs/' + self.cat_name + '.dat']
 
 
     def makeSpin(self, option, size):
@@ -131,18 +133,24 @@ class Astromodel:
         return s1, s2
 
 
-    def compute_SNR(self):
+    def compute_SNR(self, Networks, freq, approx):
+        flow = int(np.min(freq))
+        fsize = int(np.max(freq))-int(np.min(freq)) + 1
         for cat in self.catalogs :
             Cat = pd.read_csv(cat, sep='\t', index_col=False)
-            for N in GS.Networks:
-                Cat[N.net_name] = np.zeros(len(Cat.zm))
+            for N in Networks:
+                SNR_N = np.zeros(len(Cat.zm))
+                psd_compo = np.empty((len(N.compo), len(freq)+1))
+                for d in range(len(N.compo)):
+                    psd_compo[d] = N.compo[d].Make_psd()
                 for evt in range(len(Cat.zm)):
-                    event = Cat.iloc(evt)
-                    htildsq = GWk_noEcc_Pycbcwf(event)
-                    for N in GS.Networks :
-                        for d in N.compo :
-                            Cat[N.net_name][event]+= np.sum(4.*htildsq/d.Make_psd())
-                Cat[N.net_name] = np.sqrt(Cat[N.net_name])
+                    event = Cat.iloc[[evt]]
+                    htildsq = GWk_noEcc_Pycbcwf(event, freq = freq, approx=approx)
+                    for d in range(len(N.compo)) :
+                        Sn = psd_compo[d]
+                        SNR = np.sum(4.*htildsq/Sn[flow:fsize])
+                        SNR_N[evt]+= SNR
+                Cat[N.net_name] = np.sqrt(SNR_N)
             Cat.to_csv(cat, sep='\t', index=False)
 
 
