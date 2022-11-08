@@ -60,7 +60,7 @@ class Detector:
 
 class Network:
 
-    def __init__(self, net_name = None, compo = None ,pic_file = None, freq = np.arange(500)+1, efficiency = 1. ):
+    def __init__(self, net_name = None, compo = None ,pic_file = None, freq = np.arange(500)+1, efficiency = 1., SNR_thrs = 8 ):
         """Create an instance of your model.
          Parameters
          ----------
@@ -70,6 +70,8 @@ class Network:
              name of the file where to find the PIC
          compo : list of detectors
              list of detectors in the network
+         SNR_thrs : np.array int or float
+             Gives the snr threshold of detection for each network in 'Networks', must have the same size than Networks
          """
         # Set class variables
         self.net_name = net_name
@@ -77,6 +79,8 @@ class Network:
         self.pic_file = pic_file
         self.freq = freq
         self.efficiency = efficiency
+        self.fref = fref
+        self.SNR_thrs = SNR_thrs
 
     def reshape_pic(self, delimiter='\t', Header=None, index=None):
         """Reshape your psd to fit the Make psd function and write it in a new file in AuxiliaryFiles/PSDs.
