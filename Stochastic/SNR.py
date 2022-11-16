@@ -10,7 +10,7 @@ import joblib
 
 def SNR_Omega(Omega,N = None):
     ''' Calculate the SNR of a given spectrum Omega for each Network in Networks.
-    Assuming one year of detection with a duty-cycle(ie. efficiency) of 0.5
+    Assuming one year of detection with a duty-cycle (ie. efficiency) of 0.5
     '''
     if N :
         Networks = np.array([])

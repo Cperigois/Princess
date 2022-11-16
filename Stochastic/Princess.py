@@ -1,17 +1,10 @@
 import pandas as pd
 import os
 import Stochastic.SNR as SNR
-from astropy.cosmology import Planck15
 import Stochastic.Kst as K
 import numpy as np
 import Stochastic.Basic_Functions as BF
-from Stochastic.Htild import GWk_noEcc_Pycbcwf
-import math
-from scipy.interpolate import InterpolatedUnivariateSpline
-from scipy.special import jv
-from scipy.integrate import quad
-from scipy.optimize import fsolve
-import pycbc.waveform as wf
+from Starter.Htild import GWk_noEcc_Pycbcwf
 
 
 class Princess:
@@ -78,27 +71,29 @@ class Princess:
                 print(Ana[N])
             Ana.to_csv('Results/Ana/'+path, sep = '\t')
 
-    def Ana(self, path, Networks) :
-        Omega_e0 = pd.read_csv('Results/Omega_e0/' + path, index_col=False, sep='\t')
-        output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq] + ['SNR_Total']+ ['SNR_Residual']
-        Ana = pd.DataFrame(index=output_index, columns=['Total'] + self.Networks)
-        Ana['Total']['N_source'] = 0
-        Ana['Total'][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = BF.Search_Omg(Omega_e0['Total'],
+    def Analysis(self, astromodel, Networks) :
+        for cat in range(len(astromodel.catalogs)):
+            Omega_e0 = pd.read_csv('Results/Omega_e0/' + cat, index_col=False, sep='\t')
+            df = pd.read_csv('Catalogs/' + cat, delimiter='\t', index_col=None)
+            output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq] + ['SNR_Total']+ ['SNR_Residual']
+            Ana = pd.DataFrame(index=output_index, columns=['Total'] + self.Networks)
+            Ana['Total']['N_source'] = 0
+            Ana['Total'][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = BF.Search_Omg(Omega_e0['Total'],
                                                                                               self.Omega_ana_freq)
-        Ana['Total']['SNR_Total'] = SNR.SNR_Omega(Omega_e0['Total'])
-        Ana['Total']['SNR_Residual'] = 0
-        print(Ana['Total'])
-        for N in range(len(self.Networks)):
-            Ana[self.Networks[N].net_name][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = 0
-            for i in self.Omega_ana_freq:
-                Ana[self.Networks[N].net_name]['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Omega_e0[Networks[N].net_name], self.Omega_ana_freq)
-            Ana[self.Networks[N].net_name]['SNR_residual'] = SNR.SNR_Omega(Omega_e0[self.Networks[N].net_name], self.Networks[N].pic_file)
-            Ana[self.Networks[N].net_name]['SNR_total'] = SNR.SNR_Omega(Omega_e0['Total'],
+            Ana['Total']['SNR_Total'] = SNR.SNR_Omega(Omega_e0['Total'])
+            Ana['Total']['SNR_Residual'] = 0
+            print(Ana['Total'])
+            for N in range(len(self.Networks)):
+                Ana[self.Networks[N].net_name][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = 0
+                for i in self.Omega_ana_freq:
+                    Ana[self.Networks[N].net_name]['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Omega_e0[Networks[N].net_name], self.Omega_ana_freq)
+                Ana[self.Networks[N].net_name]['SNR_residual'] = SNR.SNR_Omega(Omega_e0[self.Networks[N].net_name], self.Networks[N].pic_file)
+                Ana[self.Networks[N].net_name]['SNR_total'] = SNR.SNR_Omega(Omega_e0['Total'],
                                                                            self.Networks[N].pic_file)
-            residual = df[df[self.Networks[N].net_name] < self.Networks[N].SNR_thrs]
-            Ana[self.Networks[N].net_name]['Nsource'] = len(residual.zm)
-            print(Ana[N])
-        Ana.to_csv('Results/Ana/' + path, sep='\t')
+                residual = df[df[self.Networks[N].net_name] < self.Networks[N].SNR_thrs]
+                Ana[self.Networks[N].net_name]['Nsource'] = len(residual.zm)
+                print(Ana[N])
+            Ana.to_csv('Results/Ana/' + path, sep='\t')
 
 
     def Omega(self, cat, Freq, Networks):

@@ -1,10 +1,9 @@
 import math
-import os
 import numpy as np
 import pandas as pd
 from astropy.cosmology import Planck15
 from Stochastic import Basic_Functions as BF
-from Stochastic.Htild import GWk_noEcc_Pycbcwf
+from Starter.Htild import GWk_noEcc_Pycbcwf
 
 class Astromodel:
 
