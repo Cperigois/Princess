@@ -44,6 +44,8 @@ Results files will have the same names as the catalogs it refers to.
 * Detection.py: Contain all classes and methods related to the detection.
 * Htild.py: Calculation of the frequency domain waveform
 
+Change
+
 ## Princess.stochastic
 
 **Content**
