@@ -18,6 +18,7 @@ For a first use a pre-made code(notebook) Getting_started.py(.ipy) contains a fu
 ### Structure of the code.
 
 **Entry Files**  
+changes
 AuxiliaryFiles: Contains all the files related to the detection files 
 * Overlap reduction functions(ORFs)
 * Power spectral densities (PSDs)
