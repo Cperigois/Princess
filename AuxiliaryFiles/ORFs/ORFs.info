@@ -1,0 +1,34 @@
+***
+Gamma files :
+***
+
+gamma_2ET_2CE.txt : Optimal (delta = Delta = 0) overlap reduction functions between CE1(CE located at Hanford),
+CE2(CE located at Livingston), EL1(ET located in Sardaigna[latitude 40° 31 longitude 9° 25]), EL2(ET located in Netherlands[50° 43' 23" , 5° 55' 14"]).
+
+gamma_2ET_2CE_misal.txt : Optimal antialigned (2delta = sqrt(2)/2.,  Delta = 0) overlap reduction functions between CE1(CE located at Hanford),
+CE2(CE located at Livingston), EL1(ET located in Sardaigna), EL2(ET located in Netherlands).
+
+gamma_2ET_misaligned.txt : Optimal antialigned (2delta = sqrt(2)/2.,  Delta = 0) overlap reduction functions between
+EL1(ET located in Sardaigna), EL2(ET located in Netherlands).
+
+gamma_2ET_aligned.txt : Optimal aligned (2delta = 0,  Delta = 0) overlap reduction functions between
+EL1(ET located in Sardaigna), EL2(ET located in Netherlands).
+
+***
+ORF files :
+***
+
+ORF.dat (2018) :
+Old overlap reduction function given by Tania. In this file we assume ET to be a triangle (E1, E2, and E3) located as the Virgo Detector,
+and CE two detectors of 40 km located and oriented as american LIGOs.
+
+ORF_3G_2ETal.dat (2022):
+Overlap reduction function calculated with ORF_Calculation.py using the developpement from 'Sensitivity of the Laser Interferometer Gravitational Wave Observatory to a stochastic background, and its dependence on the detector orientations
+' (https://journals.aps.org/prd/pdf/10.1103/PhysRevD.48.2389) equations 4.1-3 and B.11-13.
+Here we assumed \Delta always equal to 0 (which is the max), 2*\delta = 0 (aligned)
+
+ORF_3G_2ETmisal.dat (2022):
+Overlap reduction function calculated with ORF_Calculation.py using the developpement from 'Sensitivity of the Laser Interferometer Gravitational Wave Observatory to a stochastic background, and its dependence on the detector orientations
+' (https://journals.aps.org/prd/pdf/10.1103/PhysRevD.48.2389) equations 4.1-3 and B.11-13.
+Here we assumed \Delta always equal to 0 (which is the max), 2*\delta = sqrt(2)/2 [rad] (misaligned)
+
