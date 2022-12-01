@@ -99,7 +99,7 @@ HLV = Detection.Network(net_name = 'HLV',compo=[H,L,V], pic_file = 'AuxiliaryFil
 
 Networks = [HLV]
 
-#astromodel1.compute_SNR(Networks, Freq, approx = WF_approx)
+astromodel1.compute_SNR(Networks, Freq, approx = WF_approx)
 
 
 '''
@@ -108,7 +108,9 @@ Networks = [HLV]
 
 # Threshold you choose for a source to be detectable, default is 12 \cite.
 
-Zelda = SP.Princess(Freq, approx = WF_approx)
+
+
+Zelda = SP.Princess(Freq, approx = WF_approx, freq_refs = [10., 25.])
 Zelda.Omega_pycbc(astromodel1, Networks)
 
 
@@ -128,7 +130,7 @@ Zelda.Omega_pycbc(astromodel1, Networks)
 
 for sub_cat in astromodel1.catalogs :
     Omega_name = 'Results/Omega_e0/'+sub_cat
-    SP.Ana
+    SP.Analysis( astromodel1, Networks)
 
 Omega_ana_freq = [1., 10., 25.]
 

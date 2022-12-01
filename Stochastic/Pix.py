@@ -77,6 +77,12 @@ Matrice_Leia = [ u'    *** START ***     0%   ',
 			u'     \u25A0         \u25A0      92%  ',
 			u'     \u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0      96%  ',
 			u'  *** COMPLETED ***   100% ']
+
+#def bar_error() :
 def bar_peach(n,ntot) :
     if (int(n) % int(ntot//50))==0 :
         print(Matrice_peach[int(n)//int(ntot/50)] + str(n)+ '/'+str(ntot))
+
+def bar_leia(n,ntot) :
+    for n in range(ntot):
+        print(Matrice_leia[int(n)//int(ntot/50)] + str(n)+ '/'+str(ntot))

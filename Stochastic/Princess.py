@@ -55,7 +55,7 @@ class Princess:
             Omega_e0.to_csv('Results/Omega_e0/'+path, index = False, sep = '\t')
         else :
             Omega_e0 = pd.read_csv('Results/Omega_e0/'+path, index_col = False, sep = '\t')
-        check_file = os.path.exists('Results/Ana/' + path)
+        check_file = os.path.exists('Results/Analysis/' + path)
         if check_file == False:
             output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq] + ['SNR']
             Ana = pd.DataFrame(index=output_index, columns=['Total'] + self.Networks)
@@ -69,7 +69,7 @@ class Princess:
                 residual = df[df[N]<self.SNR_thrs[N]]
                 Ana[N]['Nsource'] = len(residual[N])
                 print(Ana[N])
-            Ana.to_csv('Results/Ana/'+path, sep = '\t')
+            Ana.to_csv('Results/Analysis/'+path, sep = '\t')
 
     def Analysis(self, astromodel, Networks) :
         for cat in range(len(astromodel.catalogs)):
@@ -91,9 +91,11 @@ class Princess:
                 Ana[self.Networks[N].net_name]['SNR_total'] = SNR.SNR_Omega(Omega_e0['Total'],
                                                                            self.Networks[N].pic_file)
                 residual = df[df[self.Networks[N].net_name] < self.Networks[N].SNR_thrs]
-                Ana[self.Networks[N].net_name]['Nsource'] = len(residual.zm)
+                Ana[self.Networks[N].net_name]['Nsource_substracted'] = len(residual.zm)
+                resolved = df[df[self.Networks[N].net_name] < self.Networks[N].SNR_thrs]
+                Ana[self.Networks[N].net_name]['Nsource_resolved'] = len(resolved.zm)
                 print(Ana[N])
-            Ana.to_csv('Results/Ana/' + path, sep='\t')
+            Ana.to_csv('Results/Analysis/' + path, sep='\t')
 
 
     def Omega(self, cat, Freq, Networks):

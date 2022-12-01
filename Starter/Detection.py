@@ -34,7 +34,7 @@ class Detector:
         self.psd
         """
         if self.Pycbc == True :
-            self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq)+1, delta_f=int(self.freq[1]-self.freq[0]),
+            self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq)+1+ np.min(self.freq), delta_f=int(self.freq[1]-self.freq[0]),
                                     low_freq_cutoff=int(self.freq[0]))
         else :
             self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq)+1,  delta_f=int(self.freq[1]-self.freq[0]), low_freq_cutoff=int(self.freq[0]), is_asd_file=self.asd)

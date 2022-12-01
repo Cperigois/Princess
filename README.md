@@ -2,9 +2,13 @@
 Predicting tool for CBC GW observations
 
 This tool aims to link astrophysical models with gravitational wave observations for compact binary coalescences.
-It's separated in different package, and will be upgrade in the next months.
+It's separated in different package, and will be upgraded in the next months/years.
+
+This project is linked to a more complete wiki page and a publication on arXiv which will be updated frequently.
+
 
 For an easy start you can simply follow the file Getting_started.py. It will present step by step all the set up needed, and contains the parameters you would like to set for your study. The first section of this document will be dedicated to an Introduction and a first use of the code through the _Getting_Started_ file. The next sections are detailing the different function for each internal main packages of the code.
+Additionnal informations as the liked publications can be found in the folder _Wiki_.
 
 ## Introduction and basic use: Getting_Started.py
 
@@ -15,10 +19,12 @@ This code is used with the following packages, please make sure all of them are 
 ### First use of the code: _Getting_Started_
 
 For a first use a pre-made code(notebook) Getting_started.py(.ipy) contains a full  guide line for the calculation of the background from the preparation of the catalogues to the analysis of the obtained background. Getting_Started.py also gather all the parameter needed for the future analysis.
+
+
 ### Structure of the code.
 
 **Entry Files**  
-changes
+
 AuxiliaryFiles: Contains all the files related to the detection files 
 * Overlap reduction functions(ORFs)
 * Power spectral densities (PSDs)
@@ -34,7 +40,7 @@ Catalogs: contains all the catalogs made by the program. The _Ana_xxx.txt_ files
 
 **Results**
 Results files will have the same names as the catalogs it refers to. 
-* /Ana: contains the files made by the analysis set up by the user from Getting_Started
+* Results/Analysis/: contains the files made by the analysis set up by the user from Getting_Started
 
 
 ## Princess.Starter
@@ -44,7 +50,6 @@ Results files will have the same names as the catalogs it refers to.
 * Detection.py: Contain all classes and methods related to the detection.
 * Htild.py: Calculation of the frequency domain waveform
 
-Change
 
 ## Princess.stochastic
 

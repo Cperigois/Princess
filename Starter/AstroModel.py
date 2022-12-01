@@ -133,14 +133,14 @@ class Astromodel:
 
     def compute_SNR(self, Networks, freq, approx):
         flow = int(np.min(freq))
-        fsize = int(np.max(freq))-int(np.min(freq)) + 1
+        fsize = flow+len(freq)
         for cat in self.catalogs :
             Cat = pd.read_csv('Catalogs/'+cat, sep='\t', index_col=False)
             print('SNR calculation for ', cat)
             ntot = len(Cat.zm)
             for N in Networks:
                 SNR_N = np.zeros(len(Cat.zm))
-                psd_compo = np.empty((len(N.compo), len(freq)+1))
+                psd_compo = np.empty((len(N.compo), len(freq)+1+flow))
                 for d in range(len(N.compo)):
                     psd_compo[d] = N.compo[d].Make_psd()
                 for evt in range(len(Cat.zm)):
