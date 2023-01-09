@@ -131,7 +131,7 @@ class Astromodel:
         return s1, s2
 
 
-    def compute_SNR(self, Networks, freq, approx):
+    def compute_SNR(self, Networks, freq, approx, real = True, ):
         flow = int(np.min(freq))
         fsize = flow+len(freq)
         for cat in self.catalogs :
@@ -150,8 +150,36 @@ class Astromodel:
                         Sn = psd_compo[d]
                         SNR = np.sum(4.*htildsq/Sn[flow:fsize])
                         SNR_N[evt]+= SNR
-                Cat[N.net_name] = np.sqrt(SNR_N)
+                Cat['snr_'+N.net_name+'_opt'] = np.sqrt(SNR_N)
+                if real == True :
+                    SNR_N = np.zeros(len(Cat.zm))
+                    
+                    for evt in range(len(Cat.zm)):
+
             Cat.to_csv(cat, sep='\t', index=False)
+
+        def compute_SNR(self, Networks, freq, approx):
+            flow = int(np.min(freq))
+            fsize = flow + len(freq)
+            for cat in self.catalogs:
+                Cat = pd.read_csv('Catalogs/' + cat, sep='\t', index_col=False)
+                print('SNR calculation for ', cat)
+                ntot = len(Cat.zm)
+                for N in Networks:
+                    SNR_N = np.zeros(len(Cat.zm))
+                    psd_compo = np.empty((len(N.compo), len(freq) + 1 + flow))
+                    for d in range(len(N.compo)):
+                        psd_compo[d] = N.compo[d].Make_psd()
+                    for evt in range(len(Cat.zm)):
+                        event = Cat.iloc[[evt]]
+                        htildsq = GWk_noEcc_Pycbcwf(event, freq=freq, approx=approx, n=evt, ntot=ntot)
+                        for d in range(len(N.compo)):
+                            Sn = psd_compo[d]
+                            SNR = np.sum(4. * htildsq / Sn[flow:fsize])
+                            SNR_N[evt] += SNR
+                    Cat[N.net_name] = np.sqrt(SNR_N)
+                Cat.to_csv(cat, sep='\t', index=False)
+
 
 
 

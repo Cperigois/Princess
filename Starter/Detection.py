@@ -1,6 +1,12 @@
 import numpy as np
 import pycbc.psd
 
+#Detection tools
+def detection_proba():
+
+def optimal_snr():
+
+def snr():
 
 class Detector:
 

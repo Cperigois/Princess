@@ -1,14 +1,23 @@
+_**Princess** is program developed by Carole Perigois ([carolperigois@outlook.com](mailto:carolperigois@outlook.com)), with the support of from the European Research Council for the ERC Consolidator grant DEMOBLACK, under contract no. 770017._
+
+
+
+<p align="center" width="100%">
+    <img width="33%" src="Wiki/Princess_logo.png">
+</p>
+
 # Princess
-Predicting tool for CBC GW observations
+**Predicting tool for CBC GW observations**
 
-This tool aims to link astrophysical models with gravitational wave observations for compact binary coalescences.
-It's separated in different package, and will be upgraded in the next months/years.
+Nowdays LIGO-Virgo-KAGRA observatiories reported a catalogue of 98 candidates for compat binary coalescences (CBCs) ([Link to portal events](https://www.gw-openscience.org/eventapi/), [GWTC-2.1](https://inspirehep.net/literature/1897574), [GWTC-3](https://inspirehep.net/literature/1961691))
+The sensitivities of these instruments will improve in the next years and new detectors will be built such as Einstein Telescope (ET), Cosmic Explorer (CE) or LISA, increasing the number of candidate. 
+These instruments are providing two observation channel for CBCs: The individual events, already detected from which we get information such as the masses and spins of the components, the distance, etc. and the astrophysical background not measured yet and defined to be the superposition of all astrophysical sources not individually resolved.
 
-This project is linked to a more complete wiki page and a publication on arXiv which will be updated frequently.
+**PRINCESS** is the first tool aiming to join these to observation channel to constrain stellar formation and evolution models. 
+This first version of the program aims to predict the background and individual observation from any astrophysical catalogue of CBCs for different detector networks. This program can be refered in publications with the following paper (_in. prep_). Developpers would like the tool to be userfriendly and interactive, so please for any questions or improvement suggestion contact Carole Perigois ([carolperigois@outlook.com](mailto:carolperigois@outlook.com)). 
 
+This document is briefly introducing the requirement, the organisation of the program as well as the _GettingStarted_ files. This project is linked to a more complete wiki page and a publication on arXiv which will be updated frequently (v1 in prep).
 
-For an easy start you can simply follow the file Getting_started.py. It will present step by step all the set up needed, and contains the parameters you would like to set for your study. The first section of this document will be dedicated to an Introduction and a first use of the code through the _Getting_Started_ file. The next sections are detailing the different function for each internal main packages of the code.
-Additionnal informations as the liked publications can be found in the folder _Wiki_.
 
 ## Introduction and basic use: Getting_Started.py
 

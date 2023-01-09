@@ -264,18 +264,7 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, ntot) :
     col = list(evt.columns)
 
 
-    if 'inc' in col :
-        hptild, hctild = wf.get_fd_waveform(approximant= approx,
-                                        mass1=evt.m1 * (1. + evt.zm),
-                                        mass2=evt.m2 * (1. + evt.zm),
-                                        spin1x=0., spin1y=0., spin1z=evt.s1,
-                                        spin2x=0., spin2y=0., spin2z=evt.s2,
-                                        delta_f= deltaf,
-                                        f_lower=flow,
-                                        distance=evt.Dl,
-                                        inclination= evt.inc, f_ref=20.)
-    else :
-        hptild, hctild = pycbc.waveform.get_fd_waveform(approximant=approx,
+    hptild, hctild = pycbc.waveform.get_fd_waveform(approximant=approx,
                                                        mass1=evt.m1 * (1. + evt.zm),
                                                        mass2=evt.m2 * (1. + evt.zm),
                                                        spin1x=0., spin1y=0., spin1z=evt.s1,
@@ -292,6 +281,7 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, ntot) :
         hptild = hptild[:len(freq)]
         hctild = hctild[:len(freq)]
     htildSQ = np.array(hptild * np.conjugate(hptild) + hctild * np.conjugate(hctild), dtype=float)
+
     Stochastic.Pix.bar_peach(n,ntot)
 
     return htildSQ
