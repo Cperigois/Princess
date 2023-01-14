@@ -25,7 +25,7 @@ class Princess:
         #for key in Neworks.keys() :
         #    self.dict_Networks[key] = Detection.Network(net_name = key, compo = Networks[key][0] , pic_file = Networks[key][1], freq = Networks[key][2], efficiency = Networks[key][3], SNR_thrs =Networks[key][4] )
 
-        #self.Networks = Networks
+        self.Networks = Networks
         self.Omega_ana_freq = Omega_ana_freq
         self.approx = approx
 
