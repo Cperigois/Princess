@@ -29,8 +29,6 @@ class Princess:
         self.Omega_ana_freq = Omega_ana_freq
         self.approx = approx
 
-
-
     def Omega_ecc(self, cat):
 
         df = pd.read_csv('Catalogs/'+cat, delimiter = '\t', index_col = None )

@@ -71,7 +71,7 @@ class Network:
          Parameters
          ----------
          net_name : str
-             Name of the detector
+             Name of the network
          pic_file : int of float
              name of the file where to find the PIC
          compo : list of detectors

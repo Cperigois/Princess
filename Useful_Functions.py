@@ -1,4 +1,5 @@
-Import numpy as np
+import numpy as np
+import scipy.stats
 
 def mean_confidence_interval(data, confidence=0.95):
     a = np.array(data)
