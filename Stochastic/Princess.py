@@ -9,13 +9,13 @@ from Starter.Htild import GWk_noEcc_Pycbcwf
 
 class Princess:
 
-    def __init__(self, Freq, approx, Omega_ana_freq = [10,25]):
+    def __init__(self, Freq, approx, Networks, Omega_ana_freq = [10,25]):
         """Create an instance of your calculations parameters.
         Parameters
         ----------
         Freq : np.array
             Frequency band of the caclulation
-        Omega_ana_freq : str
+        Omega_ana_freq : list of float
             Frequency of reference for the built of analysis file
         Network: np.array of Networks class type
             For which Network is done the calculation
@@ -118,7 +118,8 @@ class Princess:
 
     def Omega_pycbc(self, astromodel, Networks):
         for cat in range(len(astromodel.catalogs)) :
-            Cat = pd.read_csv(astromodel.catalogs[cat], delimiter='\t', index_col=None)
+            print(astromodel.catalogs[cat])
+            Cat = pd.read_csv('Catalogs/'+astromodel.catalogs[cat], delimiter='\t', index_col=None)
             Omega_e0 = pd.DataFrame({'f':self.Freq, 'Total': np.zeros(len(self.Freq))})
             for N in range(len(Networks)) :
                 Omega_e0[Networks[N].net_name] = np.zeros(len(self.Freq))

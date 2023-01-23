@@ -7,7 +7,7 @@ from Starter.Htild import GWk_noEcc_Pycbcwf
 
 class Astromodel:
 
-    def __init__(self, cat_name = None, duration = 1,  original_cat_path = None, cat_sep = None, index_column = None, flags ={'':''}):
+    def __init__(self, cat_name = None, duration = 1,  original_cat_path = None, cat_sep = None, index_column = None, flags ={'':''}, spin_option = "Zeros", orbit_evolution = False, inclination_position = False):
         """Create an instance of your model.
          Parameters
          ----------
@@ -23,6 +23,8 @@ class Astromodel:
          index_column: bool
             Used to read your original catalogue with pandas. True if you have a column with indexes in your original file.
             (default = None)
+         spin_option : str
+            Choose an option to eventually generate the spin among {"Zeros", "Isotropic", "Dynamic"}. Default is 'Zeros'
          flags: dict
             Dictionary of a possible flag column in your catalogue (Can be used to distinguish the type of binary, the formation channel...)
          """
@@ -33,7 +35,10 @@ class Astromodel:
         self.duration = duration
         self.sep_cat = cat_sep
         self.index_column = index_column
+        self.spin_option = spin_option
         self.flags = flags
+        self.orbit_evolution = orbit_evolution
+        self.inclination_position =inclination_position
         self.catalogs = []
         for x in flags.keys() :
             if x == '':
@@ -82,8 +87,12 @@ class Astromodel:
 
         # Check the masses calculations
         if 'Mc' not in Col:
+            OutCat['m1'] = Cat['m1']
+            OutCat['m2'] = Cat['m2']
             OutCat['Mc'], OutCat['q'] = BF.m1_m2_to_mc_q(Cat['m1'], Cat['m2'])
         if 'm1' not in Col:
+            OutCat['Mc'] = Cat['Mc']
+            OutCat['q'] = Cat['q']
             OutCat['m1'], OutCat['m2'] = BF.mc_q_to_m1_m2(Cat['Mc'], Cat['q'])
         # Compute luminosity distance
         if 'Dl' not in Col:
@@ -92,19 +101,25 @@ class Astromodel:
             for z in zm:
                 dl = np.append(dl, Planck15.luminosity_distance(z).value)
             OutCat['Dl'] = dl
+        else :
+            OutCat['Dl'] = Cat['Dl']
         # Generate the spin
-        OutCat['s1'], OutCat['s2'] = self.makeSpin(GS.spin_option, len(Cat['zm']))
-        if GS.orbit_evo == True:
+        if 's1' not in Col:
+            OutCat['s1'], OutCat['s2'] = self.makeSpin(self.spin_option, len(Cat['zm']))
+        else :
+            OutCat['s1'] = Cat['s1']
+            OutCat['s2'] = Cat['s2']
+        if self.orbit_evolution == True:
             OutCat['a0'] = Cat['a0']
             OutCat['e0'] = Cat['e0']
 
-        if GS.IncAndPos == True:
+        if self.inclination_position == True :
             if 'inc' not in Col:
-                OutCat['inc'] = np.random.uniform(0,2*math.pi, len(OutCat['m1']))
+                OutCat['inc'] = np.random.uniform(0, 2*math.pi, len(OutCat['m1']))
             else :
                 OutCat['inc'] = Cat['inc']
             if 'ra' not in Col:
-                OutCat['ra'] = np.random.uniform(0,2*math.pi, len(OutCat['m1']))
+                OutCat['ra'] = np.random.uniform(0, 2*math.pi, len(OutCat['m1']))
             else :
                 OutCat['ra'] = Cat['ra']
             if 'dec' not in Col:
@@ -125,7 +140,7 @@ class Astromodel:
     def makeSpin(self, option, size):
 
         # Available models : zeros, Maxwellian (in prep.), Maxwellian_dynamics (in prep.)
-        if option == 'Zero':
+        if option == 'Zeros':
             s1 = np.zeros(size)
             s2 = np.zeros(size)
         return s1, s2

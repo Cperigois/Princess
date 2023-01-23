@@ -1,16 +1,10 @@
 import numpy as np
 import pycbc.psd
 
-#Detection tools
-def detection_proba():
-
-def optimal_snr():
-
-def snr():
 
 class Detector:
 
-    def __init__(self, det_name, freq, Pycbc = True, psd_file = None):
+    def __init__(self, det_name, freq, origin = 'Pycbc', psd_file = None):
         """Define a single detector.
          Parameters
          ----------
@@ -18,8 +12,8 @@ class Detector:
              Name of the detector
          psd_file : str
              the file where to find the psd, or the psd name from PyCBC
-         PyCBC : bool
-             True if the PSD ca be found on PyCBC, False if you have your own.
+         origin : str
+             {'Pycbc, 'Princess', 'User'}.
          freq: np.array
             Contain the frequency range for the use of the detecor
          """
@@ -27,7 +21,7 @@ class Detector:
         # Set class variables
         self.det_name = det_name
         self.psd_file = psd_file
-        self.Pycbc = Pycbc
+        self.origin = origin
         self.freq = freq
 
     def Make_psd(self):
@@ -39,11 +33,16 @@ class Detector:
         ----------
         self.psd
         """
-        if self.Pycbc == True :
+        if self.origin == 'Pycbc' :
             self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq)+1+ np.min(self.freq), delta_f=int(self.freq[1]-self.freq[0]),
                                     low_freq_cutoff=int(self.freq[0]))
+        elif self.origin == 'Princess' :
+            path = 'AuxiliaryFiles/PSDs/'+psd_file+'_psd.dat'
+            self.psd = pycbc.psd.read.from_txt(path, length=len(self.freq)+1,  delta_f=int(self.freq[1]-self.freq[0]), low_freq_cutoff=int(self.freq[0]), is_asd_file=self.asd)
         else :
-            self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq)+1,  delta_f=int(self.freq[1]-self.freq[0]), low_freq_cutoff=int(self.freq[0]), is_asd_file=self.asd)
+            self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq) + 1,
+                                               delta_f=int(self.freq[1] - self.freq[0]),
+                                               low_freq_cutoff=int(self.freq[0]), is_asd_file=self.asd)
         return self.psd
 
     def reshape_psd(self, delimiter = '\t', Header = None, index  = None):

@@ -8,7 +8,7 @@ import Useful_Functions as UF
 
 class IndividualAnalysis:
 
-    def __init__(self, iteration = 100, network = 'HLV', binary_type = ['BBH', 'BNS', 'NSBH'], params = {'m1' : [0, 100, 100],'q' : [0, 1, 20],'zm': [0, 5, 30]}, pastro_thrs = 0, SNR_thrs = 0, FAR_thrs = 2 ):
+    def __init__(self, iteration = 100, network = 'HLV', pastro_thrs = 0, SNR_thrs = 0, FAR_thrs = 2 , binary_type = ['BBH', 'BNS', 'NSBH'], params = {'m1' : [0, 100, 100],'q' : [0, 1, 20],'zm': [0, 5, 30]}):
         """Gather all parameters of your study
          Parameters
          ----------
@@ -39,7 +39,7 @@ class IndividualAnalysis:
         self.param_list = params.keys()
 
         #Read Data from LVK
-        data_list = pd.read_csv('AuxiliaryFiles/LVK_data/GW_list.txt')
+        data_list = pd.read_csv('AuxiliaryFiles/LVK_data/GW_list.csv', dtype = {'id' : str, 'commonName' : str, 'binary' : str, 'run' : str, 'version' : str,'catalog.shortName' : str, 'GPS' : float,'reference' : str, 'jsonurl' : str, 'mass_1_source' : float, 'mass_1_source_lower' : float, 'mass_1_source_upper' : float, 'mass_2_source' : float, 'mass_2_source_lower' : float,'mass_2_source_upper' : float, 'network_matched_filter_snr' : float, 'network_matched_filter_snr_lower' : float, 'network_matched_filter_snr_upper' : float, 'luminosity_distance' : float, 'luminosity_distance_lower' : float, 'luminosity_distance_upper' : float, 'chi_eff,chi_eff_lower' : float, 'chi_eff_upper' : float, 'total_mass_source' : float, 'total_mass_source_lower' : float,'total_mass_source_upper' : float, 'chirp_mass_source' : float, 'chirp_mass_source_lower' : float, 'chirp_mass_source_upper' : float, 'chirp_mass' : float, 'chirp_mass_lower' : float, 'chirp_mass_upper' : float,'redshift' : float, 'redshift_lower' : float, 'redshift_upper' : float, 'far' : float, 'far_lower' : float, 'far_upper' : float, 'p_astro' : float, 'p_astro_lower' : float, 'p_astro_upper' : float, 'final_mass_source' : float,'final_mass_source_lower' : float, 'final_mass_source_upper' : float})
 
         for b in self.binary_type :
             list_events = data_list[(data_list['binary'] == b) & (data_list['network_matched_filter_snr'] > SNR_thrs) & (
@@ -49,8 +49,7 @@ class IndividualAnalysis:
                 opts = self.params[p]
                 posteriors[p] = dict({'bins': UF.newbin_lin(np.linspace(opts[0],opts[1],opts[2])), 'values': np.zeros(opts[2])})
             for evt in list_events.commonName :
-                posterior = pd.read_csv('AuxiliaryFiles/LVC_data/Posterior/' + evt + '_post.dat',
-                    sep='\t', index_col=None)
+                posterior = pd.read_csv('AuxiliaryFiles/LVC_data/Posterior/' + evt + '_post.dat', sep='\t', index_col=None)
                 for p in self.param_list:
                     hist, bini, patch = plt.hist(posterior[p], bins=posteriors[p]['bins'], density=True)
                     posteriors[p]['values']+= hist
@@ -85,7 +84,7 @@ class IndividualAnalysis:
         return np.sqrt(SNR)
 
 
-    def Full_Analysis(self, Model, update_file = False) :
+    def Full_Analysis(self, update_file = False) :
         """This function does the full analysis for all models
                 ----------
                 Model : AstroModel
