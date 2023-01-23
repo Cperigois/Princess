@@ -4,7 +4,7 @@ import pycbc.psd
 
 class Detector:
 
-    def __init__(self, det_name, freq, origin = 'Pycbc', psd_file = None):
+    def __init__(self, det_name, origin = 'Pycbc', psd_file = None, freq = None):
         """Define a single detector.
          Parameters
          ----------
@@ -17,13 +17,18 @@ class Detector:
          freq: np.array
             Contain the frequency range for the use of the detecor
          """
-
+        df= pd.read_csv('AuxiliaryFiles/PSDs/PSD_Princess.dat', index_col = None, sep = '\t')
         # Set class variables
         self.det_name = det_name
         self.psd_file = psd_file
         self.origin = origin
-        self.freq = freq
-
+        if origin == 'Princess':
+            det_carac = df.loc[psd_file]
+            self.freq = np.linspace(det_carac.fmin, det_carac.fmax, det_carac.size)
+        else :
+            self.freq = freq
+        if self.freq is None:
+            print('Unable to find th frequency range of the detector... \n Please add in your detector definition freq = [np.array] and recompile your detector')
     def Make_psd(self):
         """Load or calculate the psd of a detector.
         Parameters
@@ -38,7 +43,8 @@ class Detector:
                                     low_freq_cutoff=int(self.freq[0]))
         elif self.origin == 'Princess' :
             path = 'AuxiliaryFiles/PSDs/'+psd_file+'_psd.dat'
-            self.psd = pycbc.psd.read.from_txt(path, length=len(self.freq)+1,  delta_f=int(self.freq[1]-self.freq[0]), low_freq_cutoff=int(self.freq[0]), is_asd_file=self.asd)
+            df_psd = pd.DataFrame(path, index_col = None, sep = '\t')
+            self.psd = pycbc.psd.read.from_numpy_arrays(df_psd.f, df_psd['psd[1/Hz]'],length=len(self.freq)+1,  delta_f=int(self.freq[1]-self.freq[0]), low_freq_cutoff=int(self.freq[0]))
         else :
             self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq) + 1,
                                                delta_f=int(self.freq[1] - self.freq[0]),
