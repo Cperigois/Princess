@@ -41,7 +41,7 @@ class Princess:
                 Omega_e0[n] = np.zeros(len(self.Freq))
             for i in range(len(df['Mc'])) :
                 evt = df.iloc[i]
-                args = [ evt['Mc'], evt['q'], evt['Xsi'], evt['zm'], evt['zf'], evt['a0'], evt['e0'] ]
+                args = [ evt['Mc'], evt['q'], evt['Xsi'], evt['z'], evt['zf'], evt['a0'], evt['e0'] ]
                 Omg, Omg_e0 = GWk(args, co_type, 0 )
                 Omega['Total'] += Omg
                 Omega_e0['Total'] += Omg_e0
@@ -89,9 +89,9 @@ class Princess:
                 Ana[self.Networks[N].net_name]['SNR_total'] = SNR.SNR_Omega(Omega_e0['Total'],
                                                                            self.Networks[N].pic_file)
                 residual = df[df[self.Networks[N].net_name] < self.Networks[N].SNR_thrs]
-                Ana[self.Networks[N].net_name]['Nsource_substracted'] = len(residual.zm)
+                Ana[self.Networks[N].net_name]['Nsource_substracted'] = len(residual.z)
                 resolved = df[df[self.Networks[N].net_name] < self.Networks[N].SNR_thrs]
-                Ana[self.Networks[N].net_name]['Nsource_resolved'] = len(resolved.zm)
+                Ana[self.Networks[N].net_name]['Nsource_resolved'] = len(resolved.z)
                 print(Ana[N])
             Ana.to_csv('Results/Analysis/' + path, sep='\t')
 
@@ -107,7 +107,7 @@ class Princess:
             if orbit_evo == False :
                 for i in range(len(df['Mc'])):
                     evt = df.iloc[i]
-                    args = [evt['Mc'], evt['q'], (evt['m1']*evt['s1']+evt['m2']*evt['s2'])/(evt['m1']+evt['m2']), evt['zm']]
+                    args = [evt['Mc'], evt['q'], (evt['m1']*evt['s1']+evt['m2']*evt['s2'])/(evt['m1']+evt['m2']), evt['z']]
                     Omg_e0 = GWk_noEcc(args, co_type, 0)
                     Omega_e0['Total'] += Omg_e0
                     for N in Networks:
@@ -125,7 +125,7 @@ class Princess:
                 Omega_e0[Networks[N].net_name] = np.zeros(len(self.Freq))
             for evt in range(len(Cat['m1'])):
                 event = Cat.iloc[[evt]]
-                Omg_e0 = GWk_noEcc_Pycbcwf(event, self.Freq, self.approx, evt, len(Cat.zm))* np.power(self.Freq,3.) * K.C / astromodel.duration
+                Omg_e0 = GWk_noEcc_Pycbcwf(event, self.Freq, self.approx, evt, len(Cat.z))* np.power(self.Freq,3.) * K.C / astromodel.duration
                 Omega_e0['Total'] += Omg_e0
                 for N in range(len(Networks)):
                     a = event[str(Networks[N].net_name)]

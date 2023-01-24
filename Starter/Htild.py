@@ -35,7 +35,7 @@ def GWk(evt, type, inc = None) :
     Mc = evt[0]
     q = evt[1]
     Spin = evt[2]
-    zm = evt[3]
+    z = evt[3]
     zf = evt[4]
     a0 = evt[5]
     ecc = evt[6]
@@ -59,11 +59,11 @@ def GWk(evt, type, inc = None) :
     else :
         f0 = 1.e-4 * math.pow(float(a0) + 1, -3. / 2.) * math.pow(mtot, 0.5)
     if f0 < 100000:  # old test now f0 always >1000
-        f_lso = 4394.787 / (mtot * (1 + zm))
-        f_merg = BF.fmerg_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, zm)
-        f_ring = BF.fring_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, zm)
-        f_cut = BF.fcut_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, zm)
-        sigma = BF.sigma_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, zm)
+        f_lso = 4394.787 / (mtot * (1 + z))
+        f_merg = BF.fmerg_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, z)
+        f_ring = BF.fring_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, z)
+        f_cut = BF.fcut_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, z)
+        sigma = BF.sigma_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, z)
         if ((type == 'BNS') or (type == 'BHNS')):
             f_merg = f_lso
             f_ring = 9.e-7
@@ -74,22 +74,22 @@ def GWk(evt, type, inc = None) :
         a3 = (27. / 8. - 11. * eta / 6.) * Spin
         e1 = 1.4547 * Spin - 1.8897
         e2 = -1.8153 * Spin + 1.6557
-        nu_merg = math.pow(mtot * (1 + zm) * (f_merg) * 1.547388618e-5, 1. / 3.)
-        nu_ring = math.pow(mtot * (1 + zm) * (f_ring) * 1.547388618e-5, 1. / 3.)
+        nu_merg = math.pow(mtot * (1 + z) * (f_merg) * 1.547388618e-5, 1. / 3.)
+        nu_ring = math.pow(mtot * (1 + z) * (f_ring) * 1.547388618e-5, 1. / 3.)
         g_merg = math.pow(1. + a2 * nu_merg * nu_merg + a3 * nu_merg * nu_merg * nu_merg, 2.)
         g_ring1 = math.pow(1. + e1 * nu_merg + e2 * nu_merg * nu_merg, 2.)
         g_ring2 = math.pow(1. + e1 * nu_ring + e2 * nu_ring * nu_ring, 2.)
         wm = g_merg / (g_ring1 * f_merg)
         wr = wm * g_ring2 * math.pow(f_ring, -4. / 3.)
         # Doing the interpolation between the observed frequency and the redshift
-        if abs(float(zf) - zm) >= 0.05:
+        if abs(float(zf) - z) >= 0.05:
             z_int = []
             f_int = []
             z2 = float(zf)
             z = z2
             f_pre = math.pow(f0, -8. / 3.)
             #k = 145754753.28 * math.pow(Mc, 5. / 3.)
-            while z > float(zm):  # graphe temps red freq, verifier sans ecc et sans Q
+            while z > float(z):  # graphe temps red freq, verifier sans ecc et sans Q
                 tau_z = quad(BF.tau_Myr, z, z2)
                 f1 = pow(f_pre, -8. / 3.) - K.Cst * tau_z[0] * pow(Mc * K.M_sun, -5. / 3.) * K.yr * 1.e6
                 f_int.append(math.pow(f1, -3. / 8.) / (1. + z))
@@ -107,10 +107,10 @@ def GWk(evt, type, inc = None) :
         while (f[i] < f_cut):
             n = 2
             while n < 6:
-                if (zm - z) >= 0.05:
+                if (z - z) >= 0.05:
                     z = abs(int_zf(f[i] / n))
                 else:
-                    z = zm
+                    z = z
                 if f[i] > n * f0 / (1 + z):
                     if type == 'BBH':
                         nu = math.pow(mtot * (1 + z) * f[i] * 1.547388618e-5, 1. / 3.)
@@ -180,8 +180,8 @@ def GWk_noEcc(evt, type, inc = None) :
     Mc = evt[0]
     q = evt[1]
     Spin = evt[2]
-    zm = evt[3]
-    zf = zm
+    z = evt[3]
+    zf = z
     if inc == 0 :
         Fi = 4./5.
     else :
@@ -194,11 +194,11 @@ def GWk_noEcc(evt, type, inc = None) :
     eta = m1 * m2 / (math.pow(mtot, 2.))
     Omg_e0 = np.zeros(len(f))
 
-    f_lso = 4394.787 / (mtot * (1 + zm))
-    f_merg = BF.fmerg_f(m1,m2 , Spin, zm)
-    f_ring = BF.fring_f(m1, m2, Spin, zm)
-    f_cut = BF.fcut_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, zm)
-    sigma = BF.sigma_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, zm)
+    f_lso = 4394.787 / (mtot * (1 + z))
+    f_merg = BF.fmerg_f(m1,m2 , Spin, z)
+    f_ring = BF.fring_f(m1, m2, Spin, z)
+    f_cut = BF.fcut_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, z)
+    sigma = BF.sigma_f(BF.mass1(Mc, q), BF.mass2(Mc, q), Spin, z)
     if f_merg>1. :
         if ((type == 'BNS') or (type == 'BHNS')):
             f_merg = f_lso
@@ -209,8 +209,8 @@ def GWk_noEcc(evt, type, inc = None) :
         a3 = (27. / 8. - 11. * eta / 6.) * Spin
         e1 = 1.4547 * Spin - 1.8897
         e2 = -1.8153 * Spin + 1.6557
-        nu_merg = math.pow(mtot * (1 + zm) * (f_merg) * 1.547388618e-5, 1. / 3.)
-        nu_ring = math.pow(mtot * (1 + zm) * (f_ring) * 1.547388618e-5, 1. / 3.)
+        nu_merg = math.pow(mtot * (1 + z) * (f_merg) * 1.547388618e-5, 1. / 3.)
+        nu_ring = math.pow(mtot * (1 + z) * (f_ring) * 1.547388618e-5, 1. / 3.)
         g_merg = math.pow(1. + a2 * nu_merg * nu_merg + a3 * nu_merg * nu_merg * nu_merg, 2.)
         g_ring1 = math.pow(1. + e1 * nu_merg + e2 * nu_merg * nu_merg, 2.)
         g_ring2 = math.pow(1. + e1 * nu_ring + e2 * nu_ring * nu_ring, 2.)
@@ -265,8 +265,8 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, ntot) :
 
 
     hptild, hctild = pycbc.waveform.get_fd_waveform(approximant=approx,
-                                                       mass1=evt.m1 * (1. + evt.zm),
-                                                       mass2=evt.m2 * (1. + evt.zm),
+                                                       mass1=evt.m1 * (1. + evt.z),
+                                                       mass2=evt.m2 * (1. + evt.z),
                                                        spin1x=0., spin1y=0., spin1z=evt.s1,
                                                        spin2x=0., spin2y=0., spin2z=evt.s2,
                                                        delta_f=deltaf,

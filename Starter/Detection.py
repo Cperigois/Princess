@@ -1,10 +1,11 @@
 import numpy as np
 import pycbc.psd
+import pandas as pd
 
 
 class Detector:
 
-    def __init__(self, det_name, origin = 'Pycbc', psd_file = None, freq = None):
+    def __init__(self, det_name, configuration, origin = 'Pycbc', psd_file = None, freq = None):
         """Define a single detector.
          Parameters
          ----------
@@ -17,16 +18,13 @@ class Detector:
          freq: np.array
             Contain the frequency range for the use of the detecor
          """
-        df= pd.read_csv('AuxiliaryFiles/PSDs/PSD_Princess.dat', index_col = None, sep = '\t')
+
         # Set class variables
         self.det_name = det_name
         self.psd_file = psd_file
         self.origin = origin
-        if origin == 'Princess':
-            det_carac = df.loc[psd_file]
-            self.freq = np.linspace(det_carac.fmin, det_carac.fmax, det_carac.size)
-        else :
-            self.freq = freq
+        self.freq = freq
+        self.configuration = configuration
         if self.freq is None:
             print('Unable to find th frequency range of the detector... \n Please add in your detector definition freq = [np.array] and recompile your detector')
     def Make_psd(self):
@@ -42,9 +40,9 @@ class Detector:
             self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq)+1+ np.min(self.freq), delta_f=int(self.freq[1]-self.freq[0]),
                                     low_freq_cutoff=int(self.freq[0]))
         elif self.origin == 'Princess' :
-            path = 'AuxiliaryFiles/PSDs/'+psd_file+'_psd.dat'
-            df_psd = pd.DataFrame(path, index_col = None, sep = '\t')
-            self.psd = pycbc.psd.read.from_numpy_arrays(df_psd.f, df_psd['psd[1/Hz]'],length=len(self.freq)+1,  delta_f=int(self.freq[1]-self.freq[0]), low_freq_cutoff=int(self.freq[0]))
+            path = 'AuxiliaryFiles/PSDs/'+self.psd_file+'_psd.dat'
+            df_psd = pd.read_csv(path, index_col = None, sep = '\t')
+            self.psd = pycbc.psd.read.from_numpy_arrays(df_psd.f, df_psd['psd[1/Hz]'],length=len(self.freq)+1+ np.min(self.freq),  delta_f=int(self.freq[1]-self.freq[0]), low_freq_cutoff=int(self.freq[0]))
         else :
             self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq) + 1,
                                                delta_f=int(self.freq[1] - self.freq[0]),
@@ -71,7 +69,7 @@ class Detector:
 
 class Network:
 
-    def __init__(self, net_name = None, compo = None ,pic_file = None, freq = np.arange(500)+1, efficiency = 1., SNR_thrs = 12 ):
+    def __init__(self, net_name = None, compo = None ,pic_file = None, freq = np.arange(500)+1, efficiency = 1., SNR_thrs = 12, duration = 1 ):
         """Create an instance of your model.
          Parameters
          ----------
@@ -91,6 +89,7 @@ class Network:
         self.freq = freq
         self.efficiency = efficiency
         self.SNR_thrs = SNR_thrs
+        self.duration = duration
 
     def reshape_pic(self, delimiter='\t', Header=None, index=None):
         """Reshape your psd to fit the Make psd function and write it in a new file in AuxiliaryFiles/PSDs.
@@ -116,8 +115,8 @@ class Network:
         for evt in range(len(cat['m1'])) :
             event = cat.iloc[evt]
             wf = pycbc.waveform.get_fd_waveform(approximant=approximant,
-                                                      mass1=event['m1'] * (1. + event['zm']),
-                                                      mass2=event['m2'] * (1. + event['zm']),
+                                                      mass1=event['m1'] * (1. + event['z']),
+                                                      mass2=event['m2'] * (1. + event['z']),
                                                       spin1x=0., spin1y=0., spin1z=event['spinz1'],
                                                       spin2x=0., spin2y=0., spin2z=event['spinz2'],
                                                       delta_f=self.freq[1]-self.freq[0],

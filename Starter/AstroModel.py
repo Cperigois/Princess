@@ -54,7 +54,7 @@ class Astromodel:
         header : list of str
              Names of your columns in the original file. Some names are important and should be labeled with specific names.
 
-             zm: Redshift of merger
+             z: Redshift of merger
              m1,m2: Mass of the compact objects in solar masses
              Mc: Chirp mass in solar masses
              q: Mass ratio (q<=1)
@@ -83,7 +83,7 @@ class Astromodel:
         print(Cat.describe())
         OutCat = pd.DataFrame()
         Col = list(Cat.columns)
-        OutCat['zm'] = Cat['zm']
+        OutCat['z'] = Cat['z']
 
         # Check the masses calculations
         if 'Mc' not in Col:
@@ -96,7 +96,7 @@ class Astromodel:
             OutCat['m1'], OutCat['m2'] = BF.mc_q_to_m1_m2(Cat['Mc'], Cat['q'])
         # Compute luminosity distance
         if 'Dl' not in Col:
-            zm = np.array(Cat['zm'], float)
+            zm = np.array(Cat['z'], float)
             dl = np.array([])
             for z in zm:
                 dl = np.append(dl, Planck15.luminosity_distance(z).value)
@@ -105,7 +105,7 @@ class Astromodel:
             OutCat['Dl'] = Cat['Dl']
         # Generate the spin
         if 's1' not in Col:
-            OutCat['s1'], OutCat['s2'] = self.makeSpin(self.spin_option, len(Cat['zm']))
+            OutCat['s1'], OutCat['s2'] = self.makeSpin(self.spin_option, len(Cat['z']))
         else :
             OutCat['s1'] = Cat['s1']
             OutCat['s2'] = Cat['s2']
@@ -158,25 +158,30 @@ class Astromodel:
                     Approximants used for the waveforms
                 """
         flow = int(np.min(freq))
-        fsize = flow+len(freq)
+        fsize = len(freq)
         for cat in self.catalogs :
             Cat = pd.read_csv('Catalogs/'+cat, sep='\t', index_col=False)
             print('SNR calculation for ', cat)
-            ntot = len(Cat.zm)
+            ntot = len(Cat.z)
             for N in Networks:
-                SNR_N = np.zeros(len(Cat.zm))
+                SNR_N = np.zeros(len(Cat.z))
                 psd_compo = np.empty((len(N.compo), len(freq)+1+flow))
+                SNR_det = pd.DataFrame()
                 for d in range(len(N.compo)):
                     psd_compo[d] = N.compo[d].Make_psd()
-                for evt in range(len(Cat.zm)):
+                    SNR_det[N.compo[d].det_name] = np.zeros(len(Cat.z))
+                for evt in range(len(Cat.z)):
                     event = Cat.iloc[[evt]]
                     htildsq = GWk_noEcc_Pycbcwf(event, freq = freq, approx=approx,n = evt, ntot = ntot)
                     for d in range(len(N.compo)) :
                         Sn = psd_compo[d]
-                        SNR = np.sum(4.*htildsq/Sn[flow:fsize])
+                        SNR = np.sum(4.*htildsq/Sn[flow:fsize+flow])
+                        SNR_det[N.compo[d].det_name][evt] = np.sqrt(SNR)
                         SNR_N[evt]+= SNR
+                Cat = pd.concat([Cat, SNR_det], axis =1)
                 Cat['snr_'+N.net_name+'_opt'] = np.sqrt(SNR_N)
-            Cat.to_csv(cat, sep='\t', index=False)
+            Cat = Cat.T.drop_duplicates().T
+            Cat.to_csv('Catalogs/'+cat, sep='\t', index=False)
 
 
 
