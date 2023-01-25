@@ -9,7 +9,7 @@ from Starter.Htild import GWk_noEcc_Pycbcwf
 
 class Princess:
 
-    def __init__(self, Freq, approx, Networks, Omega_ana_freq = [10,25]):
+    def __init__(self, Freq, approx, Networks, inclination, Omega_ana_freq = [10,25]):
         """Create an instance of your calculations parameters.
         Parameters
         ----------
@@ -28,6 +28,7 @@ class Princess:
         self.Networks = Networks
         self.Omega_ana_freq = Omega_ana_freq
         self.approx = approx
+        self.inclination = inclination
 
     def Omega_ecc(self, cat):
 
@@ -125,12 +126,13 @@ class Princess:
                 Omega_e0[Networks[N].net_name] = np.zeros(len(self.Freq))
             for evt in range(len(Cat['m1'])):
                 event = Cat.iloc[[evt]]
-                Omg_e0 = GWk_noEcc_Pycbcwf(event, self.Freq, self.approx, evt, len(Cat.z))* np.power(self.Freq,3.) * K.C / astromodel.duration
+                Omg_e0 = GWk_noEcc_Pycbcwf(evt = event, freq = self.Freq, approx = self.approx, n = evt, size_catalogue = len(Cat.z), inc_option = self.inclination) * np.power(self.Freq,3.) * K.C / astromodel.duration
                 Omega_e0['Total'] += Omg_e0
                 for N in range(len(Networks)):
                     a = event[str(Networks[N].net_name)]
                     if float(a) < Networks[N].SNR_thrs:
                         Omega_e0[Networks[N].net_name] += Omg_e0
             Omega_e0.to_csv('Results/Omega_e0/' + astromodel.catalogs[cat], index=False, sep='\t')
+            print('Written :  Results/Omega_e0/' , astromodel.catalogs[cat])
 
 

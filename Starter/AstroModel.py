@@ -7,7 +7,7 @@ from Starter.Htild import GWk_noEcc_Pycbcwf
 
 class Astromodel:
 
-    def __init__(self, cat_name = None, duration = 1,  original_cat_path = None, cat_sep = None, index_column = None, flags ={'':''}, spin_option = "Zeros", orbit_evolution = False, inclination_position = False):
+    def __init__(self, cat_name = None, duration = 1,  original_cat_path = None, cat_sep = None, index_column = None, flags ={}, spin_option = "Zeros", orbit_evolution = False, inclination_position = False):
         """Create an instance of your model.
          Parameters
          ----------
@@ -40,10 +40,10 @@ class Astromodel:
         self.orbit_evolution = orbit_evolution
         self.inclination_position =inclination_position
         self.catalogs = []
-        for x in flags.keys() :
-            if x == '':
-                self.catalogs.append(self.cat_name + '.dat')
-            else :
+        if len(flags.keys())==0 :
+            self.catalogs = [self.cat_name + '.dat']
+        else :
+            for x in flags.keys() :
                 self.catalogs.append(self.cat_name + '_' + flags[x] + '.dat')
 
 
@@ -69,7 +69,7 @@ class Astromodel:
         Cat = pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, names = header)
         Cat.to_csv(self.original_cat_path, sep = self.sep_cat, index = None, header = True)
 
-    def makeCat(self, flags = {}):
+    def makeCat(self):
         """Create the catalogue(s).
         Parameters
         ----------
@@ -104,7 +104,7 @@ class Astromodel:
         else :
             OutCat['Dl'] = Cat['Dl']
         # Generate the spin
-        if 's1' not in Col:
+        if (('s1' not in Col) & ('s2' not in Col)):
             OutCat['s1'], OutCat['s2'] = self.makeSpin(self.spin_option, len(Cat['z']))
         else :
             OutCat['s1'] = Cat['s1']
@@ -126,13 +126,13 @@ class Astromodel:
                 OutCat['dec'] = np.random.uniform(0,2*math.pi, len(OutCat['m1']))
             else :
                 OutCat['dec'] = Cat['dec']
-        if flags != {} :
-            for key in flags.keys():
+        if self.flags != {} :
+            for key in self.flags.keys():
                 print(key)
                 flagCat = OutCat[Cat['flag'] == int(key)]
-                flagCat.to_csv('Catalogs/' + self.cat_name + '_' + flags[key] + '.dat', sep='\t', index=False)
+                flagCat.to_csv('Catalogs/' + self.cat_name + '_' + self.flags[key] + '.dat', sep='\t', index=False)
                 truc = flagCat.describe()
-                truc.to_csv('Catalogs/Ana_' + self.cat_name + '_' + flags[key] + '.dat', sep='\t')
+                truc.to_csv('Catalogs/Ana_' + self.cat_name + '_' + self.flags[key] + '.dat', sep='\t')
         else :
             OutCat.to_csv('Catalogs/' + self.cat_name + '.dat', sep='\t', index=False)
 
@@ -143,6 +143,39 @@ class Astromodel:
         if option == 'Zeros':
             s1 = np.zeros(size)
             s2 = np.zeros(size)
+        elif option == 'rand_Dynamics' :
+            sigmaSpin = 0.1
+            v1_L = np.random.normal(0.0, sigmaSpin, size = size)
+            v2_L = np.random.normal(0.0, sigmaSpin, size = size)
+            v3_L = np.random.normal(0.0, sigmaSpin, size = size)
+            V_1 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
+
+            v1_L = np.random.normal(0.0, sigmaSpin, size = size)
+            v2_L = np.random.normal(0.0, sigmaSpin, size = size)
+            v3_L = np.random.normal(0.0, sigmaSpin, size = size)
+            V_2 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
+
+            costheta1 = 2. * np.random.uniform(0.0, 1.0, size = size) - 1.0
+            costheta2 = 2. * np.random.uniform(0.0, 1.0, size = size) - 1.0
+
+            s1 = V_1 * costheta1
+            s2 = V_2 * costheta2
+
+        elif option == 'rand' :
+            sigmaSpin = 0.1
+            v1_L = np.random.normal(0.0, sigmaSpin, size = size)
+            v2_L = np.random.normal(0.0, sigmaSpin, size = size)
+            v3_L = np.random.normal(0.0, sigmaSpin, size = size)
+            V_1 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
+
+            v1_L = np.random.normal(0.0, sigmaSpin, size = size)
+            v2_L = np.random.normal(0.0, sigmaSpin, size = size)
+            v3_L = np.random.normal(0.0, sigmaSpin, size = size)
+            V_2 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
+
+            s1 = V_1
+            s2 = V_2
+
         return s1, s2
 
 
@@ -172,7 +205,7 @@ class Astromodel:
                     SNR_det[N.compo[d].det_name] = np.zeros(len(Cat.z))
                 for evt in range(len(Cat.z)):
                     event = Cat.iloc[[evt]]
-                    htildsq = GWk_noEcc_Pycbcwf(event, freq = freq, approx=approx,n = evt, ntot = ntot)
+                    htildsq = GWk_noEcc_Pycbcwf(evt=event, freq = freq, approx=approx, n = evt, size_catalogue = ntot, inc_option= 'optimal')
                     for d in range(len(N.compo)) :
                         Sn = psd_compo[d]
                         SNR = np.sum(4.*htildsq/Sn[flow:fsize+flow])
@@ -180,7 +213,7 @@ class Astromodel:
                         SNR_N[evt]+= SNR
                 Cat = pd.concat([Cat, SNR_det], axis =1)
                 Cat['snr_'+N.net_name+'_opt'] = np.sqrt(SNR_N)
-            Cat = Cat.T.drop_duplicates().T
+            Cat = Cat.T.groupby(level=0).first().T
             Cat.to_csv('Catalogs/'+cat, sep='\t', index=False)
 
 

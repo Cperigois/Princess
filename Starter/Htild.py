@@ -9,8 +9,6 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.special import jv
 from scipy.integrate import quad
 from scipy.optimize import fsolve
-import pycbc.waveform as wf
-
 import Stochastic.Pix
 import warnings
 
@@ -243,7 +241,7 @@ def GWk_noEcc(evt, type, inc = None) :
     return Omg_e0
 
 
-def GWk_noEcc_Pycbcwf(evt, freq, approx, n, ntot) :
+def GWk_noEcc_Pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'incat') :
     """This function calculate the contribution of a binary
         Parameters
         ----------
@@ -259,11 +257,13 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, ntot) :
         """
     warnings.filterwarnings("ignore")
     flow = int(np.min(freq))
-    fsize = len(freq)
     deltaf = int(freq[1]-freq[0])
-    col = list(evt.columns)
-
-
+    if inc_option == 'incat':
+        inc = evt.inc
+    elif inc_option =='rand' :
+        inc = np.random.uniform(0, 2. * math.pi)
+    elif inc_option == 'optimal' :
+        inc = 0
     hptild, hctild = pycbc.waveform.get_fd_waveform(approximant=approx,
                                                        mass1=evt.m1 * (1. + evt.z),
                                                        mass2=evt.m2 * (1. + evt.z),
@@ -271,6 +271,7 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, ntot) :
                                                        spin2x=0., spin2y=0., spin2z=evt.s2,
                                                        delta_f=deltaf,
                                                        f_lower=flow,
+                                                       inclination = inc,
                                                        distance=evt.Dl, f_ref=20.)
     hptild = hptild[flow:]
     hctild = hctild[flow:]
@@ -281,8 +282,7 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, ntot) :
         hptild = hptild[:len(freq)]
         hctild = hctild[:len(freq)]
     htildSQ = np.array(hptild * np.conjugate(hptild) + hctild * np.conjugate(hctild), dtype=float)
-
-    Stochastic.Pix.bar_peach(n,ntot)
+    Stochastic.Pix.bar_peach(n,size_catalogue)
 
     return htildSQ
 

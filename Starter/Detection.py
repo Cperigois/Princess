@@ -23,7 +23,16 @@ class Detector:
         self.det_name = det_name
         self.psd_file = psd_file
         self.origin = origin
-        self.freq = freq
+        if origin == 'Princess' :
+            info = pd.read_csv('AuxiliaryFiles/PSDs/PSD_Princess.dat', index_col= 'names', sep = '\t')
+            fmin = info.fmin[psd_file]
+            fmax = info.fmax[psd_file]
+            if np.min(freq)< fmin:
+                self.freq = freq[(fmin > freq)]
+            if np.max(freq)> fmax:
+                self.freq = freq[(fmax < freq)]
+        else :
+            self.freq = freq
         self.configuration = configuration
         if self.freq is None:
             print('Unable to find th frequency range of the detector... \n Please add in your detector definition freq = [np.array] and recompile your detector')
@@ -41,7 +50,7 @@ class Detector:
                                     low_freq_cutoff=int(self.freq[0]))
         elif self.origin == 'Princess' :
             path = 'AuxiliaryFiles/PSDs/'+self.psd_file+'_psd.dat'
-            df_psd = pd.read_csv(path, index_col = None, sep = '\t')
+            df_psd = pd.read_csv(path, index_col = None, sep = '\t', dtype = float)
             self.psd = pycbc.psd.read.from_numpy_arrays(df_psd.f, df_psd['psd[1/Hz]'],length=len(self.freq)+1+ np.min(self.freq),  delta_f=int(self.freq[1]-self.freq[0]), low_freq_cutoff=int(self.freq[0]))
         else :
             self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq) + 1,
@@ -123,8 +132,8 @@ class Network:
                                                       f_lower=self.freq[0],
                                                       distance=event.Dl, f_ref=20.)[0]
             for d in self.compo:
-                SNR[evt]+= pycbc.filter.matchedfilter.sigma(wf, psd=d.psd, low_frequency_cutoff=self.freq[0],
-                                                         high_frequency_cutoff=np.max(freq))
+                SNR[evt]+= pycbc.filter.matchedfilter.sigma(wf, psd=d.psd, low_frequency_cutoff=d.freq[0],
+                                                         high_frequency_cutoff=np.max(d.freq))
             SNR[evt] = np.sqrt(SNR[evt])
         cat[self.net_name] = SNR
 
