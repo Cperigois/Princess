@@ -7,7 +7,7 @@ import Useful_Functions as UF
 
 class IndividualAnalysis:
 
-    def __init__(self, name = 'AnaTest', iteration = 100, Networks = ['HLV'], pastro_thrs = 0.85, SNR_thrs = 0, FAR_thrs = 2 , binary_type = ['BBH', 'BNS', 'NSBH'], params = {'m1' : [0, 100, 100],'q' : [0, 1, 20],'zm': [0, 5, 30]}):
+    def __init__(self, name = 'AnaTest', iteration = 100, Networks = ['HLV'], pastro_thrs = 0.85, SNR_thrs = 0, FAR_thrs = 2 , Matchfiltering_error = 1., binary_type = ['BBH', 'BNS', 'NSBH'], params = {'m1' : [0, 100, 100],'q' : [0, 1, 20],'zm': [0, 5, 30]}):
         """Gather all parameters of your study
          Parameters
          ----------
@@ -35,6 +35,7 @@ class IndividualAnalysis:
         self.SNR_thrs = SNR_thrs
         self.FAR_thrs = FAR_thrs
         self.binary_type = binary_type
+        self.Matchfiltering_error = Matchfiltering_error
         self.param_list = list(params.keys())
         self.name = name
 
@@ -50,10 +51,10 @@ class IndividualAnalysis:
                                 data_list['far'] < FAR_thrs) & (data_list['p_astro'] > pastro_thrs)]
                 print(list_events.describe())
                 print(len(list_events['binary']))
-                print('O1', len(list_events[list_events.runs == 'O1']))
-                print('O2', len(list_events[list_events.runs == 'O2']))
-                print('O3a', len(list_events[list_events.runs == 'O3a']))
-                print('O3b', len(list_events[list_events.runs == 'O3b']))
+                print('O1', len(list_events[list_events.run == 'O1']))
+                print('O2', len(list_events[list_events.run == 'O2']))
+                print('O3a', len(list_events[list_events.run == 'O3a']))
+                print('O3b', len(list_events[list_events.run == 'O3b']))
                 posteriors = dict({})
                 for p in self.param_list :
                     opts = self.params[p]
@@ -93,8 +94,7 @@ class IndividualAnalysis:
         if update_file == True :
             cat['SNR_real_' + network.net_name] = np.sqrt(SNR)
             cat.to_csv('Catalogs/' + Catalogue_path, sep='\t', index=False)
-        return np.sqrt(SNR)
-
+        return self.Matchfiltering_error*np.sqrt(SNR)
 
     def Full_Analysis(self, Model, update_file = False) :
         """This function does the full analysis for all models
@@ -112,6 +112,7 @@ class IndividualAnalysis:
         for C in Model.catalogs:
             cat = pd.read_csv('Catalogs/' + C, sep='\t', index_col=None)
             name_cat = C[: len(C) - 4]
+            print(self.Networks)
             for n in self.Networks:
                 for i in range(self.iteration) :
                     SNR = self.SNR_real(C, update_file, n)
@@ -129,6 +130,7 @@ class IndividualAnalysis:
                                        '5%': data.quantile(0.05, axis =1),
                                        '95%': data.quantile(0.95, axis =1) })
                     df.to_csv('Results/'+self.name+'/Ana_'+ name_cat + '_'+ n.net_name+'_'+p +'.dat', sep = '\t', index = False)
+                print(n.net_name)
                 f = open('Results/'+self.name+'/Ana_'+ name_cat +'_'+ n.net_name+'_ndet.dat', "w")
                 f.write("Mean number of detections : {0} \nStandard deviation : {1} \nMinimum of detections : {2} \nMaximum detections : {3} ".format(np.mean(ndet), np.std(ndet), np.min(ndet), np.max(ndet)))
                 f.close()

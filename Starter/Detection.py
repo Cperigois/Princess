@@ -1,6 +1,9 @@
+import os
 import numpy as np
 import pycbc.psd
 import pandas as pd
+from astropy.cosmology import Planck15
+from Stochastic import Basic_Functions as BF
 
 
 class Detector:
@@ -23,17 +26,16 @@ class Detector:
         self.det_name = det_name
         self.psd_file = psd_file
         self.origin = origin
+        self.configuration = configuration
+        self.freq = freq
         if origin == 'Princess' :
             info = pd.read_csv('AuxiliaryFiles/PSDs/PSD_Princess.dat', index_col= 'names', sep = '\t')
             fmin = info.fmin[psd_file]
             fmax = info.fmax[psd_file]
-            if np.min(freq)< fmin:
+            if (np.min(freq)< fmin) :
                 self.freq = freq[(fmin > freq)]
             if np.max(freq)> fmax:
                 self.freq = freq[(fmax < freq)]
-        else :
-            self.freq = freq
-        self.configuration = configuration
         if self.freq is None:
             print('Unable to find th frequency range of the detector... \n Please add in your detector definition freq = [np.array] and recompile your detector')
     def Make_psd(self):
@@ -46,14 +48,14 @@ class Detector:
         self.psd
         """
         if self.origin == 'Pycbc' :
-            self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq)+1+ np.min(self.freq), delta_f=int(self.freq[1]-self.freq[0]),
-                                    low_freq_cutoff=int(self.freq[0]))
+            self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq), delta_f=float(self.freq[1]-self.freq[0]),
+                                    low_freq_cutoff=float(self.freq[0]))
         elif self.origin == 'Princess' :
             path = 'AuxiliaryFiles/PSDs/'+self.psd_file+'_psd.dat'
             df_psd = pd.read_csv(path, index_col = None, sep = '\t', dtype = float)
-            self.psd = pycbc.psd.read.from_numpy_arrays(df_psd.f, df_psd['psd[1/Hz]'],length=len(self.freq)+1+ np.min(self.freq),  delta_f=int(self.freq[1]-self.freq[0]), low_freq_cutoff=int(self.freq[0]))
-        else :
-            self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq) + 1,
+            self.psd = pycbc.psd.read.from_numpy_arrays(df_psd.f, df_psd['psd[1/Hz]'],length=len(self.freq),  delta_f=self.freq[1]-self.freq[0], low_freq_cutoff=self.freq[0])
+        elif self.origin == 'User' :
+            self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq),
                                                delta_f=int(self.freq[1] - self.freq[0]),
                                                low_freq_cutoff=int(self.freq[0]), is_asd_file=self.asd)
         return self.psd
@@ -75,6 +77,25 @@ class Detector:
         df_out = pd.DataFrame({'f' :freq, 'asd' : interp(freq)})
         df_out.to_csv('../AuxiliaryFiles/PSDs/'+self.name+'.dat', header = None, index = None, sep = '\t')
         self.psd_file = '../AuxiliaryFiles/PSDs/'+self.name+'.dat'
+
+    def SNR_source(self, mtot, z, q, waveform_approx):
+        luminosity_distance = Planck15.luminosity_distance(z).value
+        m1 = mtot * q * (1. + z) / (1 + q)
+        m2 = m1 / q
+        flim = BF.fcut_f(m1=m1, m2=m2, xsi=0, zm=z)
+        print(flim)
+        if flim > self.freq[0]+0.15:
+            psd = self.Make_psd()
+            hp, hc = pycbc.waveform.get_fd_waveform(approximant=waveform_approx, mass1=m1 * (1. + z), mass2 = m2 * (1. + z),
+                                                spin1x=0., spin1y=0., spin1z=0, spin2x=0., spin2y=0., spin2z=0,
+                                                delta_f=float(self.freq[1]-self.freq[0]), f_lower=float(self.freq[0]), distance=luminosity_distance, f_ref=20.,
+                                                inclinaison=0)
+            snr_l = pycbc.filter.matchedfilter.sigma(np.sqrt(2) * hp, psd=psd,
+                                                 low_frequency_cutoff=float(self.freq[0]),
+                                                 high_frequency_cutoff=float(np.max(self.freq)))
+        else :
+            snr_l = 0
+        return snr_l
 
 class Network:
 
@@ -136,4 +157,40 @@ class Network:
                                                          high_frequency_cutoff=np.max(d.freq))
             SNR[evt] = np.sqrt(SNR[evt])
         cat[self.net_name] = SNR
+
+
+
+    def Horizon(self, SNR_threshold = 9, mmin = 1, mmax = 10000, waveform = "IMRPhenomD", zmax = 150, mratio = 1):
+
+        deltaz = [10,1,0.1,0.01, 0.001]
+        Mtot = np.logspace(np.log10(mmin),np.log10(mmax),100)
+        Hori  = np.zeros(len(Mtot))
+        print(Mtot[0])
+
+        for m in range(len(Mtot)):
+            print(m)
+            z = 0.001
+            m1 = Mtot[m] * mratio / (1 + mratio)
+            m2 = m1 / mratio
+            zmax_1Hz = np.maximum(BF.zmax(m1,m2,0,1.2),0.001)
+            for dz in deltaz :
+                snr = SNR_threshold+0.001
+                print(snr,' ',SNR_threshold,' ',zmax_1Hz,' ', zmax)
+                while ((snr > SNR_threshold)&((z+dz)<np.minimum(zmax_1Hz,zmax))) :
+                    z = z + dz
+                    snr_net = 0
+                    for d in self.compo:
+                        snr_net += np.power(d.SNR_source(Mtot[m],z, mratio, waveform),2.)
+                    snr = np.sqrt(snr_net)
+                z = np.maximum(z - dz, 0.001)
+            Hori[m] = z+dz
+        output =  pd.DataFrame({'Mtot':Mtot, 'Horizon':Hori})
+        filename = 'Horizon_'+self.net_name +'_'+ str(mmax)+'_'+waveform
+        if os.path.exists('Horizon') ==False :
+            os.mkdir('Horizon')
+        output.to_csv('Horizon/'+filename+'.dat', sep = '\t', index = None)
+
+
+
+
 

@@ -1,5 +1,12 @@
 # 1year with a duty cycle of 50%
 
+def SNR(Network, Omega, Omg_freq):
+
+
+
+
+
+
 def SNR(net):
     GHL = []
     GLV = []

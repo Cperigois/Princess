@@ -6,18 +6,48 @@ import pycbc.psd
 import pycbc.waveform
 import pycbc.filter
 import joblib
+import Stochastic.Kst as K
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 
-def SNR_Omega(Omega,N = None):
+
+def SNR_bkg(freq_omg, Omega, Network):
+    gamma =pd.read_csv('./AuxiliaryFiles/ORFs/ORF.dat', sep = '\t', index_col = None)
+    freq = Network.freq
+    deltaF = freq[1]-freq[0]
+    interp = InterpolatedUnivariateSpline(freq_omg, Omega)
+    Omega_interp = interp(freq)
+    SNR =0
+    for d in Network.compo:
+        d.Make_psd()
+    for i in range(len(Network.compo)):
+        di = Network.compo[i]
+        for j in range(i-1):
+            dj = Network.compo[j]
+            gamma_ref = di.configuration+dj.configuration
+            if gamma_ref not in list(gamma.columns):
+                gamma_ref = dj.configuration+di.configuration
+            interp_ORF = InterpolatedUnivariateSpline(gamma.freq, gamma[gamma_ref])
+            Gammaij = interp_ORF(freq)
+            interpPi = InterpolatedUnivariateSpline(di.freq, di.psd)
+            interpPj = InterpolatedUnivariateSpline(dj.freq, dj.psd)
+            Pi = interpPi(freq)
+            Pj = interpPj(freq)
+            SNR += np.sum(Gammaij**2 * Omega_interp**2 / (freq**6 * Pi**2 * Pj**2))
+    print('SNR = ',SNR,' ', Network.net_name)
+    SNR = K.Cst_snr_bkg* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
+    return K.Cst_snr_bkg* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
+
+
+
+
+
+
+def SNR_Omega(freq, Omega, Networks):
     ''' Calculate the SNR of a given spectrum Omega for each Network in Networks.
     Assuming one year of detection with a duty-cycle (ie. efficiency) of 0.5
     '''
-    if N :
-        Networks = np.array([])
-        Networks = np.append(Networks, N)
-        print( Networks)
-    else :
-        Networks = GS.Networks
+
     #Detectors = [GS.Net_compo[n] for n in Networks]
     fmin_list = np.array([])
     fmax_list = np.array([])

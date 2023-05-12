@@ -241,7 +241,7 @@ def GWk_noEcc(evt, type, inc = None) :
     return Omg_e0
 
 
-def GWk_noEcc_Pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'incat') :
+def GWk_noEcc_Pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'InCat') :
     """This function calculate the contribution of a binary
         Parameters
         ----------
@@ -258,30 +258,37 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'incat'
     warnings.filterwarnings("ignore")
     flow = int(np.min(freq))
     deltaf = int(freq[1]-freq[0])
-    if inc_option == 'incat':
+    if inc_option == 'InCat':
         inc = evt.inc
-    elif inc_option =='rand' :
-        inc = np.random.uniform(0, 2. * math.pi)
-    elif inc_option == 'optimal' :
-        inc = 0
-    hptild, hctild = pycbc.waveform.get_fd_waveform(approximant=approx,
-                                                       mass1=evt.m1 * (1. + evt.z),
-                                                       mass2=evt.m2 * (1. + evt.z),
-                                                       spin1x=0., spin1y=0., spin1z=evt.s1,
-                                                       spin2x=0., spin2y=0., spin2z=evt.s2,
-                                                       delta_f=deltaf,
-                                                       f_lower=flow,
-                                                       inclination = inc,
-                                                       distance=evt.Dl, f_ref=20.)
-    hptild = hptild[flow:]
-    hctild = hctild[flow:]
-    if len(hptild) < len(freq):
-        hptild = np.concatenate((hptild, np.zeros(len(freq) - len(hptild))))
-        hctild = np.concatenate((hctild, np.zeros(len(freq) - len(hctild))))
-    elif len(hptild) > len(freq):
-        hptild = hptild[:len(freq)]
-        hctild = hctild[:len(freq)]
-    htildSQ = np.array(hptild * np.conjugate(hptild) + hctild * np.conjugate(hctild), dtype=float)
+    elif inc_option == 'Rand' :
+        inc = np.arccos(np.random.uniform(-1, 1))
+    elif inc_option == 'Optimal' :
+        inc = 0.
+    flim= BF.fcut_f(m1 = evt.m1, m2 = evt.m2, xsi = 0, zm = evt.z).values
+    if flim>flow:
+        hptild, hctild = pycbc.waveform.get_fd_waveform(approximant = approx,
+                                                        mass1 = evt.m1 * (1. + evt.z),
+                                                        mass2 = evt.m2 * (1. + evt.z),
+                                                        spin1x = 0., spin1y=0., spin1z=evt.s1,
+                                                        spin2x = 0., spin2y=0., spin2z=evt.s2,
+                                                        delta_f=deltaf,
+                                                        f_lower=flow,
+                                                        inclination= inc,
+                                                        distance=evt.Dl, f_ref=20.)
+        #hptild = hptild[flow:]
+        #hctild = hctild[flow:]
+        if len(hptild) < len(freq):
+            hptild = np.concatenate((hptild, np.zeros(len(freq) - len(hptild))))
+            hctild = np.concatenate((hctild, np.zeros(len(freq) - len(hctild))))
+        elif len(hptild) > len(freq):
+            hptild = hptild[:len(freq)]
+            hctild = hctild[:len(freq)]
+        htildSQ = np.array(hptild * np.conjugate(hptild) + hctild * np.conjugate(hctild), dtype=float)
+        htildSQ = np.nan_to_num(htildSQ, nan=0.0)
+    else :
+        htildSQ = 0
+        print('Waveform calculation failed, parameters m1 = {0}, m2 = {1}, and z = {2} hence to a cut frequency below the start of the analysis fcut = {3} < flow = {4}.'.format(evt.m1.values, evt.m2.values, evt.z.values, BF.fcut_f(m1 = evt.m1, m2 = evt.m2, xsi = 0, zm = evt.z).values, flow))
+
     Stochastic.Pix.bar_peach(n,size_catalogue)
 
     return htildSQ

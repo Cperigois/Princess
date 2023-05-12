@@ -1,6 +1,8 @@
 import math
 import numpy as np
 from scipy.integrate import quad
+from scipy.interpolate import InterpolatedUnivariateSpline
+
 
 def m1_m2_to_mc_q(m1, m2):
     """This function does the mapping (m1,m2) --> (mc,q)
@@ -147,10 +149,23 @@ def fcut_f(m1,m2,xsi,zm) :
 	fcut_y = -0.1331*eta -0.2714*eta*eta +4.922*eta*eta*eta - 0.08172*eta*xsi +0.1451*eta*xsi*xsi +0.1279*eta*eta*xsi
 	return (fcut_mu0+fcut_y)/(math.pi*mtot)
 
-def Search_Omg(Omega, freq_ref):
-    interp = InterpolatedUnivariateSpline(GS.Freq, Omega)
+def zmax(m1,m2,xsi,fmin) :
+	mtot = (m1+m2)*4.9685e-6
+	eta = m1*m2/pow(m1+m2,2.)
+	fmerg_mu0 = 1.-4.455*pow(1-xsi,0.217)+3.521*pow(1.-xsi,0.26)
+	fmerg_y = 0.6437*eta -0.05822*eta*eta -7.092*eta*eta*eta +0.827*eta*xsi -0.2706*eta*xsi*xsi -3.935*eta*eta*xsi
+	return (fmerg_mu0+fmerg_y)/(math.pi*mtot*fmin)-1
+
+def Search_Omg(Freq, Omega, freq_ref):
+    interp = InterpolatedUnivariateSpline(Freq, Omega)
     out = np.zeros(len(freq_ref))
     for i in range(len(freq_ref)) :
         out[i] = interp(freq_ref[i])
     return out
+
+def CDF(array,bins):
+	output = bins
+	for b in range(len(bins)) :
+		output[b] = len(array[array<bins[b]])/len(array)
+	return output
 

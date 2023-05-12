@@ -1,6 +1,6 @@
 import math
 
-""" All astrophysical constant needed are defined her :)"""
+""" All astrophysical constant needed are defined here :)"""
 
 G = 6.674e-8  # cm3 g-1 s-2
 M_sun = 1.99e33  # g
@@ -21,3 +21,4 @@ Cst = 256. * pow(math.pi, 8. / 3.) * pow(G, 5. / 3.) / (5 * pow(c, 5.))
 
 
 C = pi*c*c/(rhoc*2.*G*yr)
+Cst_snr_bkg = math.sqrt(yr)*3.*H0**2/(10.*pi**2)
