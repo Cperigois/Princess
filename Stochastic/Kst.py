@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 """ All astrophysical constant needed are defined here :)"""
 
@@ -21,4 +22,5 @@ Cst = 256. * pow(math.pi, 8. / 3.) * pow(G, 5. / 3.) / (5 * pow(c, 5.))
 
 
 C = pi*c*c/(rhoc*2.*G*yr)
-Cst_snr_bkg = math.sqrt(yr)*3.*H0**2/(10.*pi**2)
+Cst_snr_bkg = 3.*H0*H0*np.sqrt(yr)/(10.*pi**2)
+

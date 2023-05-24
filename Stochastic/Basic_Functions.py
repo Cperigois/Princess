@@ -158,9 +158,7 @@ def zmax(m1,m2,xsi,fmin) :
 
 def Search_Omg(Freq, Omega, freq_ref):
     interp = InterpolatedUnivariateSpline(Freq, Omega)
-    out = np.zeros(len(freq_ref))
-    for i in range(len(freq_ref)) :
-        out[i] = interp(freq_ref[i])
+    out = interp(freq_ref)
     return out
 
 def CDF(array,bins):

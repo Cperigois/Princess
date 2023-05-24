@@ -18,12 +18,13 @@ def SNR_bkg(freq_omg, Omega, Network):
     interp = InterpolatedUnivariateSpline(freq_omg, Omega)
     Omega_interp = interp(freq)
     SNR =0
+
     for d in Network.compo:
         d.Make_psd()
     for i in range(len(Network.compo)):
         di = Network.compo[i]
-        for j in range(i-1):
-            dj = Network.compo[j]
+        for j in range(len(Network.compo)-1-i):
+            dj = Network.compo[j+1+i]
             gamma_ref = di.configuration+dj.configuration
             if gamma_ref not in list(gamma.columns):
                 gamma_ref = dj.configuration+di.configuration
@@ -31,13 +32,68 @@ def SNR_bkg(freq_omg, Omega, Network):
             Gammaij = interp_ORF(freq)
             interpPi = InterpolatedUnivariateSpline(di.freq, di.psd)
             interpPj = InterpolatedUnivariateSpline(dj.freq, dj.psd)
-            Pi = interpPi(freq)
-            Pj = interpPj(freq)
-            SNR += np.sum(Gammaij**2 * Omega_interp**2 / (freq**6 * Pi**2 * Pj**2))
-    print('SNR = ',SNR,' ', Network.net_name)
-    SNR = K.Cst_snr_bkg* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
+            Pi = np.nan_to_num(interpPi(freq))
+            Pj = np.nan_to_num(interpPj(freq))
+            SNR += np.sum(Gammaij**2. * Omega_interp**2. / (freq**6. * Pi * Pj))
+    SNR = K.Cst_snr_bkg* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR) / deltaF
+    print(SNR)
+    return SNR
+
+def SNR_bkg_1det(freq_omg, Omega, Network):
+    freq = Network.freq
+    deltaF = freq[1]-freq[0]
+    print(deltaF)
+    interp = InterpolatedUnivariateSpline(freq_omg, Omega)
+    Omega_interp = interp(freq)
+    SNR =0
+    for d in Network.compo:
+        d.Make_psd()
+    interpPi = InterpolatedUnivariateSpline(di.freq, di.psd)
+    interpPj = InterpolatedUnivariateSpline(dj.freq, dj.psd)
+    Pi = interpPi(freq)**2
+    Pj = interpPj(freq)**2
+    print(Pi)
+    SNR += np.sum(Omega_interp**2. / (freq**6. * Pi * Pj))
+    print('SNR = ',SNR,' ', Network.name)
+    SNR = K.Cst_snr_bkg* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR) / deltaF
     return K.Cst_snr_bkg* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
 
+def SNR_bkgtrash(freq_omg, Omega, Network):
+    gamma =pd.read_csv('./AuxiliaryFiles/ORFs/ORF.dat', sep = '\t', index_col = None)
+    freq = Network.freq
+    deltaF = freq[1]-freq[0]
+    print(deltaF)
+    interp = InterpolatedUnivariateSpline(freq_omg, Omega)
+    Omega_interp = interp(freq)
+    SNR = 0
+    SNR2 = 0
+
+    for d in Network.compo:
+        d.Make_psd()
+    for i in range(len(Network.compo)):
+        di = Network.compo[i]
+        for j in range(i-1):
+            dj = Network.compo[j]
+            gamma_ref = str(di.configuration+dj.configuration)
+            if gamma_ref not in list(gamma.columns):
+                gamma_ref = str(dj.configuration+di.configuration)
+            interp_ORF = InterpolatedUnivariateSpline(gamma.freq, gamma[gamma_ref])
+            Gammaij = interp_ORF(freq)
+            interpPi = InterpolatedUnivariateSpline(di.freq, di.psd)
+            interpPj = InterpolatedUnivariateSpline(dj.freq, dj.psd)
+            Pi = np.sqrt(interpPi(freq))
+            Pj = np.sqrt(interpPj(freq))
+            Pi[np.isnan(Pi)] = 1
+            Pj[np.isnan(Pj)] = 1
+            print(Pi)
+            for f in range(len(freq)) :
+                SNR2 +=np.power(Gammaij[f],2.) * np.power(Omega_interp[f],2.) / (np.power(f+1,6.) * Pi[f] * Pj[f])
+            SNR += np.sum(np.square(Gammaij) * np.square(Omega_interp) / (np.power(freq,6.) * Pi * Pj))
+    SNR = K.Cst_snr_bkg* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR) / deltaF
+    SNR2 = K.Cst_snr_bkg* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR2) / deltaF
+    print('SNR1 = ',K.Cst_snr_bkg,' ','SNR2 = ',SNR2,' ', Network.name)
+
+    return K.Cst_snr_bkg* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
 
 
 

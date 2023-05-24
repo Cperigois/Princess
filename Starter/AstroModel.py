@@ -9,16 +9,16 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 
 class AstroModel:
 
-    def __init__(self, cat_name = None, duration = 1,  original_cat_path = None, cat_sep = None, index_column = None, flags ={}, spin_option = "Zeros", orbit_evolution = False, inclination_position = False):
+    def __init__(self, name = None, duration = 1,  original_path = None, sep = None, index_column = None, flags ={}, spin_option = "Zeros", orbit_evolution = False, inclination_position = False):
         """Create an instance of your model.
          Parameters
          ----------
-         cat_name : str
+         name : str
              Name of the reshaped catalogue in the folder catalogue
          duration : int of float
              Duration of your supposed catalogue, ie your initial catalogue is showing all sources arriving on the detector in X years.
              (default duration = 1)
-         original_cat_path : str
+         original_path : str
              Path to your original catalogue
          sep_cat: str
             Used to read your original catalogue with pandas " ", "," or "\t"
@@ -32,10 +32,10 @@ class AstroModel:
          """
 
         # Set class variables
-        self.original_cat_path = original_cat_path
-        self.cat_name = cat_name
+        self.original_path = original_path
+        self.name = name
         self.duration = duration
-        self.sep_cat = cat_sep
+        self.sep_cat = sep
         self.index_column = index_column
         self.spin_option = spin_option
         self.flags = flags
@@ -44,10 +44,10 @@ class AstroModel:
         self.catalogs = []
         print(len(flags.keys()))
         if len(flags.keys())==0 :
-            self.catalogs = [self.cat_name + '.dat']
+            self.catalogs = [self.name + '.dat']
         else :
             for x in flags.keys() :
-                self.catalogs.append(self.cat_name + '_' + flags[x] + '.dat')
+                self.catalogs.append(self.name + '_' + flags[x] + '.dat')
 
 
     def makeHeader(self, header):
@@ -69,8 +69,8 @@ class AstroModel:
              theta1,theta2: Angle between individual spins and the angular momentum of the binary
              flag: ID for the binary type/formation channel or more.
         """
-        Cat = pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, names = header)
-        Cat.to_csv(self.original_cat_path, sep = self.sep_cat, index = None, header = True)
+        Cat = pd.read_csv(self.original_path, sep = self.sep_cat, index_col = self.index_column, names = header)
+        Cat.to_csv(self.original_path, sep = self.sep_cat, index = None, header = True)
 
     def makeCat(self):
         """Create the catalogue(s).
@@ -82,7 +82,7 @@ class AstroModel:
 
         """
 
-        Cat = pd.read_csv(self.original_cat_path, sep = self.sep_cat, index_col = self.index_column, dtype = float)
+        Cat = pd.read_csv(self.original_path, sep = self.sep_cat, index_col = self.index_column, dtype = float)
         print(Cat.describe())
         OutCat = pd.DataFrame()
         Col = list(Cat.columns)
@@ -143,11 +143,11 @@ class AstroModel:
             for key in self.flags.keys():
                 print(key)
                 flagCat = OutCat[Cat['flag'] == int(key)]
-                flagCat.to_csv('Catalogs/' + self.cat_name + '_' + self.flags[key] + '.dat', sep='\t', index=False)
+                flagCat.to_csv('Catalogs/' + self.name + '_' + self.flags[key] + '.dat', sep='\t', index=False)
                 truc = flagCat.describe()
-                truc.to_csv('Catalogs/Ana_' + self.cat_name + '_' + self.flags[key] + '.dat', sep='\t')
+                truc.to_csv('Catalogs/Ana_' + self.name + '_' + self.flags[key] + '.dat', sep='\t')
         else :
-            OutCat.to_csv('Catalogs/' + self.cat_name + '.dat', sep='\t', index=False)
+            OutCat.to_csv('Catalogs/' + self.name + '.dat', sep='\t', index=False)
 
 
     def makeSpin(self, option, size):
@@ -219,7 +219,7 @@ class AstroModel:
                         det = N.compo[d]
                         print(det)
                         psd_compo[d] = det.Make_psd()
-                        SNR_det[N.compo[d].det_name] = np.zeros(len(Cat.z))
+                        SNR_det[N.compo[d].name] = np.zeros(len(Cat.z))
                 for evt in range(len(Cat.z)):
                     event = Cat.iloc[[evt]]
                     htildsq = GWk_noEcc_Pycbcwf(evt=event, freq = freq, approx=approx, n = evt, size_catalogue = ntot, inc_option= 'Optimal')
@@ -236,12 +236,12 @@ class AstroModel:
                             comp = deltaf*4.*htildsq/Sn
                             comp = np.nan_to_num(comp, nan = 0, posinf = 0)
                             SNR = comp.sum()
-                            SNR_det[str(N.compo[d].det_name)][evt] = np.sqrt(SNR)
+                            SNR_det[str(N.compo[d].name)][evt] = np.sqrt(SNR)
                         else :
                             SNR = event[str(N.compo[d])]**2
                         SNR_N[evt]+= SNR
                 Cat = pd.concat([Cat, SNR_det], axis =1)
-                Cat['snr_'+N.net_name+'_opt'] = np.sqrt(SNR_N)
+                Cat['snr_'+N.name+'_opt'] = np.sqrt(SNR_N)
             Cat = Cat.T.groupby(level=0).first().T
             Cat.to_csv('Catalogs/'+cat, sep='\t', index=False)
 

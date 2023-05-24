@@ -90,9 +90,9 @@ class IndividualAnalysis:
         fdet = factors.iloc[np.random.randint(0, high=size_factor, size = size_cat)]
         SNR = np.zeros(size_cat)
         for d in network.compo:
-            SNR += np.power(np.multiply(cat[d.det_name] , fdet['f' + d.configuration].values),2.)
+            SNR += np.power(np.multiply(cat[d.name] , fdet['f' + d.configuration].values),2.)
         if update_file == True :
-            cat['SNR_real_' + network.net_name] = np.sqrt(SNR)
+            cat['SNR_real_' + network.name] = np.sqrt(SNR)
             cat.to_csv('Catalogs/' + Catalogue_path, sep='\t', index=False)
         return self.Matchfiltering_error*np.sqrt(SNR)
 
@@ -129,24 +129,24 @@ class IndividualAnalysis:
                                        'std': np.std(data, axis=1),
                                        '5%': data.quantile(0.05, axis =1),
                                        '95%': data.quantile(0.95, axis =1) })
-                    df.to_csv('Results/'+self.name+'/Ana_'+ name_cat + '_'+ n.net_name+'_'+p +'.dat', sep = '\t', index = False)
-                print(n.net_name)
-                f = open('Results/'+self.name+'/Ana_'+ name_cat +'_'+ n.net_name+'_ndet.dat', "w")
+                    df.to_csv('Results/'+self.name+'/Ana_'+ name_cat + '_'+ n.name+'_'+p +'.dat', sep = '\t', index = False)
+                print(n.name)
+                f = open('Results/'+self.name+'/Ana_'+ name_cat +'_'+ n.name+'_ndet.dat', "w")
                 f.write("Mean number of detections : {0} \nStandard deviation : {1} \nMinimum of detections : {2} \nMaximum detections : {3} ".format(np.mean(ndet), np.std(ndet), np.min(ndet), np.max(ndet)))
                 f.close()
 
     def plot(self, Model):
         for b in self.binary_type:
             for p in self.param_list :
-                det = pd.read_csv('Results/' + self.name + '/' + self.Network.net_name + '_' + b + '_' + p + '.txt', sep = '\t', index_col = None)
+                det = pd.read_csv('Results/' + self.name + '/' + self.Network.name + '_' + b + '_' + p + '.txt', sep = '\t', index_col = None)
                 plt.fill_between(det.bins, 0, det['values'], color='grey', label='LVK events', alpha=0.3)
                 for C in Model.catalogs:
                     name_cat = C[: len(C) - 4]
-                    ana = pd.read_csv('Results/'+self.name+'/Ana_'+ name_cat + '_'+ self.Network.net_name+'_'+p +'.dat', sep = '\t', index_col = None)
+                    ana = pd.read_csv('Results/'+self.name+'/Ana_'+ name_cat + '_'+ self.Network.name+'_'+p +'.dat', sep = '\t', index_col = None)
                     plt.plot(ana.bins, ana['mean']*10, color = 'crimson', linewidth = 1, label = name_cat)
                 plt.legend(fontsize = 12)
                 plt.fill_between(ana.bins, (ana['mean']-ana['std'])*10, (ana['mean']+ana['std'])*10, color = 'crimson', alpha = 0.3)
-                plt.savefig(self.name+'_'+b+'_'+self.Network.net_name+'_'+p+'.pdf')
+                plt.savefig(self.name+'_'+b+'_'+self.Network.name+'_'+p+'.pdf')
                 plt.xticks(fontsize = 12)
                 plt.yticks(fontsize=12)
                 plt.xlabel(p, fontsize=12)

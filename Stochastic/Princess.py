@@ -24,17 +24,23 @@ class Princess:
         self.Freq = Freq
         #self.dict_Networks = {  }
         #for key in Neworks.keys() :
-        #    self.dict_Networks[key] = Detection.Network(net_name = key, compo = Networks[key][0] , pic_file = Networks[key][1], freq = Networks[key][2], efficiency = Networks[key][3], SNR_thrs =Networks[key][4] )
+        #    self.dict_Networks[key] = Detection.Network(name = key, compo = Networks[key][0] , pic_file = Networks[key][1], freq = Networks[key][2], efficiency = Networks[key][3], SNR_thrs =Networks[key][4] )
 
         self.Networks = Networks
         self.Omega_ana_freq = Omega_ana_freq
         self.approx = approx
         self.inclination = inclination
         self.astromodel = astromodel
-        output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq] + ['SNR_Total'] + ['SNR_Residual']
+
+
+    def Make_Ana_Output(self):
+        output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq] + ['SNR_Total'] + [
+            'SNR_Residual']
         self.anadict = {}
-        for cat in astromodel.catalogs :
-            self.anadict[cat] = pd.DataFrame(index=output_index, columns=['Total'] + [Networks[i].net_name for i in range(len(Networks))])
+        for cat in self.astromodel.catalogs:
+            self.anadict[cat] = pd.DataFrame(index=output_index,
+                                             columns=['Total'] + [self.Networks[i].name for i in range(len(self.Networks))])
+        print(self.anadict)
 
     def Write_results(self) :
         check_file = os.path.exists('Results/Analysis/')
@@ -42,6 +48,7 @@ class Princess:
             os.mkdir('Results/Analysis/')
         for cat in self.astromodel.catalogs:
             df = self.anadict[cat]
+            print('Results/Analysis/' + cat)
             df.to_csv('Results/Analysis/' + cat, sep='\t')
 
     def Omega_ecc(self, cat):
@@ -76,8 +83,8 @@ class Princess:
             Ana['Total'][['Omg_'+str(i)+'_Hz' for i in self.Omega_ana_freq]] = Search_Omg(Omega_e0['Total'], self.Omega_ana_freq)
             Ana['Total']['SNR'] = SNR.SNR_Omega(Omega_e0['Total'])
             for N in range(len(self.Networks)):
-                Ana[Networks[N].net_name][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = Search_Omg(Omega_e0[Networks[N].net_name], self.Omega_ana_freq)
-                Ana[N]['SNR'] = SNR.SNR_Omega(Omega_e0[Networks[N].net_name],N)
+                Ana[Networks[N].name][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = Search_Omg(Omega_e0[Networks[N].name], self.Omega_ana_freq)
+                Ana[N]['SNR'] = SNR.SNR_Omega(Omega_e0[Networks[N].name],N)
                 residual = df[df[N]<self.SNR_thrs[N]]
                 Ana[N]['Nsource'] = len(residual[N])
                 print(Ana[N])
@@ -89,14 +96,16 @@ class Princess:
             Omega_e0 = pd.read_csv('Results/Omega_e0/' + cat, index_col=False, sep='\t')
             Ana = self.anadict[cat]
             for i in self.Omega_ana_freq :
-                Ana['Total']['Omg_' + str(i) + '_Hz' ] = BF.Search_Omg(Freq = Omega_e0['f'], Omega = Omega_e0['Total'], freq_ref = [i])
+                Ana['Total']['Omg_' + str(i) + '_Hz' ] = BF.Search_Omg(Freq = Omega_e0['f'], Omega = Omega_e0['Total'], freq_ref = i)
             for N in range(len(Networks)):
                 for i in self.Omega_ana_freq:
-                    Ana[Networks[N].net_name]['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Freq = Omega_e0['f'], Omega = Omega_e0[Networks[N].net_name], freq_ref = self.Omega_ana_freq)
-                Ana[Networks[N].net_name]['SNR_residual'] = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[Networks[N].net_name], Networks[N])
-                Ana[Networks[N].net_name]['SNR_total'] = SNR.SNR_bkg(Omega_e0['f'],Omega_e0['Total'], Networks[N])
-                print(SNR.SNR_bkg(Omega_e0['f'], Omega_e0['Total'], Networks[N]))
-
+                    Ana[Networks[N].name]['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Freq = Omega_e0['f'], Omega = Omega_e0[Networks[N].name], freq_ref = i)
+                SNRres = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[Networks[N].name], Networks[N])
+                SNRtot = SNR.SNR_bkg(Omega_e0['f'],Omega_e0['Total'], Networks[N])
+                print(SNRres,' ', Networks[N].name)
+                Ana[Networks[N].name]['SNR_Residual'] = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[Networks[N].name], Networks[N])
+                Ana[Networks[N].name]['SNR_Total'] = SNR.SNR_bkg(Omega_e0['f'],Omega_e0['Total'], Networks[N])
+                print(Ana)
             self.anadict[cat] = Ana
 
 
@@ -107,7 +116,7 @@ class Princess:
         if check_file == False:
             Omega_e0 = pd.DataFrame({'f':Freq, 'Total': np.zeros(len(Freq))})
             for n in range(len(Networks)) :
-                Omega_e0[Networks[n].net_name] = np.zeros(len(Freq))
+                Omega_e0[Networks[n].name] = np.zeros(len(Freq))
             if orbit_evo == False :
                 for i in range(len(df['Mc'])):
                     evt = df.iloc[i]
@@ -128,8 +137,8 @@ class Princess:
             Ana = self.anadict[self.astromodel.catalogs[cat]]
             Ana['Total']['N_source'] = len((Cat.z))
             for N in range(len(Networks)) :
-                Omega_e0[Networks[N].net_name] = np.zeros(len(self.Freq))
-                Ana[Networks[N].net_name]['N_source'] =0
+                Omega_e0[Networks[N].name] = np.zeros(len(self.Freq))
+                Ana[Networks[N].name]['N_source'] =0
             for evt in range(len(Cat['m1'])):
                 event = Cat.iloc[[evt]]
                 if  self.inclination == 'Rand' :
@@ -150,10 +159,10 @@ class Princess:
                     SNR = 0
                     for d in Networks[N].compo :
                         conf = 'f'+str(d.configuration)
-                        SNR+= event[str(d.det_name)]* fd_table[conf][i[0]]
+                        SNR+= event[str(d.name)]* fd_table[conf][i[0]]
                     if float(SNR) < Networks[N].SNR_thrs:
-                        Ana[Networks[N].net_name]['N_source'] += 1
-                        Omega_e0[Networks[N].net_name] += Omg_e0
+                        Ana[Networks[N].name]['N_source'] += 1
+                        Omega_e0[Networks[N].name] += Omg_e0
             Omega_e0.to_csv('Results/Omega_e0/' + self.astromodel.catalogs[cat], index=False, sep='\t')
             print('Written :  Results/Omega_e0/' , self.astromodel.catalogs[cat])
 

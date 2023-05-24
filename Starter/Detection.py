@@ -8,11 +8,11 @@ from Stochastic import Basic_Functions as BF
 
 class Detector:
 
-    def __init__(self, det_name, configuration, origin = 'Pycbc', psd_file = None, freq = None):
+    def __init__(self, name, configuration, origin = 'Pycbc', psd_file = None, freq = None):
         """Define a single detector.
          Parameters
          ----------
-         det_name : str
+         name : str
              Name of the detector
          psd_file : str
              the file where to find the psd, or the psd name from PyCBC
@@ -23,7 +23,7 @@ class Detector:
          """
 
         # Set class variables
-        self.det_name = det_name
+        self.name = name
         self.psd_file = psd_file
         self.origin = origin
         self.configuration = configuration
@@ -48,17 +48,18 @@ class Detector:
         self.psd
         """
         if self.origin == 'Pycbc' :
-            self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq), delta_f=float(self.freq[1]-self.freq[0]),
+            self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq)+1, delta_f=float(self.freq[1]-self.freq[0]),
                                     low_freq_cutoff=float(self.freq[0]))
         elif self.origin == 'Princess' :
             path = 'AuxiliaryFiles/PSDs/'+self.psd_file+'_psd.dat'
             df_psd = pd.read_csv(path, index_col = None, sep = '\t', dtype = float)
-            self.psd = pycbc.psd.read.from_numpy_arrays(df_psd.f, df_psd['psd[1/Hz]'],length=len(self.freq),  delta_f=self.freq[1]-self.freq[0], low_freq_cutoff=self.freq[0])
+            self.psd = pycbc.psd.read.from_numpy_arrays(df_psd.f, df_psd['psd[1/Hz]'],length=len(self.freq)+1,  delta_f=self.freq[1]-self.freq[0], low_freq_cutoff=self.freq[0])
         elif self.origin == 'User' :
-            self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq),
+            self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq)+1,
                                                delta_f=int(self.freq[1] - self.freq[0]),
                                                low_freq_cutoff=int(self.freq[0]), is_asd_file=self.asd)
-        return self.psd
+        self.psd = self.psd[1:]
+        return self.psd[1:]
 
     def reshape_psd(self, delimiter = '\t', Header = None, index  = None):
         """Reshape your psd to fit the Make psd function and write it in a new file in AuxiliaryFiles/PSDs.
@@ -99,11 +100,11 @@ class Detector:
 
 class Network:
 
-    def __init__(self, net_name = None, compo = None ,pic_file = None, freq = np.arange(500)+1, efficiency = 1., SNR_thrs = 12, duration = 1 ):
+    def __init__(self, name = None, compo = None ,pic_file = None, freq = np.arange(500)+1, efficiency = 1., SNR_thrs = 12, duration = 1 ):
         """Create an instance of your model.
          Parameters
          ----------
-         net_name : str
+         name : str
              Name of the network
          pic_file : int of float
              name of the file where to find the PIC
@@ -113,7 +114,7 @@ class Network:
              Gives the snr threshold of detection for each network in 'Networks', must have the same size than Networks
          """
         # Set class variables
-        self.net_name = net_name
+        self.name = name
         self.compo = compo
         self.pic_file = pic_file
         self.freq = freq
@@ -156,7 +157,7 @@ class Network:
                 SNR[evt]+= pycbc.filter.matchedfilter.sigma(wf, psd=d.psd, low_frequency_cutoff=d.freq[0],
                                                          high_frequency_cutoff=np.max(d.freq))
             SNR[evt] = np.sqrt(SNR[evt])
-        cat[self.net_name] = SNR
+        cat[self.name] = SNR
 
 
 
@@ -185,7 +186,7 @@ class Network:
                 z = np.maximum(z - dz, 0.001)
             Hori[m] = z+dz
         output =  pd.DataFrame({'Mtot':Mtot, 'Horizon':Hori})
-        filename = 'Horizon_'+self.net_name +'_'+ str(mmax)+'_'+waveform
+        filename = 'Horizon_'+self.name +'_'+ str(mmax)+'_'+waveform
         if os.path.exists('Horizon') ==False :
             os.mkdir('Horizon')
         output.to_csv('Horizon/'+filename+'.dat', sep = '\t', index = None)
