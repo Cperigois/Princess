@@ -8,19 +8,22 @@ from Stochastic import Basic_Functions as BF
 
 class Detector:
 
-    def __init__(self, name, configuration, origin = 'Pycbc', psd_file = None, freq = None):
-        """Define a single detector.
-         Parameters
-         ----------
-         name : str
-             Name of the detector
-         psd_file : str
-             the file where to find the psd, or the psd name from PyCBC
-         origin : str
-             {'Pycbc, 'Princess', 'User'}.
-         freq: np.array
-            Contain the frequency range for the use of the detecor
-         """
+    def __init__(self, name:str, configuration:str, origin:str = 'Pycbc', psd_file:str = None, freq:np.ndarray = None):
+        """
+        Instance of a detector.
+        Parameters
+        ----------
+        :param name (str): Name of the detector, will be used in labeling further data as the signal-to-noise-ratio.
+        :param configuration (str): Location, orientation and arm opening of the detector. Should only be chosen among
+            preset configurations 'H', 'L', 'V', 'ET' standing for LIGO-Hanford, LIGO-Livingston, Virgo, and
+            Einstein Telescope (i.e. Triangle, anywhereon the globe) respectively
+        :param origin (str): Place where is set the psd of the detector. Available options are 'Pycbc', 'Princess', or 'User'
+        :param psd_file (str): Refers to the file containing the PSD. If origin is 'Pycbc', it refers to the name of the PSD.
+            It origin is Princess, refers to the name of the file in AuxiliaryFiles/PSDs. If origin is 'User', refers to
+            the path to the sentitivity.
+        :param freq (np.1Darray): Frequency array for the detector. Please care to have it coherent with the frequency
+            range of the detector.
+        """
 
         # Set class variables
         self.name = name
@@ -39,47 +42,58 @@ class Detector:
         if self.freq is None:
             print('Unable to find th frequency range of the detector... \n Please add in your detector definition freq = [np.array] and recompile your detector')
     def Make_psd(self):
-        """Load or calculate the psd of a detector.
-        Parameters
-        ----------
-
-        Return
-        ----------
-        self.psd
         """
+        load the PSD of the detector
+        :return (np.1Darray): PSD of the detectors for frequencies corresponding to self.freq.
+        """
+
         if self.origin == 'Pycbc' :
-            self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq)+1, delta_f=float(self.freq[1]-self.freq[0]),
+            self.psd = pycbc.psd.from_string(psd_name=self.psd_file, length=len(self.freq)+2, delta_f=float(self.freq[1]-self.freq[0]),
                                     low_freq_cutoff=float(self.freq[0]))
+            self.psd = self.psd[1:len(self.freq)+1]
         elif self.origin == 'Princess' :
             path = 'AuxiliaryFiles/PSDs/'+self.psd_file+'_psd.dat'
             df_psd = pd.read_csv(path, index_col = None, sep = '\t', dtype = float)
             self.psd = pycbc.psd.read.from_numpy_arrays(df_psd.f, df_psd['psd[1/Hz]'],length=len(self.freq)+1,  delta_f=self.freq[1]-self.freq[0], low_freq_cutoff=self.freq[0])
+            self.psd = self.psd[1:]
         elif self.origin == 'User' :
             self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq)+1,
                                                delta_f=int(self.freq[1] - self.freq[0]),
                                                low_freq_cutoff=int(self.freq[0]), is_asd_file=self.asd)
-        self.psd = self.psd[1:]
-        return self.psd[1:]
+            self.psd = self.psd[1:]
 
-    def reshape_psd(self, delimiter = '\t', Header = None, index  = None):
-        """Reshape your psd to fit the Make psd function and write it in a new file in AuxiliaryFiles/PSDs.
+        return self.psd
+
+    def reshape_psd(self, delimiter:str = '\t', have_header:bool = False, have_index:bool  = False):
+        """
+        ***UNDER DEVELOPPEMENT***
+        Reshape your psd to fit the Make psd function and write it in a new file in AuxiliaryFiles/PSDs.
         It also uptate the variable psd_file to the new directory.
         Parameters
         ----------
-        delimiter: str
-            Delimiter used in the original file
-        Header: bool
-            True if the file contain a header, else None
-        index: bool
-            True if the file contain a column with indexes, else None
+        :param delimiter (str): Delimiter used in the original file.
+        :param header (bool): True, if the original file contain an header.
+        :param index (bool): True, if the original file contain an index column.
         """
-        sens = pd.read_csv(self.psd_name, names = ['f','sens'], sep = delimiter, header = Header , index_col = index)
+
+        sens = pd.read_csv(self.psd_name, names = ['f','sens'], sep = delimiter, header = have_header , index_col = have_index)
         interp = InterpolatedUnivariateSpline(sens['f'], sens['sens'])
         df_out = pd.DataFrame({'f' :freq, 'asd' : interp(freq)})
         df_out.to_csv('../AuxiliaryFiles/PSDs/'+self.name+'.dat', header = None, index = None, sep = '\t')
         self.psd_file = '../AuxiliaryFiles/PSDs/'+self.name+'.dat'
 
-    def SNR_source(self, mtot, z, q, waveform_approx):
+    def SNR_source(self, mtot:float, z:float, q:float, waveform_approx:str)->float:
+        """
+        TEST FUNCTION USE ONLY FOR TESTS
+        Compute the snr of one specific source, assuming spins are 0 and the best sky location.
+        Parameters
+        ----------
+        :param mtot (float): Total mass of the system in Msun.
+        :param z (float): Redshift of the merger.
+        :param q (float): Mass ratio of the system. By convention q<1.
+        :param waveform_approx (str): Waveform to use for the computation of the SNR.
+        :return (snr): Signal-to-noise ration of the soure in the detector.
+        """
         luminosity_distance = Planck15.luminosity_distance(z).value
         m1 = mtot * q * (1. + z) / (1 + q)
         m2 = m1 / q
@@ -100,19 +114,24 @@ class Detector:
 
 class Network:
 
-    def __init__(self, name = None, compo = None ,pic_file = None, freq = np.arange(500)+1, efficiency = 1., SNR_thrs = 12, duration = 1 ):
-        """Create an instance of your model.
-         Parameters
-         ----------
-         name : str
-             Name of the network
-         pic_file : int of float
-             name of the file where to find the PIC
-         compo : list of detectors
-             list of detectors in the network
-         SNR_thrs : np.array int or float
-             Gives the snr threshold of detection for each network in 'Networks', must have the same size than Networks
-         """
+    def __init__(self, name:str = None, compo:list = None ,pic_file:str = None, freq:np.ndarray,
+                 efficiency:float = 1., SNR_thrs:float = 12, duration:float = 1 ):
+        """
+        Create an instance of your network.
+        Parameters
+        ----------
+        :param name (str): Name the network will be reffered to in further savings.
+        :param compo (list): List of Detectors composing the network. The programm currently does not allow to mix
+            generations of detectors.
+        :param pic_file (str): Path and file referring where the PIC is stored.
+        :param freq (np.1Darray): Array used to compute the sensitivity. Needs to be coherent with the detectors
+            frequency ranges.
+        :param efficiency (float): Duty cycle of the network, refers to the proportion of time the network has all
+            detectors operational. Default is 1.
+        :param SNR_thrs (float): Set the detection threshold of the detector. Default is 12.
+        :param duration (float): Observation duration in yr. Default is 1.
+        """
+
         # Set class variables
         self.name = name
         self.compo = compo
@@ -122,18 +141,17 @@ class Network:
         self.SNR_thrs = SNR_thrs
         self.duration = duration
 
-    def reshape_pic(self, delimiter='\t', Header=None, index=None):
-        """Reshape your psd to fit the Make psd function and write it in a new file in AuxiliaryFiles/PSDs.
+    def reshape_pic(self, delimiter:str='\t', Header:bool=False, index:bool=False):
+        """
+        Reshape your psd to fit the Make psd function and write it in a new file in AuxiliaryFiles/PSDs.
         It also uptate the variable psd_file to the new directory.
         Parameters
         ----------
-        delimiter: str
-            Delimiter used in the original file
-        Header: bool
-            True if the file contain a header, else None
-        index: bool
-            True if the file contain a column with indexes, else None
+        :param delimiter (str): delimiter used in the original file. Default is '\t'.
+        :param Header (bool): True if the original file contain a header. Default is False.
+        :param index (bool): True if the original file contain a column with indexes. Default is False.
         """
+
         sens = pd.read_csv(self.pic_name, names=['f', 'sens'], sep=delimiter, header=Header, index_col=index)
         interp = InterpolatedUnivariateSpline(sens['f'], sens['sens'])
         df_out = pd.DataFrame({'f': freq, 'pic': interp(freq)})
@@ -141,6 +159,13 @@ class Network:
         self.pic_file = '../AuxiliaryFiles/PICs/' + self.name + '.dat'
 
     def SNR_individual(self, astromodel_catalogue):
+        """
+        Compute the signal-to-noise ratios (SNRs) of each source of a catalogues for the given network.
+        Parameters
+        ----------
+        :param astromodel_catalogue (str): Path to a catalogues of binaries
+        :return: SNR (1Darray): Array of the catalogue size containing the SNRs.
+        """
         cat = pd.read_csv(astromodel_catalogue, sep = '\t', index_col = None)
         SNR = np.zeros(len(cat['m1']))
         for evt in range(len(cat['m1'])) :
@@ -148,8 +173,8 @@ class Network:
             wf = pycbc.waveform.get_fd_waveform(approximant=approximant,
                                                       mass1=event['m1'] * (1. + event['z']),
                                                       mass2=event['m2'] * (1. + event['z']),
-                                                      spin1x=0., spin1y=0., spin1z=event['spinz1'],
-                                                      spin2x=0., spin2y=0., spin2z=event['spinz2'],
+                                                      spin1x=0., spin1y=0., spin1z=event['s1'],
+                                                      spin2x=0., spin2y=0., spin2z=event['s2'],
                                                       delta_f=self.freq[1]-self.freq[0],
                                                       f_lower=self.freq[0],
                                                       distance=event.Dl, f_ref=20.)[0]
@@ -158,10 +183,24 @@ class Network:
                                                          high_frequency_cutoff=np.max(d.freq))
             SNR[evt] = np.sqrt(SNR[evt])
         cat[self.name] = SNR
+        return SNR
 
 
 
-    def Horizon(self, SNR_threshold = 9, mmin = 1, mmax = 10000, waveform = "IMRPhenomD", zmax = 150, mratio = 1):
+    def Horizon(self, SNR_threshold:float = 9., mmin:float = 1., mmax:float = 10000., waveform:str = "IMRPhenomD", zmax:float = 150., mratio:float = 1.):
+        """
+        CONTAIN ISSUES IN SOME PART OF THE PARAMETER SPACE. Compute the horizon of a detector and write it in
+        'Horizon/Horizon_'+self.name +'_'+ str(mmax)+ str(zmax)+'_'+waveform+.dat.
+        Parameters
+        ----------
+        :param SNR_threshold (float): Signal-to-noise ratio (SNR) threshold to denine sources individually resolved.
+        :param mmin (float): Minimal mass in Msun. Default is 1.
+        :param mmax (float): Maximal mass in Msun. Default is 10 000.
+        :param waveform (str): Waveform used to compute the SNR. Default is "IMRPhenomD".
+        :param zmax (float): Maximal redshift. Default is 150.
+        :param mratio (float): mass ratio considered for the computations. Default is 1.
+        :return:
+        """
 
         deltaz = [10,1,0.1,0.01, 0.001]
         Mtot = np.logspace(np.log10(mmin),np.log10(mmax),100)
@@ -186,7 +225,7 @@ class Network:
                 z = np.maximum(z - dz, 0.001)
             Hori[m] = z+dz
         output =  pd.DataFrame({'Mtot':Mtot, 'Horizon':Hori})
-        filename = 'Horizon_'+self.name +'_'+ str(mmax)+'_'+waveform
+        filename = 'Horizon_'+self.name +'_'+ str(mmax)+ str(zmax)+'_'+waveform
         if os.path.exists('Horizon') ==False :
             os.mkdir('Horizon')
         output.to_csv('Horizon/'+filename+'.dat', sep = '\t', index = None)

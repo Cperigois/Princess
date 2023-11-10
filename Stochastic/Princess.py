@@ -100,14 +100,28 @@ class Princess:
             for N in range(len(Networks)):
                 for i in self.Omega_ana_freq:
                     Ana[Networks[N].name]['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Freq = Omega_e0['f'], Omega = Omega_e0[Networks[N].name], freq_ref = i)
-                SNRres = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[Networks[N].name], Networks[N])
-                SNRtot = SNR.SNR_bkg(Omega_e0['f'],Omega_e0['Total'], Networks[N])
-                print(SNRres,' ', Networks[N].name)
+#                SNRres = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[Networks[N].name], Networks[N])
+#                SNRtot = SNR.SNR_bkg(Omega_e0['f'],Omega_e0['Total'], Networks[N])
+#                print(SNRres,' ', Networks[N].name)
                 Ana[Networks[N].name]['SNR_Residual'] = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[Networks[N].name], Networks[N])
                 Ana[Networks[N].name]['SNR_Total'] = SNR.SNR_bkg(Omega_e0['f'],Omega_e0['Total'], Networks[N])
-                print(Ana)
             self.anadict[cat] = Ana
 
+    def Analysis_noResidual(self, Networks):
+        for c in range(len(self.astromodel.catalogs)):
+            cat = self.astromodel.catalogs[c]
+            Omega_e0 = pd.read_csv('Results/Omega_e0/' + cat, index_col=False, sep='\t')
+            Ana = self.anadict[cat]
+            for i in self.Omega_ana_freq:
+                Ana['Total']['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Freq=Omega_e0['f'], Omega=Omega_e0['Total'],
+                                                                      freq_ref=i)
+            for N in range(len(Networks)):
+                for i in self.Omega_ana_freq:
+                    Ana[Networks[N].name]['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Freq=Omega_e0['f'],
+                                                                                   Omega=Omega_e0['Total'],
+                                                                                   freq_ref=i)
+                Ana[Networks[N].name]['SNR_Total'] = SNR.SNR_bkg(Omega_e0['f'], Omega_e0['Total'], Networks[N])
+            self.anadict[cat] = Ana
 
     def Omega(self, cat, Freq, Networks):
 

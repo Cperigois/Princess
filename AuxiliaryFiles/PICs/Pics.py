@@ -88,7 +88,7 @@ if __name__ == '__main__':
                 Seff += np.power(gamma[gamma_name],2.) /(np.array(PSD1[1:])*np.array(PSD2[1:]))
                 #Seff += 1./ (np.array(PSD1[1:]) * np.array(PSD2[1:]))
                 #print(Seff)
-        Omega_eff =np.power(Seff, -0.5)*np.power(gamma['freq'],3.)*2.*math.pi*math.pi/(3.*H0*H0)
+        Omega_eff =np.power(Seff, -0.5)*np.power(gamma['freq'],3.)*10.*math.pi*math.pi/(3.*H0*H0)
         omega_beta = np.array([])
         fmax = 3000
         fmin = 1

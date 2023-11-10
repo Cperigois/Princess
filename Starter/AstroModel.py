@@ -9,27 +9,25 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 
 class AstroModel:
 
-    def __init__(self, name = None, duration = 1,  original_path = None, sep = None, index_column = None, flags ={}, spin_option = "Zeros", orbit_evolution = False, inclination_position = False):
-        """Create an instance of your model.
-         Parameters
-         ----------
-         name : str
-             Name of the reshaped catalogue in the folder catalogue
-         duration : int of float
-             Duration of your supposed catalogue, ie your initial catalogue is showing all sources arriving on the detector in X years.
-             (default duration = 1)
-         original_path : str
-             Path to your original catalogue
-         sep_cat: str
-            Used to read your original catalogue with pandas " ", "," or "\t"
-         index_column: bool
-            Used to read your original catalogue with pandas. True if you have a column with indexes in your original file.
-            (default = None)
-         spin_option : str
-            Choose an option to eventually generate the spin among {"Zeros", "Isotropic", "Dynamic"}. Default is 'Zeros'
-         flags: dict
-            Dictionary of a possible flag column in your catalogue (Can be used to distinguish the type of binary, the formation channel...)
-         """
+    def __init__(self, name:str = 'model', duration:float = 1,  original_path:str = None, sep:str = None,
+                 index_column:bool = None, flags:dict ={}, spin_option:str = "Zeros", orbit_evolution:bool = False,
+                 inclination_position:bool = False):
+        """
+        Create an instance of the model.
+        Parameters
+        ----------
+        :param name (str): Name for all outputs from this model. Default is model.
+        :param duration (float): Duration of the catalogs in yr. Default is 1.
+        :param original_path (str): Path to the user orginal catalog.
+        :param sep (str): Delimiter or the user input catalog. Default is '\t'
+        :param index_column (bool): True if the input catalog of the user contain an index columns. Default is False.
+        :param flags (dict): Dictionnary of specific flags in the catalogs if there is a dedicated column. Default is {}.
+        :param spin_option (str): Set which spin components are in the initial catalogs and eventually how it should be
+         generated. Default is 'Zeros.
+        :param orbit_evolution (bool): True if the user want to account for the evolution of the binary. Default is False.
+        :param inclination_position (bool): If True generate an inclination, right acsension and declinaison for each
+        source of the catalogue. Default is False.
+        """
 
         # Set class variables
         self.original_path = original_path
@@ -49,43 +47,18 @@ class AstroModel:
             for x in flags.keys() :
                 self.catalogs.append(self.name + '_' + flags[x] + '.dat')
 
-
-    def makeHeader(self, header):
-        """Create or modify the header of your original catalogue. Careful this function WILL MODIFY your original file.
-        Parameters
-        ----------
-        header : list of str
-             Names of your columns in the original file. Some names are important and should be labeled with specific names.
-
-             z: Redshift of merger
-             m1,m2: Mass of the compact objects in solar masses
-             Mc: Chirp mass in solar masses
-             q: Mass ratio (q<=1)
-             e: Eccentricity at the formation of the first compact object
-             Dl: Luminosity distance in Mpc
-             inc: Inclination of the source in rad
-             Xeff: Effective spin of the binary
-             chi1, chi2: Individual spins of the two CO.
-             theta1,theta2: Angle between individual spins and the angular momentum of the binary
-             flag: ID for the binary type/formation channel or more.
+    def make_catalog(self):
         """
-        Cat = pd.read_csv(self.original_path, sep = self.sep_cat, index_col = self.index_column, names = header)
-        Cat.to_csv(self.original_path, sep = self.sep_cat, index = None, header = True)
-
-    def makeCat(self):
-        """Create the catalogue(s).
-        Parameters
-        ----------
-        flag: dict
-            Dictionary of the flag ids in the original catalogue
-        spin_opt
-
+        Create a catalog with the adequate parameters for further calculations.
+        The catalog will be named after the parameter self.name, and saved in the folder Catalogs/
         """
 
         Cat = pd.read_csv(self.original_path, sep = self.sep_cat, index_col = self.index_column, dtype = float)
         print(Cat.describe())
         OutCat = pd.DataFrame()
         Col = list(Cat.columns)
+
+        available_spin_option = ['Chi&Theta', 'Chi&cosTheta', 'Rand_dynamics', 'Rand_aligned', 'Zeros']
         OutCat['z'] = Cat['z']
 
         # Check the masses calculations
@@ -113,14 +86,45 @@ class AstroModel:
             OutCat['Dl'] = Cat['Dl']
         # Generate the spin
 
-        if self.spin_option== 'In_Catalogue' :
-            OutCat['s1'] = Cat['chi1']
-            OutCat['s2'] = Cat['chi2']
+        if self.spin_option not in available_spin_option :
+            raise ValueError((f"{self.spin_option} is not an option for the spin. Please choose among "
+                              f"['Chi&Theta', 'Rand_dynamics', 'Rand', 'Zeros'] \n 'Chi&Theta'(Chi&cosTheta'): You have "
+                              f"spin magnitudes chi and (cos)theta angle for both components of the binary. The program "
+                              f"will compute the spins s1 and s2 from the data.\n 'Rand_dynamics': generate randon "
+                              f"magnitude between 0 and 1 and random theta angles. \n 'Rand_aligned': generate random "
+                              f"magnitude and assumes aligned spins (i.e. costheta1=costheta2=1). \n 'Zeros': Set both "
+                              f"spin to 0. "))
+
         elif self.spin_option == 'Chi&Theta' :
-            OutCat['s1'] = Cat['chi1']*np.cos(Cat['theta1'])
-            OutCat['s2'] = Cat['chi2']*np.cos(Cat['theta2'])
-        else:
-            OutCat['s1'], OutCat['s2'] = self.makeSpin(self.spin_option, len(Cat['z']))
+            OutCat['chi1'] = Cat['chi1']
+            OutCat['chi2'] = Cat['chi2']
+            OutCat['costheta1'] = np.cos(Cat['theta1'])
+            OutCat['costheta2'] = np.cos(Cat['theta2'])
+
+        elif self.spin_option == 'Chi&cosTheta':
+            OutCat['chi1'] = Cat['chi1']
+            OutCat['chi2'] = Cat['chi2']
+            OutCat['costheta1'] = Cat['costheta1']
+            OutCat['costheta2'] = Cat['costheta2']
+
+        else :
+            OutCat['chi1'], OutCat['chi2'], OutCat['costheta1'], OutCat['costheta2'] = self.generate_spin(len(Cat['z']))
+
+        OutCat['s1'], OutCat['s2'] = self.compute_spins(OutCat['chi1'], OutCat['chi2'], OutCat['costheta1'],
+                                                        OutCat['costheta2'])
+
+
+        #Compute spin components and add it to the output.
+        if 'chip' in Col :
+            Outcat['chip'] = Cat['chip']
+        else :
+            OutCat['chip'] = self.compute_chip(OutCat['m1'], OutCat['m2'], OutCat['chi1'], OutCat['chi2'],
+                                               OutCat['costheta1'], OutCat['costheta2'])
+        if 'chieff' in Col :
+            OutCat['chieff'] = Cat['chieff']
+        else :
+            OutCat['chieff'] = self.compute_chieff(OutCat['m1'], OutCat['m2'], OutCat['chi1'], OutCat['chi2'],
+                                                   OutCat['costheta1'], OutCat['costheta2'])
 
         if self.orbit_evolution == True:
             OutCat['a0'] = Cat['a0']
@@ -150,60 +154,126 @@ class AstroModel:
             OutCat.to_csv('Catalogs/' + self.name + '.dat', sep='\t', index=False)
 
 
-    def makeSpin(self, option, size):
+    def generate_spin(self, size:int)->tuple:
+        """
+        Generate spin magnitude and theta angle from the model set by the user : self.spin_option.
+        Parameters
+        ----------
+        :param size (int): size of the catalog.
+        :return: tuple of np.array chi1, chi2, costheta1, costheta2
+        """
 
-        # Available models : zeros, Maxwellian (in prep.), Maxwellian_dynamics (in prep.)
-
-        if option == 'Rand_Dynamics' :
+        if self.spin_option == 'Rand_dynamics' :
             sigmaSpin = 0.1
             v1_L = np.random.normal(0.0, sigmaSpin, size = size)
             v2_L = np.random.normal(0.0, sigmaSpin, size = size)
             v3_L = np.random.normal(0.0, sigmaSpin, size = size)
-            V_1 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
+            chi1 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
 
             v1_L = np.random.normal(0.0, sigmaSpin, size = size)
             v2_L = np.random.normal(0.0, sigmaSpin, size = size)
             v3_L = np.random.normal(0.0, sigmaSpin, size = size)
-            V_2 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
+            chi2 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
 
             costheta1 = 2. * np.random.uniform(0.0, 1.0, size = size) - 1.0
             costheta2 = 2. * np.random.uniform(0.0, 1.0, size = size) - 1.0
 
-            s1 = V_1 * costheta1
-            s2 = V_2 * costheta2
 
-        elif option == 'Rand' :
+        elif self.spin_optionn == 'Rand_aligned' :
             sigmaSpin = 0.1
             v1_L = np.random.normal(0.0, sigmaSpin, size = size)
             v2_L = np.random.normal(0.0, sigmaSpin, size = size)
             v3_L = np.random.normal(0.0, sigmaSpin, size = size)
-            V_1 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
+            chi1 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
 
             v1_L = np.random.normal(0.0, sigmaSpin, size = size)
             v2_L = np.random.normal(0.0, sigmaSpin, size = size)
             v3_L = np.random.normal(0.0, sigmaSpin, size = size)
-            V_2 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
+            chi2 = np.sqrt(v1_L * v1_L + v2_L * v2_L + v3_L * v3_L)
 
-            s1 = V_1
-            s2 = V_2
-        else :
-            s1 = np.zeros(size)
-            s2 = np.zeros(size)
+            costheta1 = np.ones(size)
+            costheta2 = np.ones(size)
 
+        elif self.spin_option == 'Zeros' :
+            chi1 = np.zeros(size)
+            chi2 = np.zeros(size)
+            costheta1 = np.zeros(size)
+            costheta2 = np.zeros(size)
+
+
+        return chi1, chi2, costheta1, costheta2
+
+    def compute_spins(self, chi1:np.ndarray, chi2:np.ndarray, costheta1:np.ndarray, costheta2:np.ndarray)->tuple:
+        """
+        Compute spins of the two components s_i = chi_i*costheta_i
+        Parameters
+        ----------
+        :param chi1 (np.1darray): Array containing the magnitudes of the first components.
+        :param chi2 (np.1darray): Array containing the magnitudes of the second components.
+        :param costheta1 (np.1darray): Array containing the theta cosine of the first components.
+        :param costheta2 (np.1darray): Array containing the theta cosine of the second components.
+        :return: tuple containing two np.1darray s1(s2) is the projection on the z axis of the spin for firts(seconds)
+                components.
+        """
+
+        s1 = chi1*costheta1
+        s2 = chi2*costheta2
         return s1, s2
 
+    def compute_chieff(self, m1:np.ndarray, m2:np.ndarray, chi1:np.ndarray, chi2:np.ndarray, cos_theta_1:np.ndarray,
+                       cos_theta_2:np.ndarray)->np.ndarray:
+        """
+        Compute the effective spin of each binaries.
+        Parameters
+        ----------
+        :param m1 (np.1darray): Array containing the masses of the first component.
+        :param m2 (np.1darray): Array containing the masses of the second component.
+        :param chi1 (np.1darray): Array containing the magnitudes of the first components.
+        :param chi2 (np.1darray): Array containing the magnitudes of the second components.
+        :param cos_theta_1 (np.1darray): Array containing the theta cosine of the first components.
+        :param cos_theta_2 (np.1darray): Array containing the theta cosine of the second components.
+        :return (np.1darray): Array with the effective spin of each binaries.
+        """
 
-    def compute_SNR_opt(self, Networks, freq, approx ):
-        """Calculate the optimal SNR for each event of the catalogue and update the catalogue with it.
-                Parameters
-                ----------
-                Networks: list of str
-                    List of Networks considered in the study
-                freq: np.array
-                    Frequencies
-                approx: str
-                    Approximants used for the waveforms
-                """
+        chieff = (chi1 * cos_theta_1 * m1 + chi2 * cos_theta_2 * m2) / (m1 + m2)
+
+        return chieff
+
+
+    def compute_chip(self, m1, m2, chi1, chi2, cos_theta_1, cos_theta_2):
+        """
+        Compute the precessing spin of each binaries.
+        Parameters
+        ----------
+        :param m1 (np.1darray): Array containing the masses of the first component.
+        :param m2 (np.1darray): Array containing the masses of the second component.
+        :param chi1 (np.1darray): Array containing the magnitudes of the first components.
+        :param chi2 (np.1darray): Array containing the magnitudes of the second components.
+        :param cos_theta_1 (np.1darray): Array containing the theta cosine of the first components.
+        :param cos_theta_2 (np.1darray): Array containing the theta cosine of the second components.
+        :return (np.1darray): Array with the precessing spin of each binaries.
+        """
+
+        chip1 = (2. + (3. * m2) / (2. * m1)) * chi1 * m1 * m1 * (1. - cos_theta_1 * cos_theta_1) ** 0.5
+        chip2 = (2. + (3. * m1) / (2. * m2)) * chi2 * m2 * m2 * (1. - cos_theta_2 * cos_theta_2) ** 0.5
+        chipmax = np.maximum(chip1, chip2)
+        chip = chipmax / ((2. + (3. * m2) / (2. * m1)) * m1 * m1)
+        return chip
+
+
+
+
+    def compute_SNR_opt(self, Networks:list, freq:np.ndarray, approx:str):
+        """
+        Calculate the optimal SNR for each event of the catalogue and save it iwith additionnal columns in the catalog
+        Catalogs/<self.name>.dat.
+        Parameters
+        ----------
+        :param Networks (list): List of class Network instances.
+        :param freq (np.1darray): Array of frequencies.
+        :param approx (str): Approximants used for the waveforms
+        """
+
         deltaf = freq[1]-freq[0]
         for cat in self.catalogs :
             Cat = pd.read_csv('Catalogs/'+cat, sep='\t', index_col=False)
@@ -212,38 +282,41 @@ class AstroModel:
             for N in Networks:
                 SNR_N = np.zeros(len(Cat.z))
                 psd_compo = np.empty((len(N.compo), len(freq)))
-
                 SNR_det = pd.DataFrame()
+                missing_detectors =0
                 for d in range(len(N.compo)):
                     if N.compo[d] not in list(cat):
                         det = N.compo[d]
-                        print(det)
                         psd_compo[d] = det.Make_psd()
                         SNR_det[N.compo[d].name] = np.zeros(len(Cat.z))
-                for evt in range(len(Cat.z)):
-                    event = Cat.iloc[[evt]]
-                    htildsq = GWk_noEcc_Pycbcwf(evt=event, freq = freq, approx=approx, n = evt, size_catalogue = ntot, inc_option= 'Optimal')
-                    if isinstance(htildsq,int) :
-                        f = open('Catalogs/' + cat + '_errors.txt', "a")
-                        if os.path.getsize('Catalogs/'+cat+'_errors.txt') == 0:
-                            f.write('m1 m2 z\n')
-                        f.write('{0} {1} {2}\n'.format(event['m1'].values, event['m2'].values, event['z'].values))
-                        f.close()
-                        #print('Merger out of range, event notify in the file: Catalogs/{0}_errors.txt'.format(cat))
-                    for d in range(len(N.compo)) :
-                        if str(N.compo[d]) not in list(cat) :
-                            Sn = psd_compo[d]
-                            comp = deltaf*4.*htildsq/Sn
-                            comp = np.nan_to_num(comp, nan = 0, posinf = 0)
-                            SNR = comp.sum()
-                            SNR_det[str(N.compo[d].name)][evt] = np.sqrt(SNR)
-                        else :
-                            SNR = event[str(N.compo[d])]**2
-                        SNR_N[evt]+= SNR
+                        print(N.compo[d].name)
+                        missing_detectors +=1
+                if missing_detectors>0:
+                    for evt in range(len(Cat.z)):
+                        event = Cat.iloc[[evt]]
+                        htildsq = GWk_noEcc_Pycbcwf(evt=event, freq = freq, approx=approx, n = evt, size_catalogue = ntot,
+                                                    inc_option= 'Optimal')
+                        if isinstance(htildsq,int) :
+                            f = open('Catalogs/' + cat + '_errors.txt', "a")
+                            if os.path.getsize('Catalogs/'+cat+'_errors.txt') == 0:
+                                f.write('m1 m2 z\n')
+                            f.write('{0} {1} {2}\n'.format(event['m1'].values, event['m2'].values, event['z'].values))
+                            f.close()
+                            #print('Merger out of range, event notify in the file: Catalogs/{0}_errors.txt'.format(cat))
+                        for d in range(len(N.compo)) :
+                            if str(N.compo[d]) not in list(cat) :
+                                Sn = psd_compo[d]
+                                comp = deltaf*4.*htildsq/Sn
+                                comp = np.nan_to_num(comp, nan = 0, posinf = 0)
+                                SNR = comp.sum()
+                                SNR_det[str(N.compo[d].name)][evt] = np.sqrt(SNR)
+                            else :
+                                SNR = event[str(N.compo[d])]**2
+                            SNR_N[evt]+= SNR
                 Cat = pd.concat([Cat, SNR_det], axis =1)
                 Cat['snr_'+N.name+'_opt'] = np.sqrt(SNR_N)
-            Cat = Cat.T.groupby(level=0).first().T
-            Cat.to_csv('Catalogs/'+cat, sep='\t', index=False)
+                Cat = Cat.T.groupby(level=0).first().T
+                Cat.to_csv('Catalogs/'+cat, sep='\t', index=False)
 
     #def Build_Catalogue(self, mass1_distrib = np.array([np.linspace(0,1,100), np.linspace(0,50,100)]), mass2_distrib = np.array([np.linspace(0,1,100), np.linspace(0,50,100)]), z_distrib = np.array([np.linspace(0,1,100), np.linspace(0,15,100)])):
         #interpm1 = InterpolatedUnivariateSpline(mass1_distrib[0], mass1_distrib[1])

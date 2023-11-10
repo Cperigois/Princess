@@ -15,20 +15,17 @@ import warnings
 
 
 
-def GWk(evt, type, inc = None) :
-    """This function calculate the contribution of a binary
-        Parameters
-        ----------
-        args : numpy array
-            Given by the re-built catalogue
-        f : numpy array
-            Observed frequency range for the calculation. Has to be the same for all sources from a catalogue
-
-        Returns
-        -------
-        Omg : numpy array
-            Size of f with the contribution of the source for each observed frequency
-        """
+def GWk(evt:np.ndarray , type:str, inc:float = None) :
+    """
+    NOT ADAPTED YET TO THE DATAFRAME FORMAT.
+    Compute the contribution of a binary to the background with analytical waveforms from 0909.2867, and 1210.6666.
+    Parameters
+    ----------
+    :param evt (1Darray):
+    :param type:
+    :param inc:
+    :return:
+    """
 
     Mc = evt[0]
     q = evt[1]
@@ -161,7 +158,8 @@ def GWk(evt, type, inc = None) :
     return Omg, Omg_e0
 
 def GWk_noEcc(evt, type, inc = None) :
-    """This function calculate the contribution of a binary
+
+    """
         Parameters
         ----------
         args : numpy array
@@ -287,7 +285,7 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'InCat'
         htildSQ = np.nan_to_num(htildSQ, nan=0.0)
     else :
         htildSQ = 0
-        print('Waveform calculation failed, parameters m1 = {0}, m2 = {1}, and z = {2} hence to a cut frequency below the start of the analysis fcut = {3} < flow = {4}.'.format(evt.m1.values, evt.m2.values, evt.z.values, BF.fcut_f(m1 = evt.m1, m2 = evt.m2, xsi = 0, zm = evt.z).values, flow))
+        #print('Waveform calculation failed, parameters m1 = {0}, m2 = {1}, and z = {2} hence to a cut frequency below the start of the analysis fcut = {3} < flow = {4}.'.format(evt.m1.values, evt.m2.values, evt.z.values, BF.fcut_f(m1 = evt.m1, m2 = evt.m2, xsi = 0, zm = evt.z).values, flow))
 
     Stochastic.Pix.bar_peach(n,size_catalogue)
 
