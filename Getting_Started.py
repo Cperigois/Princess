@@ -20,6 +20,7 @@ import numpy as np
 from Stochastic import Princess as SP
 from Starter.AstroModel import Astromodel
 from Starter import Detection
+import Useful_functions as UF
 
 '''
 1. Prepare your model:
@@ -186,7 +187,7 @@ This part of the code aims to extract reference values for the predicted backgro
 
 for sub_cat in astromodel1.catalogs :
     Omega_name = 'Results/Omega_e0/'+sub_cat
-    SP.Analysis( astromodel1, Networks)
+    SP.Analysis(astromodel1, Networks)
 
 Omega_ana_freq = [1., 10., 25.]
 
@@ -283,3 +284,8 @@ Freq = np.linspace(1,2500,2499)
 '''
 
 Omega_ana_freq = [1.,10.,25.]
+
+'''
+    4) Gather all the files from this computation in a single folder.
+'''
+UF.move_computation(name ='Test', astromodels_list=[AM_BBH, AM_BNS, AM_BHNS])
