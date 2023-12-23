@@ -239,7 +239,7 @@ def GWk_noEcc(evt, type, inc = None) :
     return Omg_e0
 
 
-def GWk_noEcc_Pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'InCat') :
+def GWk_no_ecc_pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'InCat') :
     """This function calculate the contribution of a binary
         Parameters
         ----------
@@ -287,7 +287,7 @@ def GWk_noEcc_Pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'InCat'
         htildSQ = 0
         #print('Waveform calculation failed, parameters m1 = {0}, m2 = {1}, and z = {2} hence to a cut frequency below the start of the analysis fcut = {3} < flow = {4}.'.format(evt.m1.values, evt.m2.values, evt.z.values, BF.fcut_f(m1 = evt.m1, m2 = evt.m2, xsi = 0, zm = evt.z).values, flow))
 
-    Stochastic.Pix.bar_peach(n,size_catalogue)
+    Stochastic.pix.bar_peach(n,size_catalogue)
 
     return htildSQ
 

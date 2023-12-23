@@ -116,7 +116,7 @@ class AstroModel:
 
         #Compute spin components and add it to the output.
         if 'chip' in Col :
-            Outcat['chip'] = Cat['chip']
+            OutCat['chip'] = Cat['chip']
         else :
             OutCat['chip'] = self.compute_chip(OutCat['m1'], OutCat['m2'], OutCat['chi1'], OutCat['chi2'],
                                                OutCat['costheta1'], OutCat['costheta2'])
@@ -287,14 +287,14 @@ class AstroModel:
                 for d in range(len(N.compo)):
                     if N.compo[d] not in list(cat):
                         det = N.compo[d]
-                        psd_compo[d] = det.Make_psd()
+                        psd_compo[d] = det.make_psd()
                         SNR_det[N.compo[d].name] = np.zeros(len(Cat.z))
                         print(N.compo[d].name)
                         missing_detectors +=1
                 if missing_detectors>0:
                     for evt in range(len(Cat.z)):
                         event = Cat.iloc[[evt]]
-                        htildsq = GWk_noEcc_Pycbcwf(evt=event, freq = freq, approx=approx, n = evt, size_catalogue = ntot,
+                        htildsq = GWk_no_ecc_pycbcwf(evt=event, freq = freq, approx=approx, n = evt, size_catalogue = ntot,
                                                     inc_option= 'Optimal')
                         if isinstance(htildsq,int) :
                             f = open('Catalogs/' + cat + '_errors.txt', "a")

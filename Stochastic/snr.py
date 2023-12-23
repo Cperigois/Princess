@@ -6,7 +6,7 @@ import pycbc.psd
 import pycbc.waveform
 import pycbc.filter
 import joblib
-import Stochastic.Kst as K
+import Stochastic.constants as K
 from scipy.interpolate import InterpolatedUnivariateSpline
 
 
@@ -20,7 +20,7 @@ def SNR_bkg(freq_omg, Omega, Network):
     SNR =0
 
     for d in Network.compo:
-        d.Make_psd()
+        d.make_psd()
     for i in range(len(Network.compo)):
         di = Network.compo[i]
         for j in range(len(Network.compo)-1-i):
@@ -34,9 +34,14 @@ def SNR_bkg(freq_omg, Omega, Network):
             interpPj = InterpolatedUnivariateSpline(dj.freq, dj.psd)
             Pi = np.nan_to_num(interpPi(freq))
             Pj = np.nan_to_num(interpPj(freq))
+            Pi[Pi == 0] = 1
+            Pj[Pj == 0] = 1
+            print(Pi)
+            print(deltaF)
             SNR += np.sum(Gammaij**2. * Omega_interp**2. / (freq**6. * Pi * Pj))
     SNR = K.Cst_snr_bkg* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR) / deltaF
     print(SNR)
+    print(deltaF)
     return SNR
 
 def SNR_bkg_1det(freq_omg, Omega, Network):

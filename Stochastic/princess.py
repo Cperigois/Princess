@@ -4,7 +4,7 @@ import Stochastic.snr as SNR
 import Stochastic.constants as K
 import numpy as np
 import Stochastic.basic_functions as BF
-from Starter.htild import GWk_noecc_pycbcwf
+from Starter.htild import GWk_no_ecc_pycbcwf
 
 
 class Princess:
@@ -100,9 +100,6 @@ class Princess:
             for N in range(len(Networks)):
                 for i in self.Omega_ana_freq:
                     Ana[Networks[N].name]['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Freq = Omega_e0['f'], Omega = Omega_e0[Networks[N].name], freq_ref = i)
-#                SNRres = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[Networks[N].name], Networks[N])
-#                SNRtot = SNR.SNR_bkg(Omega_e0['f'],Omega_e0['Total'], Networks[N])
-#                print(SNRres,' ', Networks[N].name)
                 Ana[Networks[N].name]['SNR_Residual'] = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[Networks[N].name], Networks[N])
                 Ana[Networks[N].name]['SNR_Total'] = SNR.SNR_bkg(Omega_e0['f'],Omega_e0['Total'], Networks[N])
             self.anadict[cat] = Ana
@@ -163,7 +160,7 @@ class Princess:
                     event['inc'] = 0.
                 else :
                     print("inclination error")
-                Omg_e0 = GWk_noEcc_Pycbcwf(evt = event,
+                Omg_e0 = GWk_no_ecc_pycbcwf(evt = event,
                                            freq = self.Freq,
                                            approx = self.approx,
                                            n = evt,

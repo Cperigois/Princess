@@ -8,7 +8,7 @@ from Stochastic import basic_functions as BF
 
 class Detector:
 
-    def __init__(self, name:str, configuration:str, origin:str = 'Pycbc', psd_file:str = None, freq:np.ndarray = None):
+    def __init__(self, name:str, configuration:str, origin:str = 'Pycbc', freq:np.ndarray = None, psd_file:str = None):
         """
         Instance of a detector.
         Parameters
@@ -114,7 +114,7 @@ class Detector:
 
 class Network:
 
-    def __init__(self, name:str = None, compo:list = None ,pic_file:str = None, freq:np.ndarray,
+    def __init__(self, name:str = None, compo:list = None ,pic_file:str = None, freq:np.ndarray = None,
                  efficiency:float = 1., SNR_thrs:float = 12, duration:float = 1 ):
         """
         Create an instance of your network.
