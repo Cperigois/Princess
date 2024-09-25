@@ -41,7 +41,7 @@ class AstroModel:
 
     def __init__(self, name:str = 'model', duration:float = 1,  original_path:str = None, sep:str = '\t',
                  index_column:bool = None, flags:dict ={}, spin_model:str = "Zeros", orbit_evolution:bool = False,
-                 inclination_position:bool = False):
+                 inclination_position:bool = True):
         """
         Create an instance of the model.
         Parameters
@@ -94,10 +94,15 @@ class AstroModel:
         OutCat = pd.DataFrame()
         Col = list(Cat.columns)
 
-        available_spin_option = ['Chi&Theta', 'Chi&cosTheta', 'Rand_dynamics', 'Rand_aligned', 'Zeros']
+        available_spin_option = ['Spin&Theta', 'Spin&cosTheta', 'Rand_dynamics', 'Rand_aligned', 'Zeros']
         Cat = Cat.rename(columns = params['AM_params']['input_parameters'])
         print(Cat.describe())
-        OutCat['z'] = Cat['z']
+
+        if 'z' not in Col :
+            BF.build_interp()
+            OutCat['z'] = BF.dl_to_z_Planck15(Cat['dl'])
+        else :
+            OutCat['z'] = Cat['z']
 
         # Check the masses calculations
         if 'Mc' not in Col:
@@ -126,29 +131,29 @@ class AstroModel:
 
         if self.spin_model not in available_spin_option :
             raise ValueError((f"{self.spin_model} is not an option for the spin. Please choose among "
-                              f"['Chi&Theta', 'Rand_dynamics', 'Rand', 'Zeros'] \n 'Chi&Theta'(Chi&cosTheta'): You have "
+                              f"['Spin&Theta', 'Rand_dynamics', 'Rand', 'Zeros'] \n 'Spin&Theta'(Spin&cosTheta'): You have "
                               f"spin magnitudes chi and (cos)theta angle for both components of the binary. The program "
                               f"will compute the spins s1 and s2 from the data.\n 'Rand_dynamics': generate randon "
                               f"magnitude between 0 and 1 and random theta angles. \n 'Rand_aligned': generate random "
                               f"magnitude and assumes aligned spins (i.e. costheta1=costheta2=1). \n 'Zeros': Set both "
                               f"spin to 0. "))
 
-        elif self.spin_model == 'Chi&Theta' :
-            OutCat['chi1'] = Cat['chi1']
-            OutCat['chi2'] = Cat['chi2']
+        elif self.spin_model == 'Spin&Theta' :
+            OutCat['s1'] = Cat['s1']
+            OutCat['s2'] = Cat['s2']
             OutCat['costheta1'] = np.cos(Cat['theta1'])
             OutCat['costheta2'] = np.cos(Cat['theta2'])
 
-        elif self.spin_model == 'Chi&cosTheta':
-            OutCat['chi1'] = Cat['chi1']
-            OutCat['chi2'] = Cat['chi2']
+        elif self.spin_model == 'Spin&cosTheta':
+            OutCat['s1'] = Cat['s1']
+            OutCat['s2'] = Cat['s2']
             OutCat['costheta1'] = Cat['costheta1']
             OutCat['costheta2'] = Cat['costheta2']
 
         else :
             OutCat['chi1'], OutCat['chi2'], OutCat['costheta1'], OutCat['costheta2'] = self.generate_spin(len(OutCat['z']))
 
-        OutCat['s1'], OutCat['s2'] = self.compute_spins(OutCat['chi1'], OutCat['chi2'], OutCat['costheta1'],
+        OutCat['chi1'], OutCat['chi2'] = self.compute_spins(OutCat['s1'], OutCat['s2'], OutCat['costheta1'],
                                                         OutCat['costheta2'])
 
 
@@ -312,13 +317,13 @@ class AstroModel:
             elif detector.type == '3G':
                 det_list_3G.append(detector)
         if len(det_list_2G)>0:
-            self.compute_SNR_opt(det_list = det_list_2G, waveform = params['detector_params']['types']['2G']['waveform'], freq = det_list_2G[0].freq )
+            self.SNR(det_list = det_list_2G, waveform = params['detector_params']['types']['2G']['waveform'], freq = det_list_2G[0].freq )
         if len(det_list_3G)>0:
-            self.compute_SNR_opt(det_list= det_list_3G, waveform = params['detector_params']['types']['3G']['waveform'], freq = det_list_3G[0].freq )
+            self.SNR(det_list= det_list_3G, waveform = params['detector_params']['types']['3G']['waveform'], freq = det_list_3G[0].freq )
         self.compute_SNR_Networks()
 
 
-    def compute_SNR_opt(self, det_list:list, waveform:str, freq:np.array):
+    def SNR(self, det_list:list, waveform:str, freq:np.array):
         """
         Calculate the optimal SNR for each event of the catalogue and save it iwith additionnal columns in the catalog
         Catalogs/<self.name>.dat.
@@ -338,7 +343,7 @@ class AstroModel:
             for evt in range(len(Cat.z)):
                 event = Cat.iloc[[evt]]
                 htildsq = GWk_no_ecc_pycbcwf(evt=event, freq = freq, approx=waveform, n = evt, size_catalogue = ntot,
-                                            inc_option= 'Optimal')
+                                            inc_option= params['Inclination'])
                 if isinstance(htildsq,int) :
                     f = open('Catalogs/' + cat + '_errors.txt', "a")
                     if os.path.getsize('Catalogs/'+cat+'_errors.txt') == 0:

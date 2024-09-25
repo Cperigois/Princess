@@ -15,8 +15,8 @@ sys.path.append('../')
 
 """             *** GENERIC PARAMETERS ***            """
 
-name_of_project_folder = 'Test_Arnaud'
-#n_cpu_max = 4  # Number maximal of cpu used by the code
+name_of_project_folder = 'GW170817'
+n_cpu_max = 4  # Number maximal of cpu used by the code
 param_dictionary = {'name_of_project_folder': name_of_project_folder}
 AP.set(name_of_project_folder, param_dictionary, AP.advParams)
 
@@ -31,11 +31,11 @@ AP.set(name_of_project_folder, param_dictionary, AP.advParams)
                   'Zeros' (default is 'InCat', assuming that your spins are in your initial catalog
 """
 
-path_popIII =  '/home/perigois/Documents/Catalogs_channel/'
-astromodel_1 = {'name': 'source_test',
-                'original_path': path_popIII+'test_Arnaud.dat',
-                'spin_model' : 'Zeros',
-                'duration': 15}
+path =  '/home/perigois/Documents/SNR_GW170817/'
+astromodel_1 = {'name': 'GW170817',
+                'original_path': path+'GW170817_post.dat',
+                'spin_model' : 'Spin&cosTheta',
+                'duration': 1}
 
 #astromodel_2 = {'name': 'TOP5_H22',
 #                'original_path': path_popIII+'TOP5_H22.dat',
@@ -55,22 +55,28 @@ frequency_size = 2500 # need to be an int
 """
 
 # Define detectors
-detector_1 = {'name' : 'ET', 'origin': 'Pycbc', 'configuration' : 'ET', 'psd_file' : 'EinsteinTelescopeP1600143', 'type' : '3G'}
-detector_2 = {'name' : 'Livnigston', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'Livingston_O3a_psd', 'type' : '2G'}
+detector_1 = {'name' : 'ET10km', 'origin': 'Princess', 'configuration' : 'ET', 'psd_file' : 'ET10_CoBa', 'type' : '3G'}
+detector_2 = {'name' : 'ET15km', 'origin': 'Princess', 'configuration' : 'ET', 'psd_file' : 'ET15_CoBa', 'type' : '3G'}
+#detector = {'name' : 'ET10km', 'origin': 'Princess', 'configuration' : 'ET', 'psd_file' : 'ET10_CoBa', 'type' : '3G'}
 
-detector_list = {detector_1['name']: detector_1}
+detector_list = {detector_1['name']: detector_1,
+                 detector_2['name']: detector_2}
 
 "               ***                 "
-network_1 = {'name' : 'ET_net',
+network_1 = {'name' : 'ET_10',
              'compo' : {detector_1['name'] : detector_1},
              'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
              'efficiency' : 0.5,
-             'SNR_thrs' : 12
+             'SNR_thrs' : 8
              }
-network_2 = {'name' : 'HLV',
-             'compo' : {detector_2['name'] : detector_2, detector_3 : detector_3['name'], detector_4}
+network_2 = {'name' : 'ET_15',
+             'compo' : {detector_2['name'] : detector_2},
+             'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
+             'efficiency' : 0.5,
+             'SNR_thrs' : 8
+             }
 
-network_list = {network_1['name']: network_1}
+network_list = {network_2['name']: network_2,}
 
 rerun_detectors = False
 

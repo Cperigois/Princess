@@ -1,7 +1,10 @@
 import math
 import numpy as np
+import pandas as pd
 from scipy.integrate import quad
 from scipy.interpolate import InterpolatedUnivariateSpline
+from astropy.cosmology import Planck15
+
 
 
 def m1_m2_to_mc_q(m1, m2):
@@ -166,4 +169,17 @@ def CDF(array,bins):
 	for b in range(len(bins)) :
 		output[b] = len(array[array<bins[b]])/len(array)
 	return output
+
+def dl_to_z_Planck15(dl):
+	df = pd.read_csv('./AuxiliaryFiles/dl_z_table_Planck_15.txt', sep = '\t')
+	Sens_interp = InterpolatedUnivariateSpline(df['dl'], df['z'])
+	return Sens_interp(dl)
+
+def build_interp():
+	dl = np.array([])
+	z = np.logspace(-3, 2, 200)
+	for red in z:
+		dl = np.append(dl, Planck15.luminosity_distance(red).value)
+	table = pd.DataFrame({'z': z, 'dl': dl})
+	table.to_csv('./AuxiliaryFiles/dl_z_table_Planck_15.txt', index = None, sep = '\t')
 

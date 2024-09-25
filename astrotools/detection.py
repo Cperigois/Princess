@@ -52,14 +52,6 @@ class Detector:
             self.configuration = configuration
             self.type = type
             self.make_frequency()
-            if origin == 'Princess' :
-                info = pd.read_csv('AuxiliaryFiles/PSDs/PSD_Princess.dat', index_col= 'names', sep = '\t')
-                fmin = info.fmin[psd_file]
-                fmax = info.fmax[psd_file]
-                if (np.min(freq)< fmin) :
-                    self.freq = freq[(fmin > freq)]
-                if np.max(freq)> fmax:
-                    self.freq = freq[(fmax < freq)]
             if self.freq is None:
                 print('Unable to find th frequency range of the detector... \n Please add in your detector definition freq = [np.array] and recompile your detector')
         else :
@@ -95,12 +87,17 @@ class Detector:
             self.psd = self.psd[1:len(self.freq)+1]
         elif self.origin == 'Princess' :
             path = 'AuxiliaryFiles/PSDs/'+self.psd_file+'_psd.dat'
-            df = pd.read_csv(path, index_col = None, sep = '\t')
+            df = pd.read_csv(path, index_col = None, sep = '\t', header = None)
             newpath = 'Run/temp/'+self.psd_file+'_psd.dat'
             df.to_csv(newpath, index = False, sep = '\t', header = False)
-            self.psd = pycbc.psd.read.from_txt(newpath, length=len(self.freq) + 1,
-                                               delta_f=int(self.freq[1] - self.freq[0]),
-                                               low_freq_cutoff=int(self.freq[0]), is_asd_file=False)
+            #self.psd = pycbc.psd.read.from_txt(newpath, length=len(self.freq) + 1,
+            #                                   delta_f=int(self.freq[1] - self.freq[0]),
+            #                                   low_freq_cutoff=int(self.freq[0]), is_asd_file=False)
+            self.psd = pycbc.psd.read.from_numpy_arrays(np.array(df.iloc[:, 0]), np.array(df.iloc[:, 1]),
+                                                        length=len(self.freq)+1,
+                                                        delta_f=int(self.freq[1] - self.freq[0]),
+                                                        low_freq_cutoff=self.freq[0])
+
             self.psd = self.psd[1:]
         elif self.origin == 'User' :
             self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq)+1,

@@ -76,7 +76,8 @@ input_parameters = {
     "tSN2": "tsn2"
 }
 
-IncAndPos = False
+Inclination = 'InCat' # To be chosen among {'InCat', 'Rand', 'Optimal'}
+Position = 'Optimal'
 orbit_evo = False
 
 """             *** Sampling parameters ***           """
@@ -126,7 +127,13 @@ psd_attributes = {
     "LIGO_Design": {"psd_name": "aLIGODesignSensitivityP1200087", "in_pycbc": True, "min_freq": 0.01,
                     "max_freq": 2048.0, "delta_freq_min": 0.015},
     "ET_Design": {"psd_name": "EinsteinTelescopeP1600143", "in_pycbc": True, "min_freq": 0.01,
-                  "max_freq": 2048.0, "delta_freq_min": 0.015}
+                  "max_freq": 2048.0, "delta_freq_min": 0.015},
+    "ET_10km": {"psd_name": "EinsteinTelescopeP1600143", "in_pycbc": False, "min_freq": 0.01,
+                  "max_freq": 10000.0, "delta_freq_min": 0.25},
+    "ET_15km": {"psd_name": "EinsteinTelescopeP1600143", "in_pycbc": False, "min_freq": 0.01,
+                  "max_freq": 10000.0, "delta_freq_min": 0.015},
+    "ET_20km": {"psd_name": "EinsteinTelescopeP1600143", "in_pycbc": False, "min_freq": 0.01,
+                  "max_freq": 10000.0, "delta_freq_min": 0.015},
 }
 
 """             *** Event Selection ***           """
@@ -170,5 +177,6 @@ All parameters in this file has to end in the dictionnary, for the creation of t
 advParams = {"AM_params": {'input_parameters': input_parameters},
              "detector_params": {'detectors_avail': detectors_avail,
                                  'psd_attributes': psd_attributes,
-                                 'types': types}
+                                 'types': types},
+             "Inclination" : Inclination
              }
