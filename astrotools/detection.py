@@ -50,6 +50,7 @@ class Detector:
             self.psd_file = psd_file
             self.origin = origin
             self.configuration = configuration
+            print(self.name)
             self.type = type
             self.make_frequency()
             if self.freq is None:
@@ -62,14 +63,14 @@ class Detector:
 
 
     def make_frequency(self):
-        min = params['detector_params']['types'][self.type]['freq']['min']
-        max = params['detector_params']['types'][self.type]['freq']['max']
+        frequency_min = max(params['detector_params']['types'][self.type]['freq']['min'], params['detector_params']['psd_attributes'][self.psd_file]['min_freq'])
+        frequency_max = min(params['detector_params']['types'][self.type]['freq']['max'], params['detector_params']['psd_attributes'][self.psd_file]['max_freq'])
         n = params['frequency_size']
         scale = params['detector_params']['types'][self.type]['freq']['scale']
         if scale =='log':
-            self.freq = np.logspace(numpy.log10(min), numpy.log10(max), num = n)
+            self.freq = np.logspace(numpy.log10(frequency_min), numpy.log10(frequency_max), num = n)
         elif scale =='lin':
-            self.freq = np.linspace(min, max, n)
+            self.freq = np.linspace(frequency_min, frequency_max, n)
             self.deltaf = self.freq[1]-self.freq[0]
             self.make_psd()
         else :
@@ -87,21 +88,20 @@ class Detector:
             self.psd = self.psd[1:len(self.freq)+1]
         elif self.origin == 'Princess' :
             path = 'AuxiliaryFiles/PSDs/'+self.psd_file+'_psd.dat'
-            df = pd.read_csv(path, index_col = None, sep = '\t', header = None)
+            df = pd.read_csv(path, index_col = None, sep = '\t')
             newpath = 'Run/temp/'+self.psd_file+'_psd.dat'
             df.to_csv(newpath, index = False, sep = '\t', header = False)
-            #self.psd = pycbc.psd.read.from_txt(newpath, length=len(self.freq) + 1,
-            #                                   delta_f=int(self.freq[1] - self.freq[0]),
-            #                                   low_freq_cutoff=int(self.freq[0]), is_asd_file=False)
-            self.psd = pycbc.psd.read.from_numpy_arrays(np.array(df.iloc[:, 0]), np.array(df.iloc[:, 1]),
+            print( (len(self.freq)+1) * max(int(self.freq[1] - self.freq[0]),1) )
+            self.psd = pycbc.psd.read.from_numpy_arrays(np.array(df['f']), np.array(df['psd[1/Hz]']),
                                                         length=len(self.freq)+1,
-                                                        delta_f=int(self.freq[1] - self.freq[0]),
+                                                        delta_f=self.freq[1] - self.freq[0],
+                                                        #delta_f=max(int(self.freq[1] - self.freq[0]),1),
                                                         low_freq_cutoff=self.freq[0])
 
             self.psd = self.psd[1:]
         elif self.origin == 'User' :
             self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq)+1,
-                                               delta_f=int(self.freq[1] - self.freq[0]),
+                                               delta_f=max(int(self.freq[1] - self.freq[0]),1),
                                                low_freq_cutoff=int(self.freq[0]), is_asd_file=False)
             self.psd = self.psd[1:]
 

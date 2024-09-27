@@ -15,7 +15,7 @@ sys.path.append('../')
 
 """             *** GENERIC PARAMETERS ***            """
 
-name_of_project_folder = 'GW170817_LVK'
+name_of_project_folder = 'Test'
 n_cpu_max = 4  # Number maximal of cpu used by the code
 param_dictionary = {'name_of_project_folder': name_of_project_folder}
 AP.set(name_of_project_folder, param_dictionary, AP.advParams)
@@ -51,73 +51,48 @@ frequency_size = 2500 # need to be an int
 """
 
 # Define detectors
+
 detector_L1 = {'name' : 'LO1', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'Livingston_O1', 'type' : '2G'}
-detector_L2 = {'name' : 'LO2', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'Livingston_O2', 'type' : '2G'}
-detector_L3a = {'name' : 'LO3a', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'Livingston_O3a', 'type' : '2G'}
-detector_L3b = {'name' : 'LO3b', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'Livingston_O3b', 'type' : '2G'}
-detector_L4 = {'name' : 'LO4', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'LIGO_O4', 'type' : '2G'}
-
+detector_V1 = {'name' : 'VO1', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'Virgo_O1', 'type' : '2G'}
 detector_H1 = {'name' : 'HO1', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'Hanford_O1', 'type' : '2G'}
-detector_H2 = {'name' : 'HO2', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'Hanford_O2', 'type' : '2G'}
-detector_H3a = {'name' : 'HO3a', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'Hanford_O3a', 'type' : '2G'}
-detector_H3b = {'name' : 'HO3b', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'Hanford_O3b', 'type' : '2G'}
-detector_H4 = {'name' : 'HO4', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'LIGO_O4', 'type' : '2G'}
 
-#detector = {'name' : 'ET10km', 'origin': 'Princess', 'configuration' : 'ET', 'psd_file' : 'ET10_CoBa', 'type' : '3G'}
+detector_ET = {'name' : 'ET10km', 'origin': 'Princess', 'configuration' : 'ET', 'psd_file' : 'ET10_CoBa', 'type' : '3G'}
+detector_CE_h = {'name' : 'CE40km', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'CE_40km', 'type' : '3G'}
+detector_CE_h = {'name' : 'CE40km', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'CE_40km', 'type' : '3G'}
+
+
 
 detector_list = {detector_L1['name']: detector_L1,
-                 detector_L2['name']: detector_L2,
-                 detector_L3a['name']: detector_L3a,
-                 detector_L3b['name']: detector_L3b,
-                 detector_L4['name']: detector_L4,
                  detector_H1['name']: detector_H1,
-                 detector_H2['name']: detector_H2,
-                 detector_H3a['name']: detector_H3a,
-                 detector_H3b['name']: detector_H3b,
-                 detector_H4['name']: detector_H4}
+                 detector_V1['name']: detector_V1,
+                 detector_ET['name']: detector_ET,
+                 detector_CE['name']: detector_CE}
 
 "               ***                 "
-network_O1 = {'name' : 'HL_O1',
-             'compo' : {detector_L1['name'] : detector_L1, detector_H1['name'] : detector_H1},
+network_HLV = {'name' : 'HLV_O1',
+             'compo' : {detector_L1['name'] : detector_L1, detector_H1['name'] : detector_H1, detector_V1['name'] : detector_V1},
              'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
              'efficiency' : 1.,
              'SNR_thrs' : 8
              }
 
-network_O2 = {'name' : 'HL_O2',
-             'compo' : {detector_L2['name'] : detector_L2, detector_H2['name'] : detector_H2},
+network_ET = {'name' : 'ET10',
+             'compo' : {detector_ET['name'] : detector_ET},
              'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
              'efficiency' : 0.5,
              'SNR_thrs' : 8
              }
 
-network_O3a = {'name' : 'HL_O3a',
-             'compo' : {detector_L3a['name'] : detector_L3a, detector_H3a['name'] : detector_H3a},
+network_ET2CE = {'name' : 'ET2CE',
+             'compo' : {detector_ET['name'] : detector_ET, detector_CE_h['name'] : detector_CE_h, detector_CE_l['name'] : detector_CE_l},
              'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
              'efficiency' : 0.5,
              'SNR_thrs' : 8
              }
 
-network_O3b = {'name' : 'HL_O3b',
-             'compo' : {detector_L3b['name'] : detector_L3b, detector_H3b['name'] : detector_H3b},
-             'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
-             'efficiency' : 0.5,
-             'SNR_thrs' : 8
-             }
-
-network_O4 = {'name' : 'HL_O4',
-             'compo' : {detector_L4['name'] : detector_L4, detector_H4['name'] : detector_H4},
-             'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
-             'efficiency' : 0.5,
-             'SNR_thrs' : 8
-             }
-
-
-network_list = {network_O1['name']: network_O1,
-                network_O2['name']: network_O2,
-                network_O3a['name']: network_O3a,
-                network_O3b['name']: network_O3b,
-                network_O4['name']: network_O4,}
+network_list = {network_HVL['name']: network_HLV,
+                network_ET['name']: network_ET,
+                network_ET2CE['name']: network_ET2CE}
 
 rerun_detectors = False
 

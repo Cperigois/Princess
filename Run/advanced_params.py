@@ -99,30 +99,33 @@ Parameters for the sampling of the catalogue.
 
 # List of accessible detectors from text file
 detectors_avail = ["Livingston_O1", "Livingston_O2", "Livingston_O3a", "Livingston_O3b", "Hanford_O1", "Hanford_O2",
-                   "Hanford_O3a", "Virgo_O2", "Virgo_O3a", "LIGO_Design", "ET_Design"]
+                   "Hanford_O3a", "Virgo_O2", "Virgo_O3a", "LIGO_O4", "LIGO_O5", "LIGO_Design",
+                   "ET_Design", "ET_10km", "ET_15km", "ET_20km"]
 
 # For psd read from files, the values were set when constructing the files
 # For pycbc psd, the min and max frequency can be modified, as long as it is understood where the model breaks
 # For delta_freq_min for pycbc psd, tests showed that a value of 0.01 was generating malloc error, which is the
 # reason why the minimum value was set to 0.015.
 psd_attributes = {
-    "Livingston_O1": {"psd_name": "Livingston_O1_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.75,
+    "Livingston_O1": {"psd_name": "Livingston_O1_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
                       "delta_freq_min": 0.025},
-    "Livingston_O2": {"psd_name": "Livingston_O2_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.75,
+    "Livingston_O2": {"psd_name": "Livingston_O2_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
                       "delta_freq_min": 0.025},
-    "Livingston_O3a": {"psd_name": "Livingston_O3a_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.75,
+    "Livingston_O3a": {"psd_name": "Livingston_O3a_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
                        "delta_freq_min": 0.025},
-    "Livingston_O3b": {"psd_name": "Livingston_O3b_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.75,
+    "Livingston_O3b": {"psd_name": "Livingston_O3b_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
                        "delta_freq_min": 0.025},
-    "Hanford_O1": {"psd_name": "Hanford_O1_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.75,
+    "Hanford_O1": {"psd_name": "Hanford_O1_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
                    "delta_freq_min": 0.025},
-    "Hanford_O2": {"psd_name": "Hanford_O2_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.75,
+    "Hanford_O2": {"psd_name": "Hanford_O2_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
                    "delta_freq_min": 0.025},
-    "Hanford_O3a": {"psd_name": "Hanford_O3a_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.75,
+    "Hanford_O3a": {"psd_name": "Hanford_O3a_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
                     "delta_freq_min": 0.025},
-    "Virgo_O2": {"psd_name": "Virgo_O2_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.75,
+    "Hanford_O3b": {"psd_name": "Hanford_O3b_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
+                    "delta_freq_min": 0.025},
+    "Virgo_O2": {"psd_name": "Virgo_O2_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
                  "delta_freq_min": 0.025},
-    "Virgo_O3a": {"psd_name": "Virgo_O3a_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.75,
+    "Virgo_O3a": {"psd_name": "Virgo_O3a_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
                   "delta_freq_min": 0.025},
     "LIGO_Design": {"psd_name": "aLIGODesignSensitivityP1200087", "in_pycbc": True, "min_freq": 0.01,
                     "max_freq": 2048.0, "delta_freq_min": 0.015},
@@ -134,6 +137,10 @@ psd_attributes = {
                   "max_freq": 10000.0, "delta_freq_min": 0.015},
     "ET_20km": {"psd_name": "EinsteinTelescopeP1600143", "in_pycbc": False, "min_freq": 0.01,
                   "max_freq": 10000.0, "delta_freq_min": 0.015},
+    "LIGO_O4": {"psd_name": "LIGO_O4_psd", "in_pycbc": False, "min_freq": 0.01,
+                  "max_freq": 5000.0, "delta_freq_min": 0.4999},
+    "LIGO_O5": {"psd_name": "LIGO_O5_psd", "in_pycbc": False, "min_freq": 0.01,
+                  "max_freq": 5000.0, "delta_freq_min": 0.4999}
 }
 
 """             *** Event Selection ***           """

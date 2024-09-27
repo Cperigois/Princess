@@ -255,7 +255,7 @@ def GWk_no_ecc_pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'InCat
         """
     warnings.filterwarnings("ignore")
     flow = int(np.min(freq))
-    deltaf = int(freq[1]-freq[0])
+    deltaf = freq[1]-freq[0]
     if inc_option == 'InCat':
         inc = evt.inc
     elif inc_option == 'Rand' :
@@ -263,9 +263,10 @@ def GWk_no_ecc_pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'InCat
     elif inc_option == 'Optimal' :
         inc = 0.
     flim= BF.fcut_f(m1 = evt.m1, m2 = evt.m2, xsi = 0, zm = evt.z).values
+    print(flim)search line in graph python
     if flim>flow:
         hptild, hctild = pycbc.waveform.get_fd_waveform(approximant = approx,
-                                                        mass1 = evt.m1 * (1. + evt.z),
+                                                        mass1 = evt.m1* (1. + evt.z),
                                                         mass2 = evt.m2 * (1. + evt.z),
                                                         spin1x = 0., spin1y=0., spin1z=evt.chi1,
                                                         spin2x = 0., spin2y=0., spin2z=evt.chi2,

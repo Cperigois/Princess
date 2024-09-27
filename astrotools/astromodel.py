@@ -317,6 +317,7 @@ class AstroModel:
             elif detector.type == '3G':
                 det_list_3G.append(detector)
         if len(det_list_2G)>0:
+            print(det_list_2G[0].freq)
             self.SNR(det_list = det_list_2G, waveform = params['detector_params']['types']['2G']['waveform'], freq = det_list_2G[0].freq )
         if len(det_list_3G)>0:
             self.SNR(det_list= det_list_3G, waveform = params['detector_params']['types']['3G']['waveform'], freq = det_list_3G[0].freq )
