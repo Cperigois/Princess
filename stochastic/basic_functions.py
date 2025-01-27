@@ -1,10 +1,12 @@
 import math
 import numpy as np
 import pandas as pd
+import csv as csv
 from scipy.integrate import quad
 from scipy.interpolate import InterpolatedUnivariateSpline
 from astropy.cosmology import Planck15
-
+import os
+import pickle
 
 
 def m1_m2_to_mc_q(m1, m2):
@@ -183,3 +185,181 @@ def build_interp():
 	table = pd.DataFrame({'z': z, 'dl': dl})
 	table.to_csv('./AuxiliaryFiles/dl_z_table_Planck_15.txt', index = None, sep = '\t')
 
+def reshape_psd(file_input, name_output):
+	input_file = './AuxiliaryFiles/PSDs/'+file_input
+	with open(input_file, 'r') as file:
+		sample = file.read(200)  # Lire un échantillon du fichier
+		dialect = csv.Sniffer().sniff(sample)
+		separator = dialect.delimiter  # Le séparateur est ici
+		print(f"Guessed separator : '{separator}'")
+	df = pd.read_csv('./AuxiliaryFiles/PSDs/'+file_input, sep=separator, index_col = None, header = None)
+
+	print(df.describe())
+
+	output = pd.DataFrame({'f': df[0]})
+	output['psd[1/Hz]'] = df[1]**2
+
+	output_file = f'./AuxiliaryFiles/PSDs/{name_output}_psd.dat'
+	output.to_csv(output_file, sep = '\t', index = None)
+	print(f"File reshaped and saved : {output_file}")
+	print(output.describe())
+
+def load_detector(name_detector: str, project_folder: str = "/Run") -> object:
+    """
+    Load a Detector instance from a pickle file.
+
+    Parameters
+    ----------
+    name_detector : str
+        The name of the detector.
+    project_folder : str, optional
+        The base directory where the detector pickle files are stored, by default 'Run'.
+
+    Returns
+    -------
+    object
+        The loaded Detector instance, or None if loading fails.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified detector file does not exist.
+    Exception
+        For any other issues during the loading process.
+    """
+
+    file_path = os.path.join(project_folder, f"{name_detector}_DET.pickle")
+    try:
+        with open(file_path, "rb") as file:
+            detector_instance = pickle.load(file)
+            print(f"Detector '{name_detector}' successfully loaded from {file_path}.")
+            return detector_instance
+    except FileNotFoundError:
+        print(f"Error: File '{file_path}' not found.")
+        return None
+    except Exception as e:
+        print(f"An error occurred while loading the detector: {e}")
+        return None
+
+
+Matrice_peach = [' ***   GW COMPUTATION   ***         ',
+				 u'           \u25A0 \u25A0\u25A0 \u25A0             2%    ',
+				 u'          \u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0            4%    ',
+				 u'          \u25A0 \u25A0  \u25A0 \u25A0            6%    ',
+				 u'         \u25A0        \u25A0           8%    ',
+				 u'         \u25A0        \u25A0           10%   ',
+				 u'          \u25A0\u25A0\u25A0\u25A0 \u25A0\u25A0\u25A0            12%   ',
+				 u'         \u25A0    \u25A0  \u25A0\u25A0           14%   ',
+				 u'        \u25A0          \u25A0          16%   ',
+				 u'      \u25A0\u25A0            \u25A0         18%   ',
+				 u' \u25A0   \u25A0              \u25A0\u25A0        20%   ',
+				 u'  \u25A0\u25A0\u25A0                 \u25A0       22%   ',
+				 u' \u25A0                    \u25A0       24%   ',
+				 u'  \u25A0                  \u25A0        26%   ',
+				 u' \u25A0         \u25A0\u25A0     \u25A0\u25A0  \u25A0       28%   ',
+				 u'  \u25A0       \u25A0  \u25A0   \u25A0 \u25A0  \u25A0       30%   ',
+				 u'   \u25A0      \u25A0   \u25A0\u25A0\u25A0 \u25A0\u25A0 \u25A0        32%   ',
+				 u'    \u25A0\u25A0 \u25A0\u25A0 \u25A0  \u25A0   \u25A0 \u25A0\u25A0         34%   ',
+				 u'    \u25A0 \u25A0 \u25A0 \u25A0  \u25A0   \u25A0 \u25A0\u25A0         36%   ',
+				 u'   \u25A0  \u25A0 \u25A0  \u25A0 \u25A0   \u25A0 \u25A0\u25A0\u25A0        38%   ',
+				 u'\u25A0\u25A0\u25A0\u25A0   \u25A0 \u25A0 \u25A0       \u25A0 \u25A0        40%   ',
+				 u' \u25A0    \u25A0   \u25A0   \u25A0\u25A0  \u25A0 \u25A0         42%   ',
+				 u' \u25A0     \u25A0 \u25A0 \u25A0     \u25A0\u25A0           44%   ',
+				 u'  \u25A0\u25A0  \u25A0\u25A0\u25A0\u25A0\u25A0 \u25A0\u25A0\u25A0\u25A0\u25A0  \u25A0          46%   ',
+				 u' \u25A0   \u25A0     \u25A0     \u25A0  \u25A0\u25A0        48%   ',
+				 u'  \u25A0 \u25A0       \u25A0     \u25A0  \u25A0        50%   ',
+				 u'  \u25A0 \u25A0       \u25A0     \u25A0  \u25A0        52%   ',
+				 u'  \u25A0 \u25A0      \u25A0      \u25A0  \u25A0        54%   ',
+				 u'  \u25A0  \u25A0    \u25A0\u25A0      \u25A0 \u25A0         56%   ',
+				 u'   \u25A0  \u25A0\u25A0\u25A0\u25A0  \u25A0    \u25A0  \u25A0         58%   ',
+				 u'   \u25A0\u25A0    \u25A0   \u25A0   \u25A0  \u25A0         60%   ',
+				 u'\u25A0\u25A0\u25A0\u25A0    \u25A0\u25A0    \u25A0  \u25A0 \u25A0          62%   ',
+				 u' \u25A0     \u25A0  \u25A0    \u25A0\u25A0  \u25A0          64%   ',
+				 u'  \u25A0   \u25A0    \u25A0     \u25A0 \u25A0          66%   ',
+				 u'   \u25A0 \u25A0      \u25A0     \u25A0 \u25A0         68%   ',
+				 u'    \u25A0        \u25A0     \u25A0 \u25A0        70%   ',
+				 u'              \u25A0   \u25A0  \u25A0        72%   ',
+				 u'   \u25A0  \u25A0        \u25A0\u25A0\u25A0    \u25A0       74%   ',
+				 u'  \u25A0  \u25A0    \u25A0       \u25A0   \u25A0       76%   ',
+				 u' \u25A0   \u25A0   \u25A0         \u25A0   \u25A0      78%   ',
+				 u' \u25A0   \u25A0   \u25A0         \u25A0   \u25A0      80%   ',
+				 u' \u25A0  \u25A0   \u25A0           \u25A0  \u25A0      82%   ',
+				 u'\u25A0   \u25A0   \u25A0           \u25A0  \u25A0      84%   ',
+				 u'\u25A0   \u25A0   \u25A0           \u25A0   \u25A0     86%   ',
+				 u'\u25A0   \u25A0   \u25A0           \u25A0   \u25A0     88%   ',
+				 u' \u25A0  \u25A0   \u25A0           \u25A0   \u25A0     90%   ',
+				 u'  \u25A0\u25A0\u25A0   \u25A0           \u25A0 \u25A0\u25A0      92%   ',
+				 u'     \u25A0\u25A0\u25A0\u25A0\u25A0\u25A0        \u25A0\u25A0\u25A0        94%   ',
+				 u'           \u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0           96%   ',
+				 u'                              98%   ',
+				 u'   ***   GW COMPUTED   ***    100%  ', ]
+
+Matrice_Leia = [u'    *** START ***     0%   ',
+				u'        \u25A0\u25A0\u25A0\u25A0\u25A0         4%   ',
+				u'      \u25A0\u25A0   \u25A0 \u25A0\u25A0       8%   ',
+				u'     \u25A0    \u25A0    \u25A0      12%  ',
+				u'    \u25A0     \u25A0     \u25A0     16%  ',
+				u'  \u25A0\u25A0\u25A0     \u25A0     \u25A0\u25A0\u25A0   20%  ',
+				u' \u25A0  \u25A0    \u25A0\u25A0\u25A0    \u25A0  \u25A0  24%  ',
+				u' \u25A0  \u25A0  \u25A0\u25A0   \u25A0\u25A0  \u25A0  \u25A0  28%  ',
+				u' \u25A0\u25A0 \u25A0\u25A0\u25A0       \u25A0\u25A0\u25A0 \u25A0\u25A0  32%  ',
+				u' \u25A0\u25A0 \u25A0           \u25A0 \u25A0\u25A0  36%  ',
+				u' \u25A0  \u25A0   \u25A0    \u25A0  \u25A0  \u25A0  40%  ',
+				u' \u25A0  \u25A0  \u25A0\u25A0   \u25A0\u25A0  \u25A0  \u25A0  44%  ',
+				u'  \u25A0\u25A0\u25A0           \u25A0\u25A0\u25A0   48%  ',
+				u'     \u25A0    \u25A0    \u25A0      52%  ',
+				u'      \u25A0\u25A0     \u25A0\u25A0       56%  ',
+				u'\u25A0\u25A0   \u25A0  \u25A0\u25A0\u25A0\u25A0\u25A0  \u25A0      60%  ',
+				u'\u25A0 \u25A0\u25A0\u25A0           \u25A0     64%  ',
+				u' \u25A0  \u25A0            \u25A0    68%  ',
+				u'  \u25A0  \u25A0\u25A0       \u25A0   \u25A0   72%  ',
+				u'  \u25A0  \u25A0\u25A0       \u25A0\u25A0  \u25A0   76%  ',
+				u'   \u25A0\u25A0 \u25A0       \u25A0 \u25A0\u25A0    80%  ',
+				u'      \u25A0       \u25A0       84%  ',
+				u'     \u25A0         \u25A0      88%  ',
+				u'     \u25A0         \u25A0      92%  ',
+				u'     \u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0\u25A0      96%  ',
+				u'  *** COMPLETED ***   100% ']
+
+
+# def bar_error() :
+def bar_peach(n, ntot):
+	"""
+    Affiche progressivement la progression en utilisant Matrice_peach.
+    Parameters:
+        n (int): Valeur actuelle de la progression.
+        ntot (int): Valeur totale à atteindre.
+    """
+	try:
+		# Calcul du nombre de paliers (assurez-vous que ntot est suffisant pour 50 étapes)
+		steps = max(ntot // 50, 1)
+
+		# Affichage uniquement à chaque palier
+		if n % steps == 0:
+			# Calcul de l'index dans la matrice
+			index = min(n // steps, len(Matrice_peach) - 1)
+			# Affiche la ligne correspondante
+			print(Matrice_peach[index] + f" {n}/{ntot}")
+	except (ZeroDivisionError, IndexError) as e:
+		print(f"Erreur dans l'affichage de la barre de progression : {e}")
+
+
+def bar_leia(n, ntot):
+	"""
+    Affiche progressivement la progression en utilisant Matrice_peach.
+    Parameters:
+        n (int): Valeur actuelle de la progression.
+        ntot (int): Valeur totale à atteindre.
+    """
+	try:
+		# Calcul du nombre de paliers (assurez-vous que ntot est suffisant pour 50 étapes)
+		steps = max(ntot // 50, 1)
+
+		# Affichage uniquement à chaque palier
+		if n % steps == 0:
+			# Calcul de l'index dans la matrice
+			index = min(n // steps, len(Matrice_leia) - 1)
+			# Affiche la ligne correspondante
+			print(Matrice_peach[index] + f" {n}/{ntot}")
+	except (ZeroDivisionError, IndexError) as e:
+		print(f"Erreur dans l'affichage de la barre de progression : {e}")

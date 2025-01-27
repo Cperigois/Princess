@@ -1,5 +1,8 @@
 import os
 import sys
+
+import pandas as pd
+
 import Run.advanced_params as AP
 
 """
@@ -15,10 +18,11 @@ sys.path.append('../')
 
 """             *** GENERIC PARAMETERS ***            """
 
-name_of_project_folder = 'GW170817_LVK'
+name_of_project_folder = 'GC_analysis'
 n_cpu_max = 4  # Number maximal of cpu used by the code
 param_dictionary = {'name_of_project_folder': name_of_project_folder}
-AP.set(name_of_project_folder, param_dictionary, AP.advParams)
+#AP.set(name_of_project_folder, param_dictionary, AP.advParams)
+print(AP.psd_attributes['KAGRA_O4']['psd_name'])
 
 """               *** ASTROMODELS ***                 """
 """
@@ -31,18 +35,97 @@ AP.set(name_of_project_folder, param_dictionary, AP.advParams)
                   'Zeros' (default is 'InCat', assuming that your spins are in your initial catalog
 """
 
-path =  '/home/perigois/Documents/SNR_GW170817/'
-astromodel_1 = {'name': 'GW170817',
-                'original_path': path+'GW170817_post.dat',
-                'spin_model' : 'Spin&cosTheta',
-                'duration': 1}
+path =  '/home/perigois/Documents/GC_ana_bkg/Catalogs/'
+
+astro_model_1 = {
+    'name': 'GC_ngng_oleary_noclusterevolv',
+    'original_path': path + 'Catalog_co_BBH_formation_channel_field_GC_type1_ngng_GC_type2_oleary_cluster_evolution_noclusterevolv.dat',
+    'spin_model': 'Zeros',
+    'duration': 1
+}
+
+astro_model_2 = {
+    'name': 'GC_ng1g_heggie_clusterevolv',
+    'original_path': path + 'Catalog_co_BBH_formation_channel_GC_Dyn_GC_type1_ng1g_GC_type2_heggie_cluster_evolution_clusterevolv.dat',
+    'spin_model': 'Zeros',
+    'duration': 1
+}
+
+astro_model_3 = {
+    'name': 'GC_ng1g_heggie_clusterevolv_tidal',
+    'original_path': path + 'Catalog_co_BBH_formation_channel_GC_Dyn_GC_type1_ng1g_GC_type2_heggie_cluster_evolution_clusterevolv_tidal.dat',
+    'spin_model': 'Zeros',
+    'duration': 1
+}
+
+astro_model_4 = {
+    'name': 'GC_ng1g_heggie_noclusterevolv',
+    'original_path': path + 'Catalog_co_BBH_formation_channel_GC_Dyn_GC_type1_ng1g_GC_type2_heggie_cluster_evolution_noclusterevolv.dat',
+    'spin_model': 'Zeros',
+    'duration': 1
+}
+
+astro_model_5 = {
+    'name': 'GC_ng1g_oleary_clusterevolv',
+    'original_path': path + 'Catalog_co_BBH_formation_channel_GC_Dyn_GC_type1_ng1g_GC_type2_oleary_cluster_evolution_clusterevolv.dat',
+    'spin_model': 'Zeros',
+    'duration': 1
+}
+
+astro_model_6 = {
+    'name': 'GC_ng1g_oleary_clusterevolv_tidal',
+    'original_path': path + 'Catalog_co_BBH_formation_channel_GC_Dyn_GC_type1_ng1g_GC_type2_oleary_cluster_evolution_clusterevolv_tidal.dat',
+    'spin_model': 'Zeros',
+    'duration': 1
+}
+
+astro_model_7 = {
+    'name': 'GC_ng1g_oleary_noclusterevolv',
+    'original_path': path + 'Catalog_co_BBH_formation_channel_GC_Dyn_GC_type1_ng1g_GC_type2_oleary_cluster_evolution_noclusterevolv.dat',
+    'spin_model': 'Zeros',
+    'duration': 1
+}
+
+astro_model_8 = {
+    'name': 'GC_ngng_oleary_clusterevolv',
+    'original_path': path + 'Catalog_co_BBH_formation_channel_GC_Dyn_GC_type1_ngng_GC_type2_oleary_cluster_evolution_clusterevolv.dat',
+    'spin_model': 'Zeros',
+    'duration': 1
+}
+
+astro_model_9 = {
+    'name': 'GC_ngng_oleary_clusterevolv_tidal',
+    'original_path': path + 'Catalog_co_BBH_formation_channel_GC_Dyn_GC_type1_ngng_GC_type2_oleary_cluster_evolution_clusterevolv_tidal.dat',
+    'spin_model': 'Zeros',
+    'duration': 1
+}
+
+astro_model_10 = {
+    'name': 'GC_ngng_oleary_noclusterevolv',
+    'original_path': path + 'Catalog_co_BBH_formation_channel_GC_Dyn_GC_type1_ngng_GC_type2_oleary_cluster_evolution_noclusterevolv.dat',
+    'spin_model': 'Zeros',
+    'duration': 1
+}
 
 
-astro_model_list = {astromodel_1['name']: astromodel_1}#,
-                    #astromodel_2['name']: astromodel_2}
-rerun_snr_computation = False
 
-frequency_size = 2500 # need to be an int
+
+astro_model_list = {astro_model_1['name']: astro_model_1,
+                    astro_model_2['name']: astro_model_2,
+                    astro_model_3['name']: astro_model_3,
+                    astro_model_4['name']: astro_model_4,
+                    astro_model_5['name']: astro_model_5,
+                    astro_model_6['name']: astro_model_6,
+                    astro_model_7['name']: astro_model_7,
+                    astro_model_8['name']: astro_model_8,
+                    astro_model_9['name']: astro_model_9,
+                    astro_model_10['name']: astro_model_10
+                    }
+
+
+rerun_snr_computation = True
+
+frequency_size = 2000 # need to be an int
 
 """               *** Detectors and Network ***                 """
 """
@@ -50,82 +133,126 @@ frequency_size = 2500 # need to be an int
         List of available detectors : 
 """
 
+detector_reaload = True # Force to reload the detectors and their instances.
+                        # To be kept True except if the detectors are heavy to be loaded.
+
 # Define detectors
-detector_L1 = {'name' : 'LO1', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'Livingston_O1', 'type' : '2G'}
-detector_L2 = {'name' : 'LO2', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'Livingston_O2', 'type' : '2G'}
-detector_L3a = {'name' : 'LO3a', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'Livingston_O3a', 'type' : '2G'}
-detector_L3b = {'name' : 'LO3b', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'Livingston_O3b', 'type' : '2G'}
-detector_L4 = {'name' : 'LO4', 'origin': 'Princess', 'configuration' : 'L', 'psd_file' : 'LIGO_O4', 'type' : '2G'}
 
-detector_H1 = {'name' : 'HO1', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'Hanford_O1', 'type' : '2G'}
-detector_H2 = {'name' : 'HO2', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'Hanford_O2', 'type' : '2G'}
-detector_H3a = {'name' : 'HO3a', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'Hanford_O3a', 'type' : '2G'}
-detector_H3b = {'name' : 'HO3b', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'Hanford_O3b', 'type' : '2G'}
-detector_H4 = {'name' : 'HO4', 'origin': 'Princess', 'configuration' : 'H', 'psd_file' : 'LIGO_O4', 'type' : '2G'}
+detector_L4 = {'name' : 'LO4', 'origin': 'Princess', 'configuration' : 'L', 'reference' : 'LIGO_O4', 'type' : '2G'}
+detector_H4 = {'name' : 'HO4', 'origin': 'Princess', 'configuration' : 'H', 'reference' : 'LIGO_O4', 'type' : '2G'}
+detector_V4 = {'name' : 'VO4', 'origin': 'Princess', 'configuration' : 'V', 'reference' : 'Virgo_O4', 'type' : '2G'}
+detector_K4 = {'name' : 'KO4', 'origin': 'Princess', 'configuration' : 'K', 'reference' : 'KAGRA_O4', 'type' : '2G'}
 
-#detector = {'name' : 'ET10km', 'origin': 'Princess', 'configuration' : 'ET', 'psd_file' : 'ET10_CoBa', 'type' : '3G'}
+detector_L5 = {'name' : 'LO5', 'origin': 'Princess', 'configuration' : 'L', 'reference' : 'LIGO_O5', 'type' : '2G'}
+detector_H5 = {'name' : 'HO5', 'origin': 'Princess', 'configuration' : 'H', 'reference' : 'LIGO_O5', 'type' : '2G'}
+detector_V5 = {'name' : 'VO5', 'origin': 'Princess', 'configuration' : 'V', 'reference' : 'Virgo_O5', 'type' : '2G'}
+detector_K5 = {'name' : 'KO5', 'origin': 'Princess', 'configuration' : 'K', 'reference' : 'KAGRA_O5', 'type' : '2G'}
+detector_I5 = {'name' : 'IO5', 'origin': 'Princess', 'configuration' : 'I', 'reference' : 'LIGO_O5', 'type' : '2G'}
 
-detector_list = {detector_L1['name']: detector_L1,
-                 detector_L2['name']: detector_L2,
-                 detector_L3a['name']: detector_L3a,
-                 detector_L3b['name']: detector_L3b,
-                 detector_L4['name']: detector_L4,
-                 detector_H1['name']: detector_H1,
-                 detector_H2['name']: detector_H2,
-                 detector_H3a['name']: detector_H3a,
-                 detector_H3b['name']: detector_H3b,
-                 detector_H4['name']: detector_H4}
+detector_ET1 = {'name' : 'ET10km', 'origin': 'Princess', 'configuration' : 'E1', 'reference' : 'ET_10km', 'type' : '3G'}
+detector_ET2 = {'name' : 'ET10km', 'origin': 'Princess', 'configuration' : 'E2', 'reference' : 'ET_10km', 'type' : '3G'}
+detector_ET3 = {'name' : 'ET10km', 'origin': 'Princess', 'configuration' : 'E3', 'reference' : 'ET_10km', 'type' : '3G'}
+
+detector_CE20 = {'name' : 'CE_H_20km', 'origin': 'Princess', 'configuration' : 'H', 'reference' : 'CE_20km', 'type' : '3G'}
+detector_CE40H = {'name' : 'CE_H_40km', 'origin': 'Princess', 'configuration' : 'H', 'reference' : 'CE_40km', 'type' : '3G'}
+detector_CE40L = {'name' : 'CE_L_40km', 'origin': 'Princess', 'configuration' : 'L', 'reference' : 'CE_40km', 'type' : '3G'}
+
+
+
+detector_list = {detector_L4['name']: detector_L4,
+                 detector_H4['name']: detector_H4,
+                 detector_V4['name']: detector_V4,
+                 detector_K4['name']: detector_K4,
+                 detector_L5['name']: detector_L5,
+                 detector_H5['name']: detector_H5,
+                 detector_V5['name']: detector_V5,
+                 detector_K5['name']: detector_K5,
+                 detector_ET1['name']: detector_ET1,
+                 detector_ET2['name']: detector_ET2,
+                 detector_ET3['name']: detector_ET3,
+                 detector_CE20['name']: detector_CE20,
+                 detector_CE40H['name']: detector_CE40H,
+                 detector_CE40L['name']: detector_CE40L
+                 }
 
 "               ***                 "
-network_O1 = {'name' : 'HL_O1',
-             'compo' : {detector_L1['name'] : detector_L1, detector_H1['name'] : detector_H1},
-             'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
+network_LVK_O4 = {'name' : 'LVK_O4',
+             'compo' : {detector_L4['name'] : detector_L4, detector_H4['name'] : detector_H4,
+                        detector_V4['name'] : detector_V4, detector_K4['name'] : detector_K4},#https://emfollow.docs.ligo.org/userguide/capabilities.html
+             'pic_file' : 'AuxiliaryFiles/PICs/Design_HLVIK_flow_10.txt',
              'efficiency' : 1.,
-             'SNR_thrs' : 8
+             'SNR_thrs' : [8, 20, 50]
+             }
+network_LVK_O5 = {'name' : 'LVK_O5',
+             'compo' : {detector_L5['name'] : detector_L5, detector_H5['name'] : detector_H5,
+                        detector_V5['name'] : detector_V5, detector_K5['name'] : detector_K5,
+                        detector_I5['name'] : detector_I5},#https://emfollow.docs.ligo.org/userguide/capabilities.html
+             'pic_file' : 'AuxiliaryFiles/PICs/Design_HLVIK_flow_10.txt',
+             'efficiency' : 1.,
+             'SNR_thrs' : [8, 20, 50]
              }
 
-network_O2 = {'name' : 'HL_O2',
-             'compo' : {detector_L2['name'] : detector_L2, detector_H2['name'] : detector_H2},
-             'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
+network_ET = {'name' : 'ET',
+             'compo' : {detector_ET1['name'] : detector_ET1,
+                        detector_ET2['name'] : detector_ET2,
+                        detector_ET3['name'] : detector_ET3},
+             'pic_file' : 'AuxiliaryFiles/PICs/PIC_ET.txt',
              'efficiency' : 0.5,
-             'SNR_thrs' : 8
+             'SNR_thrs' : [8, 20, 50]
              }
 
-network_O3a = {'name' : 'HL_O3a',
-             'compo' : {detector_L3a['name'] : detector_L3a, detector_H3a['name'] : detector_H3a},
-             'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
+network_4020CE = {'name' : '2CE4020',
+             'compo' : {detector_CE20['name'] : detector_CE20, detector_CE40L['name'] : detector_CE40L},
+             'pic_file' : 'AuxiliaryFiles/PICs/PIC_CE4020.txt',
              'efficiency' : 0.5,
-             'SNR_thrs' : 8
+             'SNR_thrs' : [8, 20, 50]
              }
 
-network_O3b = {'name' : 'HL_O3b',
-             'compo' : {detector_L3b['name'] : detector_L3b, detector_H3b['name'] : detector_H3b},
-             'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
+network_4040CE = {'name' : '2CE4040',
+             'compo' : {detector_CE40H['name'] : detector_CE40H, detector_CE40L['name'] : detector_CE40L},
+             'pic_file' : 'AuxiliaryFiles/PICs/PIC_CE4040.txt',
              'efficiency' : 0.5,
-             'SNR_thrs' : 8
+             'SNR_thrs' : [8, 20, 50]
              }
 
-network_O4 = {'name' : 'HL_O4',
-             'compo' : {detector_L4['name'] : detector_L4, detector_H4['name'] : detector_H4},
-             'pic_file' : 'AuxiliaryFiles/PICs/ET.txt',
+network_ET2CE4020 = {'name' : 'ET2CE4020',
+             'compo' : {detector_ET1['name'] : detector_ET1,
+                        detector_ET2['name'] : detector_ET2,
+                        detector_ET3['name'] : detector_ET3,
+                        detector_CE20['name'] : detector_CE20,
+                        detector_CE40L['name'] : detector_CE40L},
+             'pic_file' : 'AuxiliaryFiles/PICs/PIC_CE4020ET.txt',
              'efficiency' : 0.5,
-             'SNR_thrs' : 8
+             'SNR_thrs' : [8, 20, 50]
+             }
+
+network_ET2CE4040 = {'name' : 'ET2CE4040',
+             'compo' : {detector_ET1['name'] : detector_ET1,
+                        detector_ET2['name'] : detector_ET2,
+                        detector_ET3['name'] : detector_ET3,
+                        detector_CE40H['name'] : detector_CE40H,
+                        detector_CE40L['name'] : detector_CE40L},
+             'pic_file' : 'AuxiliaryFiles/PICs/PIC_CE4040ET.txt',
+             'efficiency' : 0.5,
+             'SNR_thrs' : [8, 20, 50]
              }
 
 
-network_list = {network_O1['name']: network_O1,
-                network_O2['name']: network_O2,
-                network_O3a['name']: network_O3a,
-                network_O3b['name']: network_O3b,
-                network_O4['name']: network_O4,}
+network_list = {network_LVK_O4['name']: network_LVK_O4,
+                network_LVK_O5['name']: network_LVK_O5,
+                network_ET['name']: network_ET,
+                network_4020CE['name']: network_4020CE,
+                network_4040CE['name']: network_4040CE,
+                network_ET2CE4020['name']: network_ET2CE4020,
+                network_ET2CE4040['name']: network_ET2CE4040}
 
-rerun_detectors = False
+rerun_detectors = True
 
 """               *** Background computation ***                 """
 """
         Choose option for background computation
 """
-rerun_background = False
+rerun_background = True
 
 
 """               *** Post processing ***                 """
@@ -157,4 +284,10 @@ param_dictionary = {'name_of_project_folder': name_of_project_folder,
                     'results': {'cleaning': run_data_cleaning,
                                 'plots': run_plots}
                     }
-AP.set(name_of_project_folder, param_dictionary, AP.advParams)
+advParams = {"AM_params": {'input_parameters': AP.input_parameters, 'keepID' : AP.keepID, 'ID_col' : AP.ID_col},
+             "detector_params": {'detectors_avail': AP.detectors_avail,
+                                 'psd_attributes': AP.psd_attributes,
+                                 'types': AP.types},
+             "Inclination" : AP.Inclination
+             }
+AP.set(name_of_project_folder, param_dictionary, advParams)

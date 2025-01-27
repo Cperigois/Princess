@@ -3,6 +3,7 @@ import numpy as np
 import pycbc.psd
 import pandas as pd
 import json
+import math
 import pickle
 from astropy.cosmology import Planck15
 from stochastic import basic_functions as BF
@@ -14,7 +15,7 @@ def initialization():
         detector = Detector(name=params['detector_list'][det]['name'],
                             configuration=params['detector_list'][det]['configuration'],
                             origin=params['detector_list'][det]['origin'],
-                            psd_file=params['detector_list'][det]['psd_file'],
+                            reference=params['detector_list'][det]['reference'],
                             type= params['detector_list'][det]['type'])
         detector.save()
     for net in params['network_list'].keys():
@@ -25,54 +26,93 @@ def initialization():
                           SNR_thrs= params['network_list'][net]['SNR_thrs'])
         network.save()
 
+
 class Detector:
 
-    def __init__(self, name:str, configuration:str =None, origin:str = 'Pycbc', psd_file:str = None, type:str = None):
+    def __init__(self,
+                 name: str,
+                 configuration: str = None,
+                 origin: str = 'Princess',
+                 reference: str = None,
+                 type: str = None,
+                 psd_file: str =None):
         """
         Instance of a detector.
+
         Parameters
         ----------
-        :param name (str): Name of the detector, will be used in labeling further data as the signal-to-noise-ratio.
-        :param configuration (str): Location, orientation and arm opening of the detector. Should only be chosen among
-            preset configurations 'H', 'L', 'V', 'ET' standing for LIGO-Hanford, LIGO-Livingston, Virgo, and
-            Einstein Telescope (i.e. Triangle, anywhereon the globe) respectively
-        :param origin (str): Place where is set the psd of the detector. Available options are 'Pycbc', 'Princess', or 'User'
-        :param psd_file (str): Refers to the file containing the PSD. If origin is 'Pycbc', it refers to the name of the PSD.
-            It origin is Princess, refers to the name of the file in AuxiliaryFiles/PSDs. If origin is 'User', refers to
-            the path to the sentitivity.
-        :param freq (np.1Darray): Frequency array for the detector. Please care to have it coherent with the frequency
-            range of the detector.
+        name (str): Name of the detector, used for labeling further data such as the signal-to-noise ratio.
+        configuration (str): Location, orientation, and arm opening of the detector. Options: 'H', 'L', 'V', 'ET'.
+        origin (str): Source of the PSD ('Pycbc', 'Princess', or 'User').
+        psd_file (str): File or identifier for a customized PSD. Varies based on origin.
+        reference (str): Reference to existing detectors.
+        type (str): Optional, additional type information.
         """
         self.name = name
-        if (not os.path.exists('Run/' + params['name_of_project_folder'] + '/' + self.name + '_DET.pickle')):
-            # Set class variables
-            self.name = name
-            self.psd_file = psd_file
-            self.origin = origin
-            self.configuration = configuration
-            print(self.name)
-            self.type = type
-            self.make_frequency()
-            if self.freq is None:
-                print('Unable to find th frequency range of the detector... \n Please add in your detector definition freq = [np.array] and recompile your detector')
-        else :
+        # Check if the detector needs to be reloaded or created
+        project_folder = os.path.join('Run', params['name_of_project_folder'])
+        detector_file = os.path.join(project_folder, f'{self.name}_DET.pickle')
+        print(detector_file)
+
+        if not os.path.exists(detector_file) or params['overwrite']['detectors']:
+            self.initialize_detector(_configuration= configuration,
+                                     _reference= reference,
+                                     _origin= origin,
+                                     _type= type,
+                                     _psd_file= psd_file)
+            self.save()
+            print(f'Detector {self.name} successfully saved.')
+        else:
             self.load()
+            print(f'Detector {self.name} successfully loaded.')
 
+
+    def get_psd_file(self):
+        "Get the correct file where to find the Psd"
+        print(self.reference)
+        if self.origin == 'Princess' :
+            self.psd_file = params['detector_params']['psd_attributes'][self.reference]['psd_name']
+        else :
+            print("No customized psd available yet")
+
+    def initialize_detector(self, _configuration, _reference, _origin, _psd_file, _type):
+        """Initialize the detector, setting up necessary parameters."""
+        self.configuration = _configuration
+        self.origin = _origin
+        self.reference = _reference
+        if _psd_file == None:
+            self.get_psd_file()
+        else:
+            self.psd_file = _psd_file
+        self.type = _type
+
+        self.make_frequency()
         if self.freq is None:
-            print('Unable to find th frequency range of the detector... \n Please add in your detector definition freq = [np.array] and recompile your detector')
+            self.handle_missing_frequency()
 
+    def handle_missing_frequency(self):
+        """Handle the case where frequency information is missing."""
+        print(
+            f"Unable to find the frequency range for detector '{self.name}'.\n"
+            "Please define 'freq = [np.array]' in your detector definition and recompile."
+        )
 
     def make_frequency(self):
-        frequency_min = max(params['detector_params']['types'][self.type]['freq']['min'], params['detector_params']['psd_attributes'][self.psd_file]['min_freq'])
-        frequency_max = min(params['detector_params']['types'][self.type]['freq']['max'], params['detector_params']['psd_attributes'][self.psd_file]['max_freq'])
-        n = params['frequency_size']
+        frequency_min = max(params['detector_params']['types'][self.type]['freq']['min'], params['detector_params']['psd_attributes'][self.reference]['min_freq'])
+        frequency_max = min(params['detector_params']['types'][self.type]['freq']['max'], params['detector_params']['psd_attributes'][self.reference]['max_freq'])
+
+        n = max(params['frequency_size'], params['detector_params']['types'][self.type]['freq']['min_fsize'])
+
         scale = params['detector_params']['types'][self.type]['freq']['scale']
+
         if scale =='log':
             self.freq = np.logspace(numpy.log10(frequency_min), numpy.log10(frequency_max), num = n)
+
         elif scale =='lin':
             self.freq = np.linspace(frequency_min, frequency_max, n)
             self.deltaf = self.freq[1]-self.freq[0]
             self.make_psd()
+
         else :
             print ("Error in frequency array creation, please check the type, and eventually avanced param file.")
 
@@ -87,16 +127,22 @@ class Detector:
                                     low_freq_cutoff=float(self.freq[0]))
             self.psd = self.psd[1:len(self.freq)+1]
         elif self.origin == 'Princess' :
-            path = 'AuxiliaryFiles/PSDs/'+self.psd_file+'_psd.dat'
+            path = 'AuxiliaryFiles/PSDs/'+self.psd_file+'.dat'
             df = pd.read_csv(path, index_col = None, sep = '\t')
-            newpath = 'Run/temp/'+self.psd_file+'_psd.dat'
+            newpath = 'Run/temp/'+self.psd_file+'.dat'
             df.to_csv(newpath, index = False, sep = '\t', header = False)
-            print( (len(self.freq)+1) * max(int(self.freq[1] - self.freq[0]),1) )
+            print(self.freq)
+            """ Notes for the use of Pycbc.psd.read.from_numpy_array.
+            - carefully keep the lenght +1
+            - math.ceil(self.freq[0]) rounds freq[0] to the integer above, insuring that the interpolation stays in the right range
+            - delta_f needs to be 1 otherwise pycbc.psd.read.from_numpy_arrays crashes
+            This way to do psd definitely needs to be changed : it refer to pycbc classes, and are not well adapted to Princess. 
+            This issue needs to be address in the V2 of Princess.  
+            """
             self.psd = pycbc.psd.read.from_numpy_arrays(np.array(df['f']), np.array(df['psd[1/Hz]']),
                                                         length=len(self.freq)+1,
-                                                        delta_f=self.freq[1] - self.freq[0],
-                                                        #delta_f=max(int(self.freq[1] - self.freq[0]),1),
-                                                        low_freq_cutoff=self.freq[0])
+                                                        delta_f=1.,
+                                                        low_freq_cutoff=np.ceil(self.freq[0]))
 
             self.psd = self.psd[1:]
         elif self.origin == 'User' :
@@ -141,7 +187,6 @@ class Detector:
         m1 = mtot * q * (1. + z) / (1 + q)
         m2 = m1 / q
         flim = BF.fcut_f(m1=m1, m2=m2, xsi=0, zm=z)
-        print(flim)
         if flim > self.freq[0]+0.15:
             psd = self.Make_psd()
             hp, hc = pycbc.waveform.get_fd_waveform(approximant=waveform_approx, mass1=m1 * (1. + z), mass2 = m2 * (1. + z),
@@ -154,10 +199,11 @@ class Detector:
         else :
             snr_l = 0
         return snr_l
+
     def load(self):
         """try load self.name.txt"""
         path = './Run/' + params['name_of_project_folder'] + '/'
-        file = open(path + self.name + '_DET.pickle', 'rb')
+        file = open(path + name + '_DET.pickle', 'rb')
         data_pickle = file.read()
         file.close()
         self.__dict__ = pickle.loads(data_pickle)
@@ -194,13 +240,18 @@ class Network:
             self.compo = compo
             self.pic_file = pic_file
             keys = list(compo.keys())
-            self.freq = Detector(name = keys[0]).freq
             self.efficiency = efficiency
             self.SNR_thrs = SNR_thrs
             self.duration = duration
-            self.type = Detector(name = keys[0]).type
+            self.get_detectors_attributes(keys[0])
         else :
             self.load()
+
+    def get_detectors_attributes(self, name_detector):
+        with open(f"Run/{params['name_of_project_folder']}/{name_detector}_DET.pickle", 'rb') as file:
+            detector_instance = pickle.load(file)
+        self.freq = detector_instance['freq']
+        self.type = detector_instance['type']
 
     def reshape_pic(self, delimiter:str='\t', Header:bool=False, index:bool=False):
         """

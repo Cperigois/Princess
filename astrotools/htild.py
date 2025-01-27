@@ -263,7 +263,6 @@ def GWk_no_ecc_pycbcwf(evt, freq, approx, n, size_catalogue, inc_option = 'InCat
     elif inc_option == 'Optimal' :
         inc = 0.
     flim= BF.fcut_f(m1 = evt.m1, m2 = evt.m2, xsi = 0, zm = evt.z).values
-    print(flim)search line in graph python
     if flim>flow:
         hptild, hctild = pycbc.waveform.get_fd_waveform(approximant = approx,
                                                         mass1 = evt.m1* (1. + evt.z),

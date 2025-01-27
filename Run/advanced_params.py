@@ -3,7 +3,7 @@ import os
 import json
 
 
-def set(_projectFolder, _paramDictionnary, _advParamDictionnary):
+def set_old(_projectFolder, _paramDictionnary, _advParamDictionnary):
 
     output = {**_paramDictionnary, **_advParamDictionnary}
     json_object = json.dumps(output, indent=len(output.keys()))
@@ -16,6 +16,38 @@ def set(_projectFolder, _paramDictionnary, _advParamDictionnary):
     print("Done writing dict into Run/Params.json file and in Run/", str(_projectFolder), "/Params.json")
 
 
+def set(_projectFolder, _paramDictionnary, _advParamDictionnary):
+    try:
+        # Validate inputs
+        if not isinstance(_paramDictionnary, dict) or not isinstance(_advParamDictionnary, dict):
+            raise ValueError("Both _paramDictionnary and _advParamDictionnary must be dictionaries.")
+
+        # Merge dictionaries
+        output = {**_paramDictionnary, **_advParamDictionnary}
+        json_object = json.dumps(output, indent=4)  # Pretty print JSON with a standard indent level
+
+        # Define file paths
+        base_params_path = os.path.join('Run', 'Params.json')
+        project_folder_path = os.path.join('Run', _projectFolder)
+        project_params_path = os.path.join(project_folder_path, 'Params.json')
+
+        # Ensure 'Run' and project folder exist
+        os.makedirs('Run', exist_ok=True)
+        os.makedirs(project_folder_path, exist_ok=True)
+
+        # Write to base Params.json
+        with open(base_params_path, "w") as file:
+            file.write(json_object)
+
+        # Write to project-specific Params.json
+        with open(project_params_path, "w") as file:
+            file.write(json_object)
+
+        print(f"Successfully wrote Params.json to {base_params_path} and {project_params_path}.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
 def clean():
     params = json.load(open('Run/Params.json', 'r'))
     for am in params['astro_model_list'].keys():
@@ -26,13 +58,17 @@ def clean():
         os.remove('Run/' + params['name_of_project_folder'] + '/' + net + '_NET.pickle')
     os.remove('Run/Params.json')
 
+""" Types of detectors notes : 
+    - LISA and PTA types are not available
+    - min_fsize stands to ensure that the delta_f stads below or equal to 1. Otherwise Pycbc interpolation crashes.
+    - 'refs' stands for the reference frequency for Omega compotation.
+"""
 
-types = {"2G": {'freq': {'min': 10., 'max' : 2000., 'scale': 'lin', 'ref': [10.,25.]}, 'waveform': "IMRPhenomD"},
-         "3G": {'freq':{'min': 1., 'max' : 2500., 'scale': 'lin', 'ref': [10.,25.]}, 'waveform': "IMRPhenomD"},
+types = {"2G": {'freq': {'min': 10., 'max' : 2000., 'scale': 'lin', 'ref': [25.], 'min_fsize' : 1990}, 'waveform': "IMRPhenomD"},
+         "3G": {'freq':{'min': 1., 'max' : 2500., 'scale': 'lin', 'ref': [10.,25.], 'min_fsize' : 2500}, 'waveform': "IMRPhenomD"},
          'LISA': { 'freq':{'min': 1.e-4, 'max' : 0.1, 'scale': 'log', 'ref': 0.001}, 'waveform': "Ajith"},
          'PTA': {  'freq':{'min': 1.e-10, 'max' : 1.e-7, 'scale': 'log', 'ref': 1.e-9},'waveform': "Inspiral"}
         }
-
 
 """             *** ASTROMODEL ***           """
 
@@ -76,9 +112,11 @@ input_parameters = {
     "tSN2": "tsn2"
 }
 
-Inclination = 'InCat' # To be chosen among {'InCat', 'Rand', 'Optimal'}
+Inclination = 'Rand' # To be chosen among {'InCat', 'Rand', 'Optimal'}
 Position = 'Optimal'
 orbit_evo = False
+keepID = False
+ID_col = 'Name'
 
 """             *** Sampling parameters ***           """
 
@@ -99,7 +137,7 @@ Parameters for the sampling of the catalogue.
 
 # List of accessible detectors from text file
 detectors_avail = ["Livingston_O1", "Livingston_O2", "Livingston_O3a", "Livingston_O3b", "Hanford_O1", "Hanford_O2",
-                   "Hanford_O3a", "Virgo_O2", "Virgo_O3a", "LIGO_O4", "LIGO_O5", "LIGO_Design",
+                   "Hanford_O3a", "Virgo_O2", "Virgo_O3a", "Virgo_O3b", "Virgo_O4", "Virgo_O5", "LIGO_O4", "LIGO_O5", "LIGO_Design",
                    "ET_Design", "ET_10km", "ET_15km", "ET_20km"]
 
 # For psd read from files, the values were set when constructing the files
@@ -127,20 +165,34 @@ psd_attributes = {
                  "delta_freq_min": 0.025},
     "Virgo_O3a": {"psd_name": "Virgo_O3a_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
                   "delta_freq_min": 0.025},
+    "Virgo_O3b": {"psd_name": "Virgo_O3b_psd", "in_pycbc": False, "min_freq": 16.0, "max_freq": 1023.0,
+                  "delta_freq_min": 0.025},
     "LIGO_Design": {"psd_name": "aLIGODesignSensitivityP1200087", "in_pycbc": True, "min_freq": 0.01,
                     "max_freq": 2048.0, "delta_freq_min": 0.015},
     "ET_Design": {"psd_name": "EinsteinTelescopeP1600143", "in_pycbc": True, "min_freq": 0.01,
                   "max_freq": 2048.0, "delta_freq_min": 0.015},
-    "ET_10km": {"psd_name": "EinsteinTelescopeP1600143", "in_pycbc": False, "min_freq": 0.01,
+    "ET_10km": {"psd_name": "ET10_CoBa_psd", "in_pycbc": False, "min_freq": 0.01,
                   "max_freq": 10000.0, "delta_freq_min": 0.25},
-    "ET_15km": {"psd_name": "EinsteinTelescopeP1600143", "in_pycbc": False, "min_freq": 0.01,
+    "ET_15km": {"psd_name": "ET15_Coba_psd", "in_pycbc": False, "min_freq": 0.01,
                   "max_freq": 10000.0, "delta_freq_min": 0.015},
-    "ET_20km": {"psd_name": "EinsteinTelescopeP1600143", "in_pycbc": False, "min_freq": 0.01,
+    "ET_20km": {"psd_name": "ET20_Coba_psd", "in_pycbc": False, "min_freq": 0.01,
                   "max_freq": 10000.0, "delta_freq_min": 0.015},
-    "LIGO_O4": {"psd_name": "LIGO_O4_psd", "in_pycbc": False, "min_freq": 0.01,
-                  "max_freq": 5000.0, "delta_freq_min": 0.4999},
-    "LIGO_O5": {"psd_name": "LIGO_O5_psd", "in_pycbc": False, "min_freq": 0.01,
-                  "max_freq": 5000.0, "delta_freq_min": 0.4999}
+    "LIGO_O4": {"psd_name": "LIGO_O4_psd", "in_pycbc": False, "min_freq": 10.21659,
+                  "max_freq": 4.995378e+03, "delta_freq_min": 0.015},#https://emfollow.docs.ligo.org/userguide/capabilities.html
+    "Virgo_O4": {"psd_name": "Virgo_O4_psd", "in_pycbc": False, "min_freq": 10.0,
+                  "max_freq": 10000.0, "delta_freq_min": 0.1},#https://emfollow.docs.ligo.org/userguide/capabilities.html
+    "KAGRA_O4": {"psd_name": "Kagra_O4_psd", "in_pycbc": False, "min_freq": 1.0,
+                  "max_freq": 10000.0, "delta_freq_min": 0.1},#https://emfollow.docs.ligo.org/userguide/capabilities.html
+    "LIGO_O5": {"psd_name": "LIGO_O5_psd", "in_pycbc": False, "min_freq": 5.0,
+                  "max_freq": 5000, "delta_freq_min": 0.015},#https://emfollow.docs.ligo.org/userguide/capabilities.html
+    "Virgo_O5": {"psd_name": "Virgo_O5_psd", "in_pycbc": False, "min_freq": 10.0,
+                  "max_freq": 10000.0, "delta_freq_min": 0.1},#https://emfollow.docs.ligo.org/userguide/capabilities.html
+    "KAGRA_O5": {"psd_name": "Kagra_O5_psd", "in_pycbc": False, "min_freq": 1.0,
+                  "max_freq": 10000.0, "delta_freq_min": 0.4999}, #https://emfollow.docs.ligo.org/userguide/capabilities.html
+    "CE_20km": {"psd_name": "CE_20km_psd", "in_pycbc": False, "min_freq": 1.0,
+                  "max_freq": 5000.0, "delta_freq_min": 0.4999}, #https://emfollow.docs.ligo.org/userguide/capabilities.html
+    "CE_40km": {"psd_name": "CE_40km_psd", "in_pycbc": False, "min_freq": 1.0,
+                  "max_freq": 5000.0, "delta_freq_min": 0.4999} #https://emfollow.docs.ligo.org/userguide/capabilities.html
 }
 
 """             *** Event Selection ***           """
@@ -181,7 +233,7 @@ bayes_option_multichannel = "NoRate"
 All parameters in this file has to end in the dictionnary, for the creation of the json file.
 """
 
-advParams = {"AM_params": {'input_parameters': input_parameters},
+advParams = {"AM_params": {'input_parameters': input_parameters, 'keepID' : keepID, 'ID_col' : ID_col},
              "detector_params": {'detectors_avail': detectors_avail,
                                  'psd_attributes': psd_attributes,
                                  'types': types},

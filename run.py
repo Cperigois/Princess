@@ -19,7 +19,7 @@ if __name__ == '__main__':
         os.mkdir('Run/' + params['name_of_project_folder'] + "/Astro_Models/Catalogs")
 
     #Read and reshape astrophysical models, save instance of each astrophysical models for later
-    AM.initialization()
+#    AM.initialization()
 
     #Read and reshape detectors and networks, save instances for each of them
     DET.initialization()
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     AM.process_astromodel()
 
     #Compute backgrounds, residuals and the corresponding analysis
-    #BKG.process_background_computation()
+    BKG.process_background_computation()
 
     if params['results']['cleaning'] == True :
         AP.clean()
