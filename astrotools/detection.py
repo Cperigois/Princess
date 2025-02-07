@@ -52,7 +52,6 @@ class Detector:
         # Check if the detector needs to be reloaded or created
         project_folder = os.path.join('Run', params['name_of_project_folder'])
         detector_file = os.path.join(project_folder, f'{self.name}_DET.pickle')
-        print(detector_file)
 
         if not os.path.exists(detector_file) or params['overwrite']['detectors']:
             self.initialize_detector(_configuration= configuration,
@@ -63,8 +62,9 @@ class Detector:
             self.save()
             print(f'Detector {self.name} successfully saved.')
         else:
-            self.load()
+            self.load(self.name)
             print(f'Detector {self.name} successfully loaded.')
+        print(f'Detector {self.name} instance recreated.')
 
 
     def get_psd_file(self):
@@ -79,12 +79,20 @@ class Detector:
         """Initialize the detector, setting up necessary parameters."""
         self.configuration = _configuration
         self.origin = _origin
-        self.reference = _reference
+        if _reference == None :
+            self.reference = params['detector_list'][self.name]['reference']
+        else :
+            self.reference = _reference
+
         if _psd_file == None:
             self.get_psd_file()
         else:
             self.psd_file = _psd_file
-        self.type = _type
+
+        if _type == None :
+            self.type = params['detector_list'][self.name]['type']
+        else :
+            self.type = _type
 
         self.make_frequency()
         if self.freq is None:
@@ -200,13 +208,29 @@ class Detector:
             snr_l = 0
         return snr_l
 
-    def load(self):
-        """try load self.name.txt"""
-        path = './Run/' + params['name_of_project_folder'] + '/'
-        file = open(path + name + '_DET.pickle', 'rb')
-        data_pickle = file.read()
-        file.close()
-        self.__dict__ = pickle.loads(data_pickle)
+    @classmethod
+    def load(cls, name):
+        """
+        Load a Detector object from a pickle file.
+
+        :param name: Name of the detector.
+        :type name: str
+        :return: The loaded Detector object.
+        :rtype: Detector
+        """
+        path = f'./Run/{params["name_of_project_folder"]}/'
+        with open(path + name + '_DET.pickle', 'rb') as file:
+            data = pickle.load(file)
+
+        if isinstance(data, cls):
+            return data
+        elif isinstance(data, dict):
+            # Create a new instance without infinite recursion
+            detector = object.__new__(cls)
+            detector.__dict__.update(data)
+            return detector
+        else:
+            raise TypeError("Loaded data is not a valid Detector instance or dictionary.")
 
     def save(self):
         path = './Run/' + params['name_of_project_folder'] + '/'
@@ -246,6 +270,30 @@ class Network:
             self.get_detectors_attributes(keys[0])
         else :
             self.load()
+
+    @classmethod
+    def load(cls, name):
+        """
+        Load a Detector object from a pickle file.
+
+        :param name: Name of the detector.
+        :type name: str
+        :return: The loaded Detector object.
+        :rtype: Detector
+        """
+        path = f'./Run/{params["name_of_project_folder"]}/'
+        with open(path + name + '_NET.pickle', 'rb') as file:
+            data = pickle.load(file)
+
+        if isinstance(data, dict):
+            # Ensure data is used to create an instance of Detector
+            network = cls(name)
+            network.__dict__.update(data)
+            return network
+        elif isinstance(data, cls):
+            return data
+        else:
+            raise TypeError("Loaded data is not a valid Network instance or dictionary.")
 
     def get_detectors_attributes(self, name_detector):
         with open(f"Run/{params['name_of_project_folder']}/{name_detector}_DET.pickle", 'rb') as file:

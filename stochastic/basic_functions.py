@@ -8,6 +8,9 @@ from astropy.cosmology import Planck15
 import os
 import pickle
 
+def xor(x, y):
+    return bool((x and not y) or (not x and y))
+
 
 def m1_m2_to_mc_q(m1, m2):
     """This function does the mapping (m1,m2) --> (mc,q)
@@ -147,12 +150,23 @@ def sigma_f(m1,m2,xsi,zm) :
 	sigma_y = -0.4098*eta +1.829*eta*eta -2.87*eta*eta*eta - 0.03523*eta*xsi +0.1008*eta*xsi*xsi -0.02017*eta*eta*xsi
 	return (sigma_mu0+sigma_y)/(math.pi*mtot)
 
-def fcut_f(m1,m2,xsi,zm) :
-	mtot = (m1+m2)*4.9685e-6*(1+zm)
-	eta = m1*m2/pow(m1+m2,2.)
-	fcut_mu0 = 0.3236+0.04894*xsi+0.01346*xsi*xsi
-	fcut_y = -0.1331*eta -0.2714*eta*eta +4.922*eta*eta*eta - 0.08172*eta*xsi +0.1451*eta*xsi*xsi +0.1279*eta*eta*xsi
-	return (fcut_mu0+fcut_y)/(math.pi*mtot)
+
+def fcut_f(m1, m2, xsi, zm):
+	m1, m2, xsi, zm = np.asarray(m1), np.asarray(m2), np.asarray(xsi), np.asarray(zm)
+
+	mtot = (m1 + m2) * 4.9685e-6 * (1 + zm)
+	eta = m1 * m2 / np.power(m1 + m2, 2.)
+
+	fcut_mu0 = 0.3236 + 0.04894 * xsi + 0.01346 * xsi ** 2
+	fcut_y = (-0.1331 * eta - 0.2714 * eta ** 2 + 4.922 * eta ** 3
+			  - 0.08172 * eta * xsi + 0.1451 * eta * xsi ** 2 + 0.1279 * eta ** 2 * xsi)
+
+	result = (fcut_mu0 + fcut_y) / (math.pi * mtot)
+
+	# S'assurer que le retour est bien un float si les entrées sont scalaires
+	if np.isscalar(m1) and np.isscalar(m2) and np.isscalar(xsi) and np.isscalar(zm):
+		return float(result)
+	return result.astype(float)
 
 def zmax(m1,m2,xsi,fmin) :
 	mtot = (m1+m2)*4.9685e-6
@@ -203,43 +217,6 @@ def reshape_psd(file_input, name_output):
 	output.to_csv(output_file, sep = '\t', index = None)
 	print(f"File reshaped and saved : {output_file}")
 	print(output.describe())
-
-def load_detector(name_detector: str, project_folder: str = "/Run") -> object:
-    """
-    Load a Detector instance from a pickle file.
-
-    Parameters
-    ----------
-    name_detector : str
-        The name of the detector.
-    project_folder : str, optional
-        The base directory where the detector pickle files are stored, by default 'Run'.
-
-    Returns
-    -------
-    object
-        The loaded Detector instance, or None if loading fails.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the specified detector file does not exist.
-    Exception
-        For any other issues during the loading process.
-    """
-
-    file_path = os.path.join(project_folder, f"{name_detector}_DET.pickle")
-    try:
-        with open(file_path, "rb") as file:
-            detector_instance = pickle.load(file)
-            print(f"Detector '{name_detector}' successfully loaded from {file_path}.")
-            return detector_instance
-    except FileNotFoundError:
-        print(f"Error: File '{file_path}' not found.")
-        return None
-    except Exception as e:
-        print(f"An error occurred while loading the detector: {e}")
-        return None
 
 
 Matrice_peach = [' ***   GW COMPUTATION   ***         ',
@@ -363,3 +340,15 @@ def bar_leia(n, ntot):
 			print(Matrice_peach[index] + f" {n}/{ntot}")
 	except (ZeroDivisionError, IndexError) as e:
 		print(f"Erreur dans l'affichage de la barre de progression : {e}")
+
+
+def interpolation_psd(detector_name, file_path) :
+	if isinstance(detector_name, list):
+		interpolations = {}
+		for det, file in detector_name, file_path:
+			df= pd.read_csv(file, index_col = None, sep = '\t')
+			interp = InterpolatedUnivariateSpline(df['f'], df['psd[1/Hz]'])
+			interpolations[det] = interp
+
+
+

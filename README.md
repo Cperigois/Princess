@@ -1,76 +1,87 @@
 _**Princess** is program developed by Carole Perigois ([carolperigois@outlook.com](mailto:carolperigois@outlook.com)), with the support of from the European Research Council for the ERC Consolidator grant DEMOBLACK, under contract no. 770017._
-
-
-
 <p align="center" width="100%">
-    <img width="33%" src="Wiki/Princess_logo.png">
+    <img width="33%" src="docs/Princess_logo.png">
 </p>
 
-# Princess
-**Predicting tool for CBC GW observations**
+# PRINCESS: Prediction of Compact Binaries Observations with Gravitational Waves
 
-Nowdays LIGO-Virgo-KAGRA observatiories reported a catalogue of 98 candidates for compat binary coalescences (CBCs) ([Link to portal events](https://www.gw-openscience.org/eventapi/), [GWTC-2.1](https://inspirehep.net/literature/1897574), [GWTC-3](https://inspirehep.net/literature/1961691))
-The sensitivities of these instruments will improve in the next years and new detectors will be built such as Einstein Telescope (ET), Cosmic Explorer (CE) or LISA, increasing the number of candidate. 
-These instruments are providing two observation channel for CBCs: The individual events, already detected from which we get information such as the masses and spins of the components, the distance, etc. and the astrophysical background not measured yet and defined to be the superposition of all astrophysical sources not individually resolved.
+## Overview
+PRINCESS is a computational tool designed to predict gravitational wave observations from compact binary coalescences (CBCs) in current and future detector networks. The tool combines predictions of individual gravitational wave events and the astrophysical gravitational wave background, leveraging user-provided CBC catalogs.
 
-**PRINCESS** is the first tool aiming to join these to observation channel to constrain stellar formation and evolution models. 
-This first version of the program aims to predict the background and individual observation from any astrophysical catalogue of CBCs for different detector networks. This program can be refered in publications with the following paper (_in. prep_). Developpers would like the tool to be userfriendly and interactive, so please for any questions or improvement suggestion contact Carole Perigois ([carolperigois@outlook.com](mailto:carolperigois@outlook.com)). 
+## Installation and Requirements
+PRINCESS is publicly available on GitHub and GitLab and requires the following dependencies:
 
-This document is briefly introducing the requirement, the organisation of the program as well as the _GettingStarted_ files. This project is linked to a more complete wiki page and a publication on arXiv which will be updated frequently (v1 in prep).
+- Python 3.7 or higher
+- PyCBC v1.18 (more recent versions are not compatible)
+- Pandas
+- NumPy
+- SciPy
 
+To verify installation, run the `test.py` script, which checks dependencies and performs a test run using a mini-catalog.
 
-## Introduction and basic use: Getting_Started.py
+## Repository Structure
+```
+PRINCESS/
+│-- AuxiliaryFiles/        # Contains data related to detectors and past detections
+│   ├── LVK data/         # Data from the LIGO-Virgo-KAGRA (LVK) collaboration
+│   ├── ORFs/             # Overlap reduction functions for detector networks
+│   ├── PICs/             # Power integrated curves
+│   ├── PSDs/             # Noise power spectral densities for detectors
+│-- Run/
+│   ├── getting_started.py  # Initial parameter configuration
+│   ├── advanced_params.py  # Advanced computation settings
+│   ├── run.py             # Main script executing the full analysis
+│-- astrotools/            # Functions related to astrophysical models
+│-- gwtools/               # Functions for gravitational wave computations
+│-- stochastic/            # Functions for stochastic background computations
+│-- README.md
+```
 
-### Requierment
-This program has been made and tested with Python 3.6.
-This code is used with the following packages, please make sure all of them are installed with the right version.
+## Main Code Files
 
-### First use of the code: _Getting_Started_
+### `run.py`
+This is the primary script for executing a full analysis. It should not be modified. The workflow includes:
+- **Initialization**: Reads and structures input parameters.
+- **Individual detections**: Computes signal-to-noise ratios (SNR) for each binary event.
+- **Background computation**: Computes the gravitational wave background spectrum.
+- **Data cleaning**: Removes unnecessary temporary files at the end of execution.
 
-For a first use a pre-made code(notebook) Getting_started.py(.ipy) contains a full  guide line for the calculation of the background from the preparation of the catalogues to the analysis of the obtained background. Getting_Started.py also gather all the parameter needed for the future analysis.
+### `Run/getting_started.py`
+This file is the entry point for setting up a new project. Users must:
+- Define the project folder name.
+- Specify input astrophysical models.
+- Configure detectors and detector networks.
+- Set computation parameters.
 
+### `Run/advanced_params.py`
+This file contains additional customizable parameters such as:
+- Frequency bounds for different detectors.
+- Input catalog formatting options.
+- Advanced options for background spectrum calculations.
 
-### Structure of the code.
+## Usage
+To run an analysis, follow these steps:
+1. Edit `getting_started.py` with the desired astrophysical models and detector configurations.
+2. Run the main script:
+   ```bash
+   python run.py
+   ```
+3. The results will be stored in a folder within `Run/`, named after the project.
 
-**Entry Files**  
+## Output Structure
+After execution, results are stored in `Run/<project_name>/` with the following directories:
+- **Astro_Models/**: Contains transformed input catalogs.
+- **Results/Analysis/**: Includes SNR values and detection statistics.
+- **Results/Omega/**: Contains the gravitational wave background spectrum.
+- **Params.json**: Stores all computation parameters for reference.
 
-AuxiliaryFiles: Contains all the files related to the detection files 
-* Overlap reduction functions(ORFs)
-* Power spectral densities (PSDs)
-* Power integrated curves (PICs)
+## Common Issues
+- If `Params.json` is not updating, manually delete `Run/Params.json` before re-running.
+- Ensure dependencies are installed correctly by running `test.py`.
 
-**Catalogs**  
-Catalogs: contains all the catalogs made by the program. The _Ana_xxx.txt_ files contains the basic statistics about the _xxx.txt_ catalog.
+## Contact
+For issues or feature requests, contact the corresponding author or check the GitHub/GitLab repositories.
 
-**Packages**  
-* Princess.Starter: This package contains functions to load your astrophysical catalogue and make it usable with Princess.stochastic  
-* Princess.Stochastic: Make prediction on the astrophysical gravitational wave background.  
-* Princess.AuxiliaryPacks: All useful package as constants or basic functions. 
-
-**Results**
-Results files will have the same names as the catalogs it refers to. 
-* Results/Analysis/: contains the files made by the analysis set up by the user from Getting_Started
-
-
-## Princess.Starter
-
-**Content**
-* AstroModel.py: AstroModel class and method
-* Detection.py: Contain all classes and methods related to the detection.
-* Htild.py: Calculation of the frequency domain waveform
-
-
-## Princess.stochastic
-
-**Content**
-* Princess.py: Tools to calculate the background of a catalogue
-* SNR.py: Calculation of the SNR of a given background
-
-## Princess.AuxiliaryPacks
-
-**Content**
-Basic_function.py: All basic function useful
-Kst.py: contain the constants used in the program
-Pix.py: contains the drawings appearing in the code
-
+---
+PRINCESS is an evolving tool, and future updates may enhance its capabilities, including new astrophysical models and detector configurations.
 

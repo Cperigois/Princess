@@ -6,40 +6,88 @@ import pycbc.psd
 import pycbc.waveform
 import pycbc.filter
 import astrotools.detection as DET
+import stochastic.basic_functions as BF
 import joblib
 import stochastic.constants as K
 from scipy.interpolate import InterpolatedUnivariateSpline
 
 
-
 def SNR_bkg(freq_omg, Omega, Network):
-    gamma =pd.read_csv('./AuxiliaryFiles/ORFs/ORF.dat', sep = '\t', index_col = None)
+    """
+    Computes the signal-to-noise ratio (SNR) for a stochastic gravitational wave background.
+
+    :param freq_omg: Array of input frequencies for Omega.
+    :type freq_omg: numpy.ndarray
+    :param Omega: Normalized spectral energy density of the stochastic background.
+    :type Omega: numpy.ndarray
+    :param Network: Detector network containing frequency and composition information.
+    :type Network: object
+    :return: Computed SNR value.
+    :rtype: float
+    """
+    # Load overlap reduction functions (ORFs)
+    gammafile = './AuxiliaryFiles/ORFs/ORF.dat'
+    gamma = pd.read_csv('./AuxiliaryFiles/ORFs/ORF.dat', sep='\t', index_col=None)
     freq = Network.freq
-    deltaF = freq[1]-freq[0]
+    deltaF = freq[1] - freq[0]
+
+    # Interpolate Omega over the network frequencies
     interp = InterpolatedUnivariateSpline(freq_omg, Omega)
     Omega_interp = interp(freq)
-    SNR =0
+
+    #Interpolate all psds
+
+    SNR = 0
+
+    # Retrieve detectors
     compo = list(Network.compo.keys())
-    for i in range(len(compo)):
-        di = DET.Detector(name = compo[i])
-        for j in range(len(compo)-1-i):
-            dj = Network.compo[j+1+i]
-            gamma_ref = di.configuration+dj.configuration
-            if gamma_ref not in list(gamma.columns):
-                gamma_ref = dj.configuration+di.configuration
+
+    for i, name_i in enumerate(compo):
+        di = DET.Detector.load(name=name_i)
+
+        for j in range(i + 1, len(compo)):
+            dj = DET.Detector.load(name = Network.compo[compo[j]]['name'])
+
+            # Construct the ORF column name
+            name1 = di.configuration + dj.configuration
+            name2 = dj.configuration + di.configuration
+            if name1 in gamma.columns:
+                gamma_ref = di.configuration + dj.configuration
+            elif name2 in gamma.columns:
+                gamma_ref = dj.configuration + di.configuration
+            else :
+                print(f'Error : No configuration available for the couple ({di.configuration}, {dj.configuration} \n'
+                      f'Please check the ORF file : {gammafile}')
+
+            # Interpolate the overlap reduction function
             interp_ORF = InterpolatedUnivariateSpline(gamma.freq, gamma[gamma_ref])
             Gammaij = interp_ORF(freq)
-            interpPi = InterpolatedUnivariateSpline(di.freq, di.psd)
-            interpPj = InterpolatedUnivariateSpline(dj.freq, dj.psd)
-            Pi = np.nan_to_num(interpPi(freq))
-            Pj = np.nan_to_num(interpPj(freq))
-            SNR += np.sum(Gammaij**2. * Omega_interp**2. / (freq**6. * Pi * Pj))
-    SNR = K.Cst_snr_bkg* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR) / deltaF
-    print(SNR)
-    
+
+            # Interpolate the PSDs
+            df_Pi = pd.read_csv('AuxiliaryFiles/PSDs/'+di.psd_file+'.dat', index_col=None, sep='\t')
+            interpPi = InterpolatedUnivariateSpline(df_Pi['f'], df_Pi['psd[1/Hz]'])
+
+            df_Pj = pd.read_csv('AuxiliaryFiles/PSDs/'+dj.psd_file+'.dat', index_col=None, sep='\t')
+            interpPj = InterpolatedUnivariateSpline(df_Pj['f'], df_Pj['psd[1/Hz]'])
+
+            Pi = interpPi(freq)
+            Pj = interpPj(freq)
+
+            # Compute SNR
+            SNR += np.sum((Gammaij ** 2 * Omega_interp ** 2) / (freq ** 6 * Pi * Pj))
+
+    SNR = K.Cst_snr_bkg * np.sqrt(2 * Network.duration * Network.efficiency) * np.sqrt(SNR) / deltaF
+
     return SNR
 
 def SNR_bkg_1det(freq_omg, Omega, Network):
+    """
+    Old function for SNR background computation
+    :param freq_omg:
+    :param Omega:
+    :param Network:
+    :return:
+    """
     freq = Network.freq
     deltaF = freq[1]-freq[0]
     print(deltaF)
@@ -48,7 +96,7 @@ def SNR_bkg_1det(freq_omg, Omega, Network):
     SNR =0
     for d in Network.compo:
         d.Make_psd()
-    interpPi = InterpolatedUnivariateSpline(di.freq, di.psd)
+    interpPi = InterpolatedUnivariateSpline(np.array(freq, dtype = float), np.array(di.psd, dtype = float))
     interpPj = InterpolatedUnivariateSpline(dj.freq, dj.psd)
     Pi = interpPi(freq)**2
     Pj = interpPj(freq)**2
@@ -59,6 +107,12 @@ def SNR_bkg_1det(freq_omg, Omega, Network):
     return K.Cst_snr_bkg* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
 
 def SNR_bkgtrash(freq_omg, Omega, Network):
+    """ Old function to compute the background
+    :param freq_omg:
+    :param Omega:
+    :param Network:
+    :return:
+    """
     gamma =pd.read_csv('./AuxiliaryFiles/ORFs/ORF.dat', sep = '\t', index_col = None)
     freq = Network.freq
     deltaF = freq[1]-freq[0]
@@ -94,9 +148,6 @@ def SNR_bkgtrash(freq_omg, Omega, Network):
     print('SNR1 = ',K.Cst_snr_bkg,' ','SNR2 = ',SNR2,' ', Network.name)
 
     return K.Cst_snr_bkg* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
-
-
-
 
 
 def SNR_Omega(freq, Omega, Networks):

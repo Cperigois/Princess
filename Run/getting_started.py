@@ -36,9 +36,10 @@ print(AP.psd_attributes['KAGRA_O4']['psd_name'])
 """
 
 path =  '/home/perigois/Documents/GC_ana_bkg/Catalogs/'
+rerun_astromodels = False
 
 astro_model_1 = {
-    'name': 'GC_ngng_oleary_noclusterevolv',
+    'name': 'Field',
     'original_path': path + 'Catalog_co_BBH_formation_channel_field_GC_type1_ngng_GC_type2_oleary_cluster_evolution_noclusterevolv.dat',
     'spin_model': 'Zeros',
     'duration': 1
@@ -123,7 +124,7 @@ astro_model_list = {astro_model_1['name']: astro_model_1,
                     }
 
 
-rerun_snr_computation = True
+rerun_snr_computation = False
 
 frequency_size = 2000 # need to be an int
 
@@ -132,9 +133,6 @@ frequency_size = 2000 # need to be an int
         Set the runs you want to use
         List of available detectors : 
 """
-
-detector_reaload = True # Force to reload the detectors and their instances.
-                        # To be kept True except if the detectors are heavy to be loaded.
 
 # Define detectors
 
@@ -167,6 +165,7 @@ detector_list = {detector_L4['name']: detector_L4,
                  detector_H5['name']: detector_H5,
                  detector_V5['name']: detector_V5,
                  detector_K5['name']: detector_K5,
+                 detector_I5['name']: detector_I5,
                  detector_ET1['name']: detector_ET1,
                  detector_ET2['name']: detector_ET2,
                  detector_ET3['name']: detector_ET3,
@@ -246,7 +245,8 @@ network_list = {network_LVK_O4['name']: network_LVK_O4,
                 network_ET2CE4020['name']: network_ET2CE4020,
                 network_ET2CE4040['name']: network_ET2CE4040}
 
-rerun_detectors = True
+rerun_detectors = True  # Force to reload the detectors and their instances.
+                        # To be kept True except if the detectors are heavy to be loaded.
 
 """               *** Background computation ***                 """
 """
@@ -259,7 +259,7 @@ rerun_background = True
 """
         Choose if you want to compute multichannel analysis
 """
-run_data_cleaning = True
+run_data_cleaning = False
 run_plots = False
 
 """---------------------------------------------------"""
@@ -279,7 +279,8 @@ param_dictionary = {'name_of_project_folder': name_of_project_folder,
                     'network_list' : network_list,
                     'frequency_size' : frequency_size,
                     'n_cpu_max': n_cpu_max,
-                    'overwrite': {'astromodel': rerun_snr_computation,
+                    'overwrite': {'astromodel': rerun_astromodels,
+                                  'individual_snr': rerun_snr_computation,
                                   'detectors': rerun_detectors},
                     'results': {'cleaning': run_data_cleaning,
                                 'plots': run_plots}

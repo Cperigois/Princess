@@ -7,7 +7,8 @@ import numpy as np
 import stochastic.basic_functions as BF
 from astrotools.htild import GWk_no_ecc_pycbcwf
 from astrotools.astromodel import AstroModel as AM
-import astrotools.detection as DET
+from astrotools.detection import Detector as DET
+import astrotools.detection as detection
 
 params = json.load(open('Run/Params.json', 'r'))
 
@@ -19,6 +20,7 @@ def process_background_computation():
         os.mkdir('Run/' + params['name_of_project_folder'] + "/Results/Omega")
     for astomodel in params['astro_model_list'].keys():
         Zelda = Princess(astromodel=AM(name = astomodel))
+        Zelda.Network_list()
         Zelda.Make_Ana_Output()
         Zelda.compute_Omega()
         Zelda.Analysis()
@@ -48,36 +50,56 @@ class Princess:
         self.astromodel = astromodel
 
     def Make_Ana_Output(self):
-        output_index = ['N_source'] + ['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq] + ['SNR_Total'] + [
-            'SNR_Residual']
+        """
+        Initializes the analysis output structure.
+        Creates a DataFrame for each catalog, containing results for 'Total'
+        and each network with its respective SNR thresholds.
+        """
+        output_index = ['N_source'] + [f'Omg_{i}_Hz' for i in self.Omega_ana_freq] + ['SNR_Total', 'SNR_Residual']
         self.anadict = {}
+
         for cat in self.astromodel.catalogs:
-            self.anadict[cat] = pd.DataFrame(index=output_index,
-                                             columns=['Total'] + [i for i in list(params['network_list'].keys())])
-        print(self.anadict)
+            columns = ['Total']
+
+            # Add network names and their respective thresholds
+            for network in self.net_list_GB:
+                columns.append(network.name)
+                columns.extend([f'{network.name}_thrs_{thr}' for thr in network.SNR_thrs])
+
+            # Create DataFrame with specified index and columns
+            self.anadict[cat] = pd.DataFrame(index=output_index, columns=columns)
 
     def Write_results(self) :
         check_file = os.path.exists('Run/' + params['name_of_project_folder'] + "/Results/Analysis/")
         if check_file == False:
             os.mkdir('Run/' + params['name_of_project_folder'] + "/Results/Analysis/")
         for cat in self.astromodel.catalogs:
-            df = self.anadict[cat]
+            df = pd.DataFrame(self.anadict[cat])
             print('Results/Analysis/' + cat)
             df.to_csv('Run/' + params['name_of_project_folder'] + "/Results/Analysis/" + cat, sep='\t')
 
-    def compute_Omega(self):
-        net_list_GB = list([])
+    def Network_list(self):
+        """
+                Initializes the network list.
+        """
+        self.net_list_GB = []
+
         for net in params['network_list'].keys():
-            network = DET.Network(name = net)
-            if network.type == 'LISA':
+            network = detection.Network(name=net)
+
+            if network.type in ['LISA', 'PTA']:
                 print("Princess not ready for this computation")
-            elif network.type == 'PTA':
-                print("Princess not ready for this computation")
-            else :
-                net_list_GB.append(network)
-            self.net_list_GB = net_list_GB
-            if len(net_list_GB) > 0:
-                self.Omega_pycbc()
+            else:
+                self.net_list_GB.append(network)
+
+    def compute_Omega(self):
+        """
+        Initializes the network list and computes Omega using pycbc only once if applicable.
+        """
+
+        # Ensure Omega_pycbc is only executed if there is at least one valid network
+        if self.net_list_GB:
+            self.Omega_pycbc()
 
     def Omega_ecc(self, cat):
 
@@ -118,21 +140,48 @@ class Princess:
                 print(Ana[N])
             Ana.to_csv('Results/Analysis/'+path, sep = '\t')
 
-    def Analysis(self) :
-        for c in range(len(self.astromodel.catalogs)):
-            cat = self.astromodel.catalogs[c]
-            Omega_e0 = pd.read_csv('Run/' + params['name_of_project_folder'] + "/Results/Omega/" + cat, index_col=False, sep='\t')
+    def Analysis(self):
+        """
+        Performs the analysis for each astrophysical model catalog.
+        Computes Omega at specified frequencies and SNR for each network and its thresholds.
+        Updates the analysis dictionary with the results.
+        """
+        project_folder = params['name_of_project_folder']
+
+        for cat in self.astromodel.catalogs:
+            # Load Omega data
+            omega_path = f'Run/{project_folder}/Results/Omega/{cat}'
+            Omega_e0 = pd.read_csv(omega_path, index_col=False, sep='\t')
+
+            # Retrieve the analysis dictionary for the catalog
             Ana = self.anadict[cat]
-            for i in self.Omega_ana_freq :
-                Ana['Total']['Omg_' + str(i) + '_Hz' ] = BF.Search_Omg(Freq = Omega_e0['f'], Omega = Omega_e0['Total'], freq_ref = i)
+
+            # Compute Omega values at specified reference frequencies for 'Total'
+            for freq in self.Omega_ana_freq:
+                Ana['Total'][f'Omg_{freq}_Hz'] = BF.Search_Omg(
+                    Freq=Omega_e0['f'], Omega=Omega_e0['Total'], freq_ref=freq
+                )
+
+            # Process each network in the analysis
             for network in self.net_list_GB:
-                for i in self.Omega_ana_freq:
-                    Ana[network.name]['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Freq = Omega_e0['f'], Omega = Omega_e0[network.name], freq_ref = i)
-#                SNRres = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[Networks[N].name], Networks[N])
-#                SNRtot = SNR.SNR_bkg(Omega_e0['f'],Omega_e0['Total'], Networks[N])
-#                print(SNRres,' ', Networks[N].name)
-                Ana[network.name]['SNR_Residual'] = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[network.name], network)
-                Ana[network.name]['SNR_Total'] = SNR.SNR_bkg(Omega_e0['f'],Omega_e0['Total'], network)
+                # Compute the total SNR for the network
+                SNR_network_total = SNR.SNR_bkg(Omega_e0['f'], Omega_e0['Total'], network)
+
+                # Process each SNR threshold for the network
+                for thrs in network.SNR_thrs:
+                    column_name = f'{network.name}_thrs_{thrs}'
+
+                    # Compute Omega values at specified frequencies for each threshold
+                    for freq in self.Omega_ana_freq:
+                        Ana[column_name][f'Omg_{freq}_Hz'] = BF.Search_Omg(
+                            Freq=Omega_e0['f'], Omega=Omega_e0[column_name], freq_ref=freq
+                        )
+
+                    # Compute residual and total SNR for the network at the threshold
+                    Ana[column_name]['SNR_Residual'] = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[column_name], network)
+                    Ana[column_name]['SNR_Total'] = SNR_network_total
+
+            # Save the updated analysis dictionary
             self.anadict[cat] = Ana
 
     def Analysis_noResidual(self, Networks):
@@ -170,106 +219,63 @@ class Princess:
                             Omega_e0[N] += Omg_e0
             Omega_e0.to_csv('Results/Omega_e0/' + cat, index=False, sep='\t')
 
-    def Omega_pycbc_old(self):
-        fd_table = pd.read_csv('./AuxiliaryFiles/factor_table.dat', index_col=None, sep='\t')
-        Freq_GB = np.linspace(1,2500,2500)
-        waveform = params['detector_params']['types']['3G']['waveform']
-        for cat in range(len(self.astromodel.catalogs)) :
-            Cat = pd.read_csv('./Run/' + params['name_of_project_folder'] + '/Astro_Models/Catalogs/'+self.astromodel.catalogs[cat], delimiter='\t', index_col=None)
-            Omega_e0 = pd.DataFrame({'f':Freq_GB-1., 'Total': np.zeros(len(Freq_GB))})
-            Ana = self.anadict[self.astromodel.catalogs[cat]]
-            Ana['Total']['N_source'] = len((Cat.z))
-            for N in self.net_list_GB :
-                network = N
-                Omega_e0[network.name] = np.zeros(len(Freq_GB))
-                Ana[network.name]['N_source'] =0
-            for evt in range(len(Cat['m1'])):
-                event = Cat.iloc[[evt]]
-                if  self.inclination == 'Rand' :
-                    i = np.random.randint(0, len(fd_table.inc),1, int)
-                    r = fd_table.iloc[i]
-                    event['inc'] = np.arccos(r.inc.values)
-                elif self.inclination == 'Optimal':
-                    event['inc'] = 0.
-                else :
-                    print("inclination error")
-                Omg_e0 = GWk_no_ecc_pycbcwf(evt = event,
-                                           freq = Freq_GB,
-                                           approx = waveform,
-                                           n = evt,
-                                           size_catalogue = len(Cat.z)) * np.power(Freq_GB-1.,3.) * K.C / self.astromodel.duration
-                Omega_e0['Total'] += Omg_e0
-                for N in self.net_list_GB :
-                    SNR = 0
-                    network = N
-                    for d in network.compo.keys() :
-                        detector = DET.Detector(name = d)
-                        conf = 'f'+str(detector.configuration)
-                        if self.inclination == 'Rand':
-                            fd = fd_table[conf][i[0]]
-                        elif self.inclination == 'Optimal':
-                            fd = 1
-                        SNR+= event[d]* fd
-                    # Loop through each threshold in the list of SNR thresholds
-                    for snr_thr in network.SNR_thrs:
-                        if event[network.name] < snr_thr:
-                            col_name = network.name+'_thrs_'+str(snr_thr)
-                            # Initialize the dictionary for this threshold if not already present
-                            if snr_thr not in Ana[network.name]:
-                                Ana[col_name] = {'N_source': 0}
-
-                            # Increment the source count for this threshold
-                            Ana[col_name]['N_source'] += 1
-
-                            # Ensure the Omega_e0 dictionary has an entry for this threshold
-                            if col_name not in Omega_e0.keys:
-                                Omega_e0[col_name] = np.zeros(len(Freq_GB))
-
-                            # Add to the Omega_e0 value for this threshold
-                            Omega_e0[col_name] += Omg_e0
-            Omega_e0.to_csv('Run/' + params['name_of_project_folder'] + "/Results/Omega/" + self.astromodel.catalogs[cat], index=False, sep='\t')
-            print('Written : Run/' + params['name_of_project_folder'] + "/Results/Omega/" , self.astromodel.catalogs[cat])
 
     def Omega_pycbc(self):
+        """
+        Computes the Omega function using the pycbc waveform model for all events in the AstroModel catalogs.
+        Saves the results in the appropriate results folder.
+        """
         # Load factor table
         fd_table = pd.read_csv('./AuxiliaryFiles/factor_table.dat', sep='\t')
+
+        # Define frequency range and waveform type
         Freq_GB = np.linspace(1, 2500, 2500)
         waveform = params['detector_params']['types']['3G']['waveform']
+        project_folder = params["name_of_project_folder"]
 
-        # Loop through all catalogs
+        # Load all networks once
+        networks = {network.name: network for network in self.net_list_GB}
+
+        # Process each catalog
         for cat_path in self.astromodel.catalogs:
-            # Load catalog data
-            catalog_path = f'./Run/{params["name_of_project_folder"]}/Astro_Models/Catalogs/{cat_path}'
+            catalog_path = f'./Run/{project_folder}/Astro_Models/Catalogs/{cat_path}'
             Cat = pd.read_csv(catalog_path, delimiter='\t')
 
-            # Initialize Omega and analysis dictionaries
-            Omega_e0 = pd.DataFrame({'f': Freq_GB - 1., 'Total': np.zeros(len(Freq_GB))})
+            # Ensure that self.anadict[cat_path] is a dictionary
+            if cat_path not in self.anadict or not isinstance(self.anadict[cat_path], dict):
+                self.anadict[cat_path] = {'Total': {'N_source': len(Cat.z)}}
             Ana = self.anadict[cat_path]
-            Ana['Total']['N_source'] = len(Cat.z)
 
-            # Initialize network-specific data
-            for network in self.net_list_GB:
-                Omega_e0[network.name] = np.zeros(len(Freq_GB))
-                Ana[network.name]['N_source'] = 0
+            # Initialize Omega dataframe
+            Omega_e0 = pd.DataFrame({'f': Freq_GB - 1.})
+            Omega_e0['Total'] = np.zeros_like(Freq_GB)
+
+            # Initialize Omega and source counts for each network and its thresholds
+            for network_name, network in networks.items():
+#                network = NET.load(name = network_name)
+                for snr_thr in network.SNR_thrs:
+                    threshold_col = f"{network.name}_thrs_{snr_thr}"
+                    Omega_e0[threshold_col] = np.zeros_like(Freq_GB)
+                    Ana.setdefault(threshold_col, {}).update({'N_source': 0})
 
             # Process each event in the catalog
             for _, event in Cat.iterrows():
-                # Handle inclination
+                # Set inclination
                 if self.inclination == 'Rand':
                     i = np.random.randint(0, len(fd_table))
-                    event['inc'] = np.arccos(fd_table.iloc[i].inc)
+                    event['inc'] = np.arccos(fd_table.iloc[i]['inc'])
                 elif self.inclination == 'Optimal':
                     event['inc'] = 0.0
                 else:
                     raise ValueError("Invalid inclination value. Must be 'Rand' or 'Optimal'.")
 
-                # Calculate Omega for the event
+                # Compute Omega for the event
                 Omg_e0 = (
                         GWk_no_ecc_pycbcwf(
                             evt=event,
                             freq=Freq_GB,
                             approx=waveform,
-                            n=event.name,  # Row index
+                            n=event.name,
                             size_catalogue=len(Cat.z)
                         )
                         * np.power(Freq_GB - 1., 3.)
@@ -278,35 +284,38 @@ class Princess:
                 )
                 Omega_e0['Total'] += Omg_e0
 
-                # Evaluate for each network
-                for network in self.net_list_GB:
-                    if network.name not in event.keys():
-                        for d in network.compo.keys():
-                            detector = DET.Detector(name=d)
-                            conf = f'f{detector.configuration}'
-                            fd = fd_table[conf][i] if self.inclination == 'Rand' else 1
-                            SNR += event[d] * fd
-                    else : SNR = event[network.name]
+                # Compute SNR for each network
+                for network_name, network in networks.items():
+                    SNR = 0  # Initialize SNR
 
-                    # Handle thresholds for the network
+                    if network_name not in event:
+                        for d in network.compo.keys():
+                            detector = DET.load(d)
+                            conf = detector.configuration
+                            fd = fd_table.iloc[i][conf] if self.inclination == 'Rand' else 1
+                            SNR += event[d] * fd
+                    else:
+                        SNR = event[network_name]
+
+                    # Check threshold levels
                     for snr_thr in network.SNR_thrs:
-                        col_name = f"{network.name}_thrs_{snr_thr}"
+                        col_name = f"{network_name}_thrs_{snr_thr}"
 
                         if SNR < snr_thr:
-                            # Initialize analysis dictionary for threshold if not present
-                            Ana.setdefault(col_name, {'N_source': 0})
-                            Ana[col_name]['N_source'] += 1
+                            Ana.setdefault(col_name, {}).update(
+                                {'N_source': Ana.get(col_name, {}).get('N_source', 0) + 1})
 
-                            # Ensure Omega_e0 column exists for this threshold
                             if col_name not in Omega_e0:
-                                Omega_e0[col_name] = np.zeros(len(Freq_GB))
+                                Omega_e0[col_name] = np.zeros_like(Freq_GB)
 
                             Omega_e0[col_name] += Omg_e0
 
-            # Save Omega results to file
-            result_path = f'Run/{params["name_of_project_folder"]}/Results/Omega/{cat_path}'
+            # Save results
+            result_path = f'Run/{project_folder}/Results/Omega/{cat_path}'
             Omega_e0.to_csv(result_path, index=False, sep='\t')
             print(f'Written: {result_path}')
+
+
 
 
 

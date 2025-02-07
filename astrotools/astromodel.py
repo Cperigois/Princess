@@ -9,23 +9,13 @@ from stochastic import basic_functions as BF
 from astrotools.htild import GWk_no_ecc_pycbcwf
 import astrotools.detection as DET
 
-from scipy.interpolate import InterpolatedUnivariateSpline
-
 params = json.load(open('Run/Params.json', 'r'))
 
-
-def initialization(model):
-    astromodel = AstroModel(name=params['astro_model_list'][model]['name'],
-                                original_path=params['astro_model_list'][model]['original_path'],
-                                spin_model=params['astro_model_list'][model]['spin_model'],
-                                duration=params['astro_model_list'][model]['duration'])
-    print(astromodel.name,' ',astromodel.original_path)
-    astromodel.save()
 
 def process_astromodel():
     """
     Main function to process all astromodels defined in the configuration.
-    Ensures required directories exist, initializes AstroModel instances with their parameters,
+    Loads existing models if available, otherwise initializes, saves,
     generates catalogs, and computes SNR.
     """
     # Ensure necessary directories exist
@@ -40,56 +30,57 @@ def process_astromodel():
     # Process each astromodel defined in the parameter configuration
     for model_key, model_params in params['astro_model_list'].items():
         try:
-            # Initialize an AstroModel instance with specific parameters
-            am = AstroModel(
-                name=model_params['name'],
-                original_path=model_params['original_path'],
-                spin_model=model_params['spin_model'],
-                duration=model_params['duration']
-            )
-            print(f"Initialized AstroModel: {am.name} with path: {am.original_path}")
+            model_name = model_params['name']
+            model_save_path = f"{base_path}/{model_name}_AM.pickle"
 
-            # Save the initialized model
-            am.save()
+            # Vérifier si le modèle existe déjà
+            if os.path.exists(model_save_path) and (not params['overwrite']['astromodel']) :
+                am = AstroModel.load(model_save_path)
+                print(f"Loaded existing AstroModel: {am.name}")
+            else:
+                # Initialisation d'un nouveau modèle
+                am = AstroModel(
+                    name=model_params['name'],
+                    original_path=model_params['original_path'],
+                    spin_model=model_params['spin_model'],
+                    duration=model_params['duration']
+                )
+                print(f"Initialized new AstroModel: {am.name}")
 
-            # Generate catalog for the model
-            am.make_catalog()
-
-            # Compute the SNR for the generated catalog
-            am.compute_SNR()
+                # Générer le catalogue pour le modèle
+                am.make_catalog()
+                am.compute_SNR()
+                # Sauvegarde du modèle pour un usage futur
+                am.save()
+                print('ICI')
+            # if the user ask for the rurun of SNR without rerunning the astromodel
+            if params['overwrite']['individual_snr'] and (not params['overwrite']['astromodel']):
+                am.check_SNR_reboot() # Set to False the computation of SNRs to ensure its recomputation
+                am.compute_SNR()
 
         except Exception as e:
             print(f"Error processing AstroModel '{model_key}': {e}")
+
 
 class AstroModel:
 
     def __init__(self, name:str = 'model', duration:float = 1,  original_path:str = None, sep:str = None,
                  index_column:bool = None, flags:dict ={}, spin_model:str = "Zeros", orbit_evolution:bool = False,
                  inclination_position:bool = True):
-        """
-        Initializes an AstroModel instance and loads or creates necessary data.
+        """Initializes an AstroModel instance and loads or creates necessary data.
 
-        Parameters
-        ----------
-        name : str
-            Name for all outputs from this model. Default is 'model'.
-        duration : float
-            Duration of the catalogs in years. Default is 1.
-        original_path : str
-            Path to the user's original catalog file.
-        sep : str
-            Delimiter for the user's input catalog. Default is '\t'.
-        index_column : bool
-            True if the input catalog has an index column. Default is False.
-        flags : dict
-            Dictionary of specific flags in the catalog, if applicable. Default is {}.
-        spin_model : str
-            Determines how spin components are handled/generated. Default is 'Zeros'.
-        orbit_evolution : bool
-            True to account for binary evolution. Default is False.
-        inclination_position : bool
-            If True, generates inclination, right ascension, and declination for each catalog source. Default is True.
+        :param name: (str) Name for all outputs from this model. Default is 'model'.
+        :param duration: (float) Duration of the catalogs in years. Default is 1
+        :param original_path: (str) Path to the user's original catalog file.
+        :param sep: (str) Delimiter for the user's input catalog. Default is '\t'.
+        :param index_column: (bool) True if the input catalog has an index column. Default is False.
+        :param flags: (dict) Dictionary of specific flags in the catalog, if applicable. Default is {}.
+        :param spin_model: (str) Determines how spin components are handled/generated. Default is 'Zeros'.
+        :param orbit_evolution: (bool) True to account for binary evolution. Default is False.
+        :param inclination_position: (bool) If True, generates inclination, right ascension, and declination
+        for each catalog source. Default is True.
         """
+
         self.name = name
         self.original_path = original_path
         self.duration = duration
@@ -113,7 +104,26 @@ class AstroModel:
         if not os.path.exists(model_path) or params['overwrite']['astromodel']:
             self.save()
         else:
-            self.load()
+            self.load(model_path)
+
+    @classmethod
+    def load(cls, model_path):
+        """
+        Loads a previously saved AstroModel instance from a pickle file.
+        If the loaded object is a dictionary, it converts it back into an AstroModel instance.
+        """
+        try:
+            with open(model_path, 'rb') as f:
+                obj = pickle.load(f)
+
+            if isinstance(obj, dict):  # Si c'est un dictionnaire, reconstruire un objet AstroModel
+                return cls(**obj)
+            return obj  # Si c'est déjà un objet AstroModel, on le retourne directement
+
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Pickle file for AstroModel not found: {model_path}")
+        except Exception as e:
+            raise ValueError(f"Error loading AstroModel from {model_path}: {e}")
 
     def make_catalog(self):
         """
@@ -229,7 +239,16 @@ class AstroModel:
         else:
             output_path = f"Run/{params['name_of_project_folder']}/Astro_Models/Catalogs/{self.name}.dat"
             OutCat.to_csv(output_path, sep='\t', index=False)
+            self.columns = OutCat.columns.to_numpy
             print(f"Catalog saved to: {output_path}")
+        self.check_SNR_reboot()
+
+    def check_SNR_reboot(self):
+
+        self.SNR_2G = False
+        self.SNR_3G = False
+        self.SNR_LISA = False
+        self.SNR_PTA = False
 
     def generate_spin(self, size:int)->tuple:
         """
@@ -350,50 +369,61 @@ class AstroModel:
                 det_list_2G.append(detector)
             elif detector['type'] == '3G':
                 det_list_3G.append(detector)
-        if len(det_list_2G)>0:
+        if ((not self.SNR_2G) or params['overwrite']['individual_snr']) and len(det_list_2G)>0:
             self.SNR(det_list = det_list_2G, waveform = params['detector_params']['types']['2G']['waveform'], freq = det_list_2G[0]['freq'] )
-        if len(det_list_3G)>0:
+            self.SNR_2G = True
+        elif self.SNR_2G :
+            print('SNR for 2G detectors already computed')
+        else :
+            print("Possible error...Check values for SNR check point am.SNR_2G and the presence of 2G detectors in catalog columns")
+        if ((not self.SNR_3G) or params['overwrite']['individual_snr']) and len(det_list_3G)>0:
             self.SNR(det_list= det_list_3G, waveform = params['detector_params']['types']['3G']['waveform'], freq = det_list_3G[0]['freq'] )
+            self.SNR_3G = True
+        elif self.SNR_3G :
+            print('SNR for 3G detectors already computed')
+        else :
+            print("Possible error...Check values for SNR check point am.SNR_3G and the presence of 2G detectors in catalog columns")
         self.compute_SNR_Networks()
+        self.save()
 
 
-    def SNR(self, det_list:list, waveform:str, freq:np.array):
+
+    def SNR(self, det_list: list, waveform: str, freq: np.array):
         """
-        Calculate the optimal SNR for each event of the catalogue and save it iwith additionnal columns in the catalog
-        Catalogs/<self.name>.dat.
-        Parameters
-        ----------
-        :param Networks (list): List of class Network instances.
-        :param freq (np.1darray): Array of frequencies.
-        :param approx (str): Approximants used for the waveforms
+        Calculate the optimal SNR for each event of the catalogue and save it with additional columns.
         """
-        for cat in self.catalogs :
-            Cat = pd.read_csv('./Run/' + params['name_of_project_folder'] + '/Astro_Models/Catalogs/'+cat, sep='\t', index_col=False)
-            print('SNR calculation for ', cat)
+
+        for cat in self.catalogs:
+            Cat = pd.read_csv('./Run/' + params['name_of_project_folder'] + '/Astro_Models/Catalogs/' + cat, sep='\t',
+                              index_col=False)
+            print('SNR calculation for', cat)
             ntot = len(Cat.z)
-            df = pd.DataFrame({})
+
+            # Initialisation des colonnes SNR à zéro pour chaque détecteur
             for i in det_list:
-                Cat[i['name']] = np.zeros(ntot)
-            for evt in range(len(Cat.z)):
-                event = Cat.iloc[[evt]]
-                BF.bar_peach(evt, len(Cat.z))
-                htildsq = GWk_no_ecc_pycbcwf(evt=event, freq = freq, approx=waveform, n = evt, size_catalogue = ntot,
-                                            inc_option= params['Inclination'])
-                if isinstance(htildsq,int) :
-                    f = open('Catalogs/' + cat + '_errors.txt', "a")
-                    if os.path.getsize('Catalogs/'+cat+'_errors.txt') == 0:
-                        f.write('m1 m2 z\n')
-                        f.write('{0} {1} {2}\n'.format(event['m1'].values, event['m2'].values, event['z'].values))
-                        f.close()
-                            #print('Merger out of range, event notify in the file: Catalogs/{0}_errors.txt'.format(cat))
+                Cat[i['name']] = 0.0
+
+            for evt in range(len(Cat)):
+                event = Cat.iloc[[evt]]  # Sélectionne une seule ligne sous forme de DataFrame
+                htildsq = GWk_no_ecc_pycbcwf(evt=event, freq=freq, approx=waveform, n=evt, size_catalogue=ntot,
+                                             inc_option=params['Inclination'])
+                if isinstance(htildsq, int):  # Si htildsq est un entier, erreur
+                    error_file = 'Catalogs/' + cat + '_errors.txt'
+                    with open(error_file, "a") as f:
+                        if os.path.getsize(error_file) == 0:
+                            f.write('m1 m2 z\n')
+                        f.write(f"{event['m1'].iloc[0]} {event['m2'].iloc[0]} {event['z'].iloc[0]}\n")
                 else:
                     for d in det_list:
                         Sn = d['psd']
-                        comp = d['deltaf']*4.*htildsq/Sn
-                        comp = np.nan_to_num(comp, nan = 0, posinf = 0)
-                        SNR = comp.sum()
-                        Cat[d['name']][evt] = np.sqrt(SNR)
-                Cat.to_csv('./Run/' + params['name_of_project_folder'] + '/Astro_Models/Catalogs/'+cat, sep='\t', index=False)
+                        comp = d['deltaf'] * 4. * htildsq / Sn
+                        comp = np.nan_to_num(comp, nan=0, posinf=0)
+                        SNR = np.sqrt(comp.sum())  # Calcul final de la SNR
+                        Cat.at[evt, d['name']] = SNR  # Correction de l'affectation
+
+            # Sauvegarde du fichier avec les nouvelles colonnes
+            output_file = './Run/' + params['name_of_project_folder'] + '/Astro_Models/Catalogs/' + cat
+            Cat.to_csv(output_file, sep='\t', index=False)
 
 
     def compute_SNR_Networks(self):
@@ -448,20 +478,6 @@ class AstroModel:
                 except Exception as e:
                     print(f"Problem during the saving of file {cat}: {e}")
 
-    def load_old(self):
-        """try load self.name.txt"""
-        path = './Run/' + params['name_of_project_folder'] + '/'
-        file = open(path + self.name + '_AM.pickle', 'rb')
-        data_pickle = file.read()
-        file.close()
-        self.__dict__ = pickle.loads(data_pickle)
-
-    def save_old(self):
-        path = './Run/' + params['name_of_project_folder'] + '/'
-        file = open(path + self.name + '_AM.pickle', 'wb')
-        file.write(pickle.dumps(self.__dict__))
-        file.close()
-
 
     def save(self):
         """
@@ -475,20 +491,7 @@ class AstroModel:
         except Exception as e:
             print(f"Error saving AstroModel '{self.name}': {e}")
 
-    def load(self):
-        """
-        Loads a previously saved AstroModel instance from a pickle file.
-        """
-        model_path = f"Run/{params['name_of_project_folder']}/{self.name}_AM.pickle"
-        try:
-            with open(model_path, 'rb') as f:
-                obj = pickle.load(f)
-            self.__dict__.update(obj.__dict__)
-            print(f"AstroModel '{self.name}' loaded successfully.")
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Pickle file for AstroModel '{self.name}' not found.")
-        except Exception as e:
-            raise ValueError(f"Error loading AstroModel '{self.name}': {e}")
+
 
 
 
