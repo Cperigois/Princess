@@ -1,0 +1,35 @@
+
+
+[build-system]
+requires = ["setuptools>=58.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Princess"
+authors = [
+  { name = "Carole Périgois", email = "caroleperigois@outlook.com" }
+]
+maintainers = [
+  { name = "Carole Périgois", email = "caroleperigois@outlook.com" },
+]
+description = "Overlay of PyTorch to generalize trainning and inference processes for detection & instance segmentation tasks."
+readme = "README.md"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3.11",
+]
+dynamic = ["version"]
+requires-python = ">=3.6.9"
+dependencies = [ # write all needed libraries
+  "pycbc",
+  "astropy==6.1.7",
+  "pandas",
+  "scipy"
+]
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "Princess.__version__" }
