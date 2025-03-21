@@ -1,6 +1,5 @@
 import os
 import pycbc.waveform
-from astropy.cosmology import Planck15
 import Princess.stochastic.constants as K
 import numpy as np
 import Princess.stochastic.basic_functions as BF
@@ -11,6 +10,7 @@ from scipy.integrate import quad
 from scipy.optimize import fsolve
 import Princess.stochastic.pix
 import warnings
+from Princess.cosmology.cosmology import Cosmology
 
 
 
@@ -26,6 +26,8 @@ def GWk(evt:np.ndarray , type:str, inc:float = None) :
     :param inc:
     :return:
     """
+    cosmology = Cosmology.load(params['Cosmo_model'])
+    cosmology.info()
 
     Mc = evt[0]
     q = evt[1]
@@ -113,7 +115,7 @@ def GWk(evt:np.ndarray , type:str, inc:float = None) :
                         g_ring = math.pow(1. + e1 * nu + e2 * nu * nu, 2.)
                     else:
                         g_merg = 1.
-                    Dl = Planck15.luminosity_distance(z).value * K.Mpc# check units !!!
+                    Dl = cosmology.luminosity_distance(z)# check units !!!
                     K2 = pow(Mc * K.M_sun * (1 + z), 5. / 3.) / (Dl * Dl )
                     if n == 2:  # Data for circular orbits
                         if f[i] < f_merg:
@@ -172,7 +174,8 @@ def GWk_noEcc(evt, type, inc = None) :
         Omg : numpy array
             Size of f with the contribution of the source for each observed frequency
         """
-
+    cosmology = Cosmology.load(params['Cosmo_model'])
+    cosmology.info()
     Mc = evt[0]
     q = evt[1]
     Spin = evt[2]
@@ -225,7 +228,7 @@ def GWk_noEcc(evt, type, inc = None) :
                 g_ring = math.pow(1. + e1 * nu + e2 * nu * nu, 2.)
             else:
                 g_merg = 1.
-            Dl = Planck15.luminosity_distance(z).value * K.Mpc# check units !!!
+            Dl = cosmology.luminosity_distance(z)# check units !!!
             K2 = pow(Mc * K.M_sun * (1 + z), 5. / 3.) / (Dl * Dl )
             if f[i] < f_merg:
                 Omg_e0[i] += g_merg * K.K1 * K2 * math.pow(f[i], 2. / 3.) * Fi

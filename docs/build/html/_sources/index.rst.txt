@@ -6,17 +6,20 @@
 Welcome to Princess's documentation!
 ======================================
 
-deepvisiontools in an overlay of PyTorch for object detection and instances segmentation tasks in images. It's development is supported by the `PHENOME - EMPHASIS`_ network and currently handled by INRAE - UE-APC.
+_**Princess** is program developed by Carole Perigois ([carolperigois@outlook.com](mailto:carolperigois@outlook.com)), with the support of from the European Research Council for the ERC Consolidator grant DEMOBLACK, under contract no. 770017._
 
-.. _`PHENOME - EMPHASIS`:
-   https://www.phenome-emphasis.fr/
+PRINCESS is a computational tool designed to predict gravitational wave observations from compact binary coalescences (CBCs) in current and future detector networks. The tool combines predictions of individual gravitational wave events and the astrophysical gravitational wave background, leveraging user-provided CBC catalogs.
+
+
+
+.. _`DEMOBLACK`:
+   https://demoblack.com/
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Documentation:
 
    doc
-
 
 
 Indices and tables

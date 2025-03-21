@@ -1,15 +1,21 @@
+print(f"Loading {__name__}")
 import math
 import os
 import numpy as np
 import pandas as pd
 import json
 import pickle
-from astropy.cosmology import Planck15
 from Princess.stochastic import basic_functions as BF
-from Princess.astrotools.htild import GWk_no_ecc_pycbcwf
-import Princess.astrotools.detection as DET
+from Princess.gwtools.htild import GWk_no_ecc_pycbcwf
+from Princess.gwtools.Network import Network
+from Princess.gwtools.Detector import Detector
+from Princess.cosmology.cosmology import Cosmology
+import importlib.resources
 
-params = json.load(open('Run/Params.json', 'r'))
+
+#Import parameter file
+with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+    params = json.load(f)
 
 
 def process_astromodel():
@@ -67,7 +73,8 @@ class AstroModel:
     def __init__(self, name:str = 'model', duration:float = 1,  original_path:str = None, sep:str = None,
                  index_column:bool = None, flags:dict ={}, spin_model:str = "Zeros", orbit_evolution:bool = False,
                  inclination_position:bool = True):
-        """Initializes an AstroModel instance and loads or creates necessary data.
+        """
+        Initializes an AstroModel instance and loads or creates necessary data.
 
         :param name: (str) Name for all outputs from this model. Default is 'model'.
         :param duration: (float) Duration of the catalogs in years. Default is 1
@@ -158,11 +165,11 @@ class AstroModel:
 
         # Rename input columns if specified in parameters
         Cat.rename(columns=params['AM_params'].get('input_parameters', {}), inplace=True)
-
+        cosmology = Cosmology.load(params['Cosmo_model'])
+        cosmology.info()
         # Handle redshift (z)
         if 'z' not in Col:  # If 'z' is missing, compute it from luminosity distance
-            BF.build_interp()
-            OutCat['z'] = BF.dl_to_z_Planck15(Cat['dl'])
+            OutCat['z'] = cosmology.compute_z(Cat['dl'])
         else:
             OutCat['z'] = Cat['z']
 
@@ -183,7 +190,7 @@ class AstroModel:
 
         # Compute luminosity distance (Dl) if missing
         if 'Dl' not in Col:
-            OutCat['Dl'] = [Planck15.luminosity_distance(z).value for z in OutCat['z']]
+            OutCat['Dl'] = cosmology.compute_dl(OutCat['z'])
         else:
             OutCat['Dl'] = Cat['Dl']
 
@@ -360,7 +367,7 @@ class AstroModel:
         det_list_2G = list([])
         det_list_3G = list([])
         for det in params['detector_list'].keys():
-            detector = DET.Detector.load(det)
+            detector = Detector.load(det)
             if detector.type == 'LISA' :
                 print("Princess not ready for this computation")
             elif detector.type == 'PTA' :
@@ -493,7 +500,7 @@ class AstroModel:
 
         # Parcourir les réseaux dans la liste des réseaux
         for net in params['network_list'].keys():
-            network = DET.Network(name=net)
+            network = Network(name=net)
 
             # Parcourir chaque catalogue
             for cat in self.catalogs:
@@ -520,7 +527,7 @@ class AstroModel:
                 for det in network.compo.keys():
                     if det in Cat.columns:
                         Cat[f'{net}_optimal'] += Cat[det] ** 2
-                        detector_object = DET.Detector.load(name = det)
+                        detector_object = Detector.load(name = det)
                         config = detector_object.configuration
                         Cat[net] += (Cat[det] * fd[config]) ** 2
                     else:

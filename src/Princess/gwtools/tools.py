@@ -6,15 +6,12 @@ import pandas as pd
 import json
 import pickle
 from astropy.cosmology import Planck15
-
-from astrotools.detection import Detector
-from gwtools.Network import Network
-from stochastic import basic_functions as BF
-#from astrotools.htild import GWk_no_ecc_pycbcwf
-#import astrotools.detection as DET
-import gwtools.Detector as DET
+from Princess.astrotools.detection import Detector
+from Princess.gwtools.Network import Network
+from Princess.stochastic import basic_functions as BF
+import Princess.gwtools.Detector as DET
 import gwtools.Network as NET
-from gwtools.htild import GWk_no_ecc_pycbcwf
+from Princess.gwtools.htild import GWk_no_ecc_pycbcwf
 
 
 def SNR_single_old(event, det_list: list, network : Network, waveform: str, freq: np.array, savefile: bool = True, name = 'event'):

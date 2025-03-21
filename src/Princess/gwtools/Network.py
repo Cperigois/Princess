@@ -1,14 +1,17 @@
+print(f"Loading {__name__}")
 import os
 import numpy as np
 import pycbc.psd
 import pandas as pd
 import json
-import math
 import pickle
-from astropy.cosmology import Planck15
-from stochastic import basic_functions as BF
+from Princess.stochastic import basic_functions as BF
+import importlib.resources
 
-params = json.load(open('./Run/Params.json', 'r'))
+
+#Import parameter file
+with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+    params = json.load(f)
 
 class Network:
 
@@ -120,20 +123,6 @@ class Network:
 
 
     def horizon(self, SNR_threshold:float = 9., mmin:float = 1., mmax:float = 10000., waveform:str = "IMRPhenomD", zmax:float = 150., mratio:float = 1.):
-        """
-        CONTAIN ISSUES IN SOME PART OF THE PARAMETER SPACE. Compute the horizon of a detector and write it in
-        'Horizon/Horizon_'+self.name +'_'+ str(mmax)+ str(zmax)+'_'+waveform+.dat.
-        Parameters
-        ----------
-        :param SNR_threshold (float): Signal-to-noise ratio (SNR) threshold to denine sources individually resolved.
-        :param mmin (float): Minimal mass in Msun. Default is 1.
-        :param mmax (float): Maximal mass in Msun. Default is 10 000.
-        :param waveform (str): Waveform used to compute the SNR. Default is "IMRPhenomD".
-        :param zmax (float): Maximal redshift. Default is 150.
-        :param mratio (float): mass ratio considered for the computations. Default is 1.
-        :return:
-        """
-
         deltaz = [10,1,0.1,0.01, 0.001]
         Mtot = np.logspace(np.log10(mmin),np.log10(mmax),100)
         Hori  = np.zeros(len(Mtot))

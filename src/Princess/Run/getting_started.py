@@ -1,6 +1,7 @@
+print(f"Loading {__name__}")
+
 import os
 import sys
-
 import pandas as pd
 
 import Run.advanced_params as AP
@@ -21,7 +22,6 @@ sys.path.append('../')
 name_of_project_folder = 'PopIII'
 n_cpu_max = 4  # Number maximal of cpu used by the code
 param_dictionary = {'name_of_project_folder': name_of_project_folder}
-
 
 """               *** ASTROMODELS ***                 """
 """

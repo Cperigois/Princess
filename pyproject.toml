@@ -19,10 +19,11 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
 ]
 dynamic = ["version"]
-requires-python = ">=3.6.9"
+requires-python = ">=3.6"
 dependencies = [ # write all needed libraries
+  "joblib",
+  "numpy==1.26",
   "pycbc",
-  "astropy==6.1.7",
   "pandas",
   "scipy"
 ]

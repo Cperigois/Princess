@@ -10,7 +10,7 @@ import shutil
 
 
 if __name__ == '__main__':
-    params = json.load(open('Run/Params.json', 'r'))
+    params = json.load(open('Params.json', 'r'))
 
     # Make sure directories are created
     if not os.path.exists('Run/' + params['name_of_project_folder']):

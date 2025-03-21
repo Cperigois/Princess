@@ -1,12 +1,10 @@
+print(f"Loading {__name__}")
 import math
 import numpy as np
 import pandas as pd
 import csv as csv
 from scipy.integrate import quad
 from scipy.interpolate import InterpolatedUnivariateSpline
-from astropy.cosmology import Planck15
-import os
-import pickle
 
 def xor(x, y):
     return bool((x and not y) or (not x and y))
@@ -186,18 +184,6 @@ def CDF(array,bins):
 		output[b] = len(array[array<bins[b]])/len(array)
 	return output
 
-def dl_to_z_Planck15(dl):
-	df = pd.read_csv('./AuxiliaryFiles/dl_z_table_Planck_15.txt', sep = '\t')
-	Sens_interp = InterpolatedUnivariateSpline(df['dl'], df['z'])
-	return Sens_interp(dl)
-
-def build_interp():
-	dl = np.array([])
-	z = np.logspace(-3, 2, 200)
-	for red in z:
-		dl = np.append(dl, Planck15.luminosity_distance(red).value)
-	table = pd.DataFrame({'z': z, 'dl': dl})
-	table.to_csv('./AuxiliaryFiles/dl_z_table_Planck_15.txt', index = None, sep = '\t')
 
 def reshape_psd(file_input, name_output):
 	input_file = './AuxiliaryFiles/PSDs/'+file_input

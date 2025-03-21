@@ -5,12 +5,16 @@ import Princess.stochastic.snr as SNR
 import Princess.stochastic.constants as K
 import numpy as np
 import Princess.stochastic.basic_functions as BF
-from Princess.astrotools.htild import GWk_no_ecc_pycbcwf
+from Princess.gwtools.htild import GWk_no_ecc_pycbcwf
 from Princess.astrotools.astromodel import AstroModel as AM
-from Princess.astrotools.detection import Detector as DET
-import Princess.astrotools.detection as detection
+from Princess.gwtools.Detector import Detector
+from Princess.gwtools.Network import Network
+import importlib.resources
 
-params = json.load(open('Run/Params.json', 'r'))
+
+#Import parameter file
+with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+    params = json.load(f)
 
 def process_background_computation():
     # Compute background and analysis
@@ -43,7 +47,7 @@ class Princess:
         """
         #self.dict_Networks = {  }
         #for key in Neworks.keys() :
-        #    self.dict_Networks[key] = Detection.Network(name = key, compo = Networks[key][0] , pic_file = Networks[key][1], freq = Networks[key][2], efficiency = Networks[key][3], SNR_thrs =Networks[key][4] )
+        #    self.dict_Networks[key] = Network(name = key, compo = Networks[key][0] , pic_file = Networks[key][1], freq = Networks[key][2], efficiency = Networks[key][3], SNR_thrs =Networks[key][4] )
 
         self.Omega_ana_freq = Omega_ana_freq
         self.inclination = inclination
@@ -85,7 +89,7 @@ class Princess:
         self.net_list_GB = []
 
         for net in params['network_list'].keys():
-            network = detection.Network(name=net)
+            network = Network(name=net)
 
             if network.type in ['LISA', 'PTA']:
                 print("Princess not ready for this computation")
@@ -290,7 +294,7 @@ class Princess:
 
                     if network_name not in event:
                         for d in network.compo.keys():
-                            detector = DET.load(d)
+                            detector = Detector.load(d)
                             conf = detector.configuration
                             fd = fd_table.iloc[i][conf] if self.inclination == 'Rand' else 1
                             SNR += event[d] * fd

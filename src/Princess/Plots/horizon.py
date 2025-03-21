@@ -10,8 +10,12 @@ from tools import plasma_palette, get_project_params
 import gwtools.Detector as DET
 import gwtools.Network as NET
 import Plots.tools as Plttools
-os.system('../')
-params = json.load(open('./Run/Params.json', 'r'))
+
+import importlib.resources
+
+#Import parameter file
+with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+    params = json.load(f)
 
 for det in params['detector_list'].keys():
     detector = DET.Detector(name=params['detector_list'][det]['name'],

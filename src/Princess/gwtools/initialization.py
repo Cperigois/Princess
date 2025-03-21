@@ -1,8 +1,12 @@
-import gwtools.Detector as DET
-import gwtools.Network as NET
+import Princess.gwtools.Detector as DET
+import Princess.gwtools.Network as NET
 import json
+import importlib.resources
 
-params = json.load(open('./Run/Params.json', 'r'))
+
+#Import parameter file
+with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+    params = json.load(f)
 
 def initialization():
     for det in params['detector_list'].keys():

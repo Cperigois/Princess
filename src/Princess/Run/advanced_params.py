@@ -1,6 +1,9 @@
+print(f"Loading {__name__}")
 import pandas
+from Princess.cosmology.cosmology import Cosmology
 import os
 import json
+print(f"Loading {__name__}")
 
 
 def set_old(_projectFolder, _paramDictionnary, _advParamDictionnary):
@@ -57,6 +60,34 @@ def clean():
     for net in params['network_list'].keys():
         os.remove('Run/' + params['name_of_project_folder'] + '/' + net + '_NET.pickle')
     os.remove('Run/Params.json')
+
+
+##################################################
+#                   COSMOLOGY Add this part to a notebook for an extraction to the Princess paper
+##################################################
+# Load the available cosmologies from presets.json
+with open("cosmology/presets.json", "r") as f:
+    preset_cosmologies = json.load(f)
+
+available_models = ", ".join(preset_cosmologies.keys())
+
+""" 
+Cosmology. Here you can choose an existing Cosmology or create a customized one.
+Current cosmologies available are: {}
+""".format(available_models)
+
+# For a customized cosmology uncomment the following lines and add the reference paper,
+# and eventually the table and the model your data refers to. Save the model with reference information.
+
+# my_cosmo = Cosmology(name="MyModel", Omega_m=0.32, Omega_Lambda=0.68, H0=70)
+# my_cosmo.save(reference_paper="Planck Collaboration (2020)",
+#               model_values="TT,TE,EE+lowP",
+#               table_values="Table 4")
+# cosmo_model = my_cosmo.name
+
+# Otherwise, just choose among preset cosmologies
+cosmo_model = "Planck18"
+
 
 """ Types of detectors notes : 
     - LISA and PTA types are not available
@@ -237,5 +268,6 @@ advParams = {"AM_params": {'input_parameters': input_parameters, 'keepID' : keep
              "detector_params": {'detectors_avail': detectors_avail,
                                  'psd_attributes': psd_attributes,
                                  'types': types},
-             "Inclination" : Inclination
+             "Inclination" : Inclination,
+             "Cosmo_model" : cosmo_model
              }

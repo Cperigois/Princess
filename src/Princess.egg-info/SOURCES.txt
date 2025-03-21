@@ -2,9 +2,11 @@ README.md
 pyproject.toml
 setup.py
 src/Princess/__init__.py
+src/Princess/advanced_params.py
 src/Princess/horizon.py
 src/Princess/plots.py
 src/Princess/run.py
+src/Princess/run_test.py
 src/Princess.egg-info/PKG-INFO
 src/Princess.egg-info/SOURCES.txt
 src/Princess.egg-info/dependency_links.txt
@@ -18,7 +20,10 @@ src/Princess/AuxiliaryFiles/PICs/Pics.py
 src/Princess/Plots/__init__.py
 src/Princess/Plots/horizon.py
 src/Princess/Plots/plots.py
+src/Princess/Plots/plots_bkg_project.py
+src/Princess/Plots/plotutils.py
 src/Princess/Plots/tools.py
+src/Princess/Run/__init__.py
 src/Princess/Run/advanced_params.py
 src/Princess/Run/getting_started.py
 src/Princess/Run/test.py
@@ -30,6 +35,8 @@ src/Princess/astrotools/__init__.py
 src/Princess/astrotools/astromodel.py
 src/Princess/astrotools/detection.py
 src/Princess/astrotools/htild.py
+src/Princess/cosmology/__init__.py
+src/Princess/cosmology/cosmology.py
 src/Princess/gwtools/Detector.py
 src/Princess/gwtools/Network.py
 src/Princess/gwtools/SNR_computation_NN.py
@@ -45,3 +52,5 @@ src/Princess/stochastic/basic_functions.py
 src/Princess/stochastic/constants.py
 src/Princess/stochastic/pix.py
 src/Princess/stochastic/snr.py
+src/Princess/test/advanced_params.py
+src/Princess/test/getting_started.py

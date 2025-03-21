@@ -1,14 +1,17 @@
+print(f"Loading {__name__}")
 import os
 import numpy as np
 import pycbc.psd
 import pandas as pd
 import json
-import math
 import pickle
-from astropy.cosmology import Planck15
-from stochastic import basic_functions as BF
+from Princess.stochastic import basic_functions as BF
+import importlib.resources
 
-params = json.load(open('./Run/Params.json', 'r'))
+
+#Import parameter file
+with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+    params = json.load(f)
 
 class Detector:
 
@@ -174,7 +177,8 @@ class Detector:
         :param waveform_approx (str): Waveform to use for the computation of the SNR.
         :return (snr): Signal-to-noise ration of the soure in the detector.
         """
-        luminosity_distance = Planck15.luminosity_distance(z).value
+        cosmology = Cosmology.load(params['Cosmo_model'])
+        luminosity_distance = cosmology.luminosity_distance(z)
         m1 = mtot * q * (1. + z) / (1 + q)
         m2 = m1 / q
         flim = BF.fcut_f(m1=m1, m2=m2, xsi=0, zm=z)
