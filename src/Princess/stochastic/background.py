@@ -1,29 +1,30 @@
 import pandas as pd
 import os
 import json
-import Princess.stochastic.snr as SNR
-import Princess.stochastic.constants as K
 import numpy as np
-import Princess.stochastic.basic_functions as BF
-from Princess.gwtools.htild import GWk_no_ecc_pycbcwf
+from Princess.gwtools.waveform import GWk_no_ecc_pycbcwf
 from Princess.astrotools.astromodel import AstroModel as AM
 from Princess.gwtools.Detector import Detector
 from Princess.gwtools.Network import Network
+from Princess.stochastic.utils import Search_Omg, Compute_constant
+from Princess.cosmology.cosmology import Cosmology
+from Princess.stochastic.snr import SNR_Omega, SNR_bkg
 import importlib.resources
 
-
-#Import parameter file
+# Import parameter file
 with importlib.resources.open_text("Princess.Run", "Params.json") as f:
     params = json.load(f)
 
 def process_background_computation():
     # Compute background and analysis
+
+
     if not os.path.exists('Run/' + params['name_of_project_folder'] + "/Results"):
         os.mkdir('Run/' + params['name_of_project_folder'] + "/Results")
     if not os.path.exists('Run/' + params['name_of_project_folder'] + "/Results/Omega/"):
         os.mkdir('Run/' + params['name_of_project_folder'] + "/Results/Omega")
     for astomodel in params['astro_model_list'].keys():
-        Zelda = Princess(astromodel=AM(name = astomodel))
+        Zelda = Background(astromodel=AM(name = astomodel))
         Zelda.Network_list()
         Zelda.Make_Ana_Output()
         Zelda.compute_Omega()
@@ -31,7 +32,7 @@ def process_background_computation():
         Zelda.Write_results()
 
 
-class Princess:
+class Background:
 
     def __init__(self, astromodel, inclination = 'Optimal', Omega_ana_freq = [10,25]):
         """Create an instance of your calculations parameters.
@@ -135,10 +136,10 @@ class Princess:
             Ana = pd.DataFrame(index=output_index, columns=['Total'] + self.Networks)
             Ana['Total']['N_source'] = 0
             Ana['Total'][['Omg_'+str(i)+'_Hz' for i in self.Omega_ana_freq]] = Search_Omg(Omega_e0['Total'], self.Omega_ana_freq)
-            Ana['Total']['SNR'] = SNR.SNR_Omega(Omega_e0['Total'])
+            Ana['Total']['SNR'] = SNR_Omega(Omega_e0['Total'])
             for N in range(len(self.Networks)):
                 Ana[Networks[N].name][['Omg_' + str(i) + '_Hz' for i in self.Omega_ana_freq]] = Search_Omg(Omega_e0[Networks[N].name], self.Omega_ana_freq)
-                Ana[N]['SNR'] = SNR.SNR_Omega(Omega_e0[Networks[N].name],N)
+                Ana[N]['SNR'] = SNR_Omega(Omega_e0[Networks[N].name],N)
                 residual = df[df[N]<self.SNR_thrs[N]]
                 Ana[N]['Nsource'] = len(residual[N])
                 print(Ana[N])
@@ -162,14 +163,14 @@ class Princess:
 
             # Compute Omega values at specified reference frequencies for 'Total'
             for freq in self.Omega_ana_freq:
-                Ana['Total'][f'Omg_{freq}_Hz'] = BF.Search_Omg(
+                Ana['Total'][f'Omg_{freq}_Hz'] = Search_Omg(
                     Freq=Omega_e0['f'], Omega=Omega_e0['Total'], freq_ref=freq
                 )
 
             # Process each network in the analysis
             for network in self.net_list_GB:
                 # Compute the total SNR for the network
-                SNR_network_total = SNR.SNR_bkg(Omega_e0['f'], Omega_e0['Total'], network)
+                SNR_network_total = SNR_bkg(Omega_e0['f'], Omega_e0['Total'], network)
 
                 # Process each SNR threshold for the network
                 for thrs in network.SNR_thrs:
@@ -177,12 +178,12 @@ class Princess:
 
                     # Compute Omega values at specified frequencies for each threshold
                     for freq in self.Omega_ana_freq:
-                        Ana[column_name][f'Omg_{freq}_Hz'] = BF.Search_Omg(
+                        Ana[column_name][f'Omg_{freq}_Hz'] = Search_Omg(
                             Freq=Omega_e0['f'], Omega=Omega_e0[column_name], freq_ref=freq
                         )
 
                     # Compute residual and total SNR for the network at the threshold
-                    Ana[column_name]['SNR_Residual'] = SNR.SNR_bkg(Omega_e0['f'], Omega_e0[column_name], network)
+                    Ana[column_name]['SNR_Residual'] = SNR_bkg(Omega_e0['f'], Omega_e0[column_name], network)
                     Ana[column_name]['SNR_Total'] = SNR_network_total
 
             # Save the updated analysis dictionary
@@ -194,14 +195,14 @@ class Princess:
             Omega_e0 = pd.read_csv('Run/' + params['name_of_project_folder'] + "/Results/Omega/" + cat, index_col=False, sep='\t')
             Ana = self.anadict[cat]
             for i in self.Omega_ana_freq:
-                Ana['Total']['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Freq=Omega_e0['f'], Omega=Omega_e0['Total'],
+                Ana['Total']['Omg_' + str(i) + '_Hz'] = Search_Omg(Freq=Omega_e0['f'], Omega=Omega_e0['Total'],
                                                                       freq_ref=i)
             for N in range(len(Networks)):
                 for i in self.Omega_ana_freq:
-                    Ana[Networks[N].name]['Omg_' + str(i) + '_Hz'] = BF.Search_Omg(Freq=Omega_e0['f'],
+                    Ana[Networks[N].name]['Omg_' + str(i) + '_Hz'] = Search_Omg(Freq=Omega_e0['f'],
                                                                                    Omega=Omega_e0['Total'],
                                                                                    freq_ref=i)
-                Ana[Networks[N].name]['SNR_Total'] = SNR.SNR_bkg(Omega_e0['f'], Omega_e0['Total'], Networks[N])
+                Ana[Networks[N].name]['SNR_Total'] = SNR_bkg(Omega_e0['f'], Omega_e0['Total'], Networks[N])
             self.anadict[cat] = Ana
 
     def Omega(self, cat, Freq, Networks):
@@ -239,6 +240,11 @@ class Princess:
 
         # Load all networks once
         networks = {network.name: network for network in self.net_list_GB}
+
+        # Compute background constant
+        cosmology = Cosmology.load(params['Cosmo_model'])
+        cosmology.info()
+        Bkg_cst = Compute_constant(cosmology.H0)
 
         # Process each catalog
         for cat_path in self.astromodel.catalogs:
@@ -283,7 +289,7 @@ class Princess:
                             size_catalogue=len(Cat.z)
                         )
                         * np.power(Freq_GB - 1., 3.)
-                        * K.C
+                        * Bkg_cst
                         / self.astromodel.duration
                 )
                 Omega_e0['Total'] += Omg_e0

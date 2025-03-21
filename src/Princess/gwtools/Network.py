@@ -5,15 +5,16 @@ import pycbc.psd
 import pandas as pd
 import json
 import pickle
-from Princess.stochastic import basic_functions as BF
+from Princess.gwtools.utils import zmaximal
 import importlib.resources
 
-
-#Import parameter file
+# Import parameter file
 with importlib.resources.open_text("Princess.Run", "Params.json") as f:
     params = json.load(f)
 
+
 class Network:
+
 
     def __init__(self, efficiency:float = 1., SNR_thrs:float = 12, duration:float = 1,
                  name:str = None, compo:list = None ,pic_file:str = None ):
@@ -133,7 +134,7 @@ class Network:
             z = 0.001
             m1 = Mtot[m] * mratio / (1 + mratio)
             m2 = m1 / mratio
-            zmax_1Hz = np.maximum(BF.zmax(m1,m2,0,1.2),0.001)
+            zmax_1Hz = np.maximum(zmaximal(m1,m2,0,1.2),0.001)
             for dz in deltaz :
                 snr = SNR_threshold+0.001
                 print(snr,' ',SNR_threshold,' ',zmax_1Hz,' ', zmax)

@@ -5,18 +5,16 @@ import numpy as np
 import pandas as pd
 import json
 import pickle
-from Princess.stochastic import basic_functions as BF
-from Princess.gwtools.htild import GWk_no_ecc_pycbcwf
+from Princess.astrotools.utils import m1_m2_to_mc_q, mc_q_to_m1_m2
+from Princess.gwtools.waveform import GWk_no_ecc_pycbcwf
 from Princess.gwtools.Network import Network
 from Princess.gwtools.Detector import Detector
 from Princess.cosmology.cosmology import Cosmology
 import importlib.resources
 
-
-#Import parameter file
+# Import parameter file
 with importlib.resources.open_text("Princess.Run", "Params.json") as f:
     params = json.load(f)
-
 
 def process_astromodel():
     """
@@ -24,6 +22,11 @@ def process_astromodel():
     Loads existing models if available, otherwise initializes, saves,
     generates catalogs, and computes SNR.
     """
+
+    # Import parameter file
+    with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+        params = json.load(f)
+
     # Ensure necessary directories exist
     base_path = f"Run/{params['name_of_project_folder']}"
     astro_models_path = f"{base_path}/Astro_Models"
@@ -87,6 +90,8 @@ class AstroModel:
         :param inclination_position: (bool) If True, generates inclination, right ascension, and declination
         for each catalog source. Default is True.
         """
+
+
 
         self.name = name
         self.original_path = original_path
@@ -177,11 +182,11 @@ class AstroModel:
         if 'Mc' not in Col:  # If chirp mass is missing, calculate it from m1 and m2
             OutCat['m1'] = Cat['m1']
             OutCat['m2'] = Cat['m2']
-            OutCat['Mc'], OutCat['q'] = BF.m1_m2_to_mc_q(OutCat['m1'], OutCat['m2'])
+            OutCat['Mc'], OutCat['q'] = m1_m2_to_mc_q(OutCat['m1'], OutCat['m2'])
         elif 'm1' not in Col:  # If m1 and m2 are missing, calculate them from Mc and q
             OutCat['Mc'] = Cat['Mc']
             OutCat['q'] = Cat['q']
-            OutCat['m1'], OutCat['m2'] = BF.mc_q_to_m1_m2(Cat['Mc'], Cat['q'])
+            OutCat['m1'], OutCat['m2'] = mc_q_to_m1_m2(Cat['Mc'], Cat['q'])
         else:  # If all are present, copy directly
             OutCat['Mc'] = Cat['Mc']
             OutCat['q'] = Cat['q']

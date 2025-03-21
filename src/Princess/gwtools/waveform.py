@@ -1,7 +1,8 @@
 print(f"Loading {__name__}")
 import pycbc.waveform
 import numpy as np
-import Princess.stochastic.basic_functions as BF
+from Princess.gwtools.progress_bar import bar_peach
+from Princess.gwtools.utils import fcut_f
 import warnings
 
 
@@ -50,7 +51,7 @@ def GWk_no_ecc_pycbcwf(evt, freq, approx, n, size_catalogue, inc_option='InCat',
         inc = 0.0
 
     # Cumpute cutting frequency(the last emitting frequency of a source)
-    flim = BF.fcut_f(m1=m1, m2=m2, xsi=0, zm=z)
+    flim = fcut_f(m1=m1, m2=m2, xsi=0, zm=z)
 
     if flim > flow:
         # Compute GW signal with Pycbc
@@ -82,7 +83,7 @@ def GWk_no_ecc_pycbcwf(evt, freq, approx, n, size_catalogue, inc_option='InCat',
 
     # Update the progress bar
     if disable_progress_bar == False:
-        BF.bar_peach(n, size_catalogue)
+        bar_peach(n, size_catalogue)
 
     return htildSQ
 

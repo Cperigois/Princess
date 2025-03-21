@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="doc.html">Pkg astrotools</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doc.html#pkg-cosmology">Pkg cosmology</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doc.html#pkg-gwtools">Pkg gwtools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doc.html#pkg-stochastic">Pkg stochastic</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doc.html#module-Princess.Run">Run</a></li>
 </ul>
 
@@ -83,7 +84,21 @@
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Documentation:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="doc.html">Pkg astrotools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doc.html">Pkg astrotools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="doc.html#module-Princess.astrotools.astromodel">class astromodel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.astrotools.astromodel.AstroModel"><code class="docutils literal notranslate"><span class="pre">AstroModel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.astrotools.astromodel.load_detector"><code class="docutils literal notranslate"><span class="pre">load_detector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.astrotools.astromodel.process_astromodel"><code class="docutils literal notranslate"><span class="pre">process_astromodel()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="doc.html#module-Princess.astrotools.catalogue_generation">catalogue_generation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.astrotools.catalogue_generation.generate_population"><code class="docutils literal notranslate"><span class="pre">generate_population()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.astrotools.catalogue_generation.sample_distribution"><code class="docutils literal notranslate"><span class="pre">sample_distribution()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.astrotools.catalogue_generation.save_population"><code class="docutils literal notranslate"><span class="pre">save_population()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="doc.html#pkg-cosmology">Pkg cosmology</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="doc.html#module-Princess.cosmology.cosmology">class cosmology</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.cosmology.cosmology.Cosmology"><code class="docutils literal notranslate"><span class="pre">Cosmology</span></code></a></li>
@@ -104,8 +119,33 @@
 <li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.gwtools.Network.Network"><code class="docutils literal notranslate"><span class="pre">Network</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="doc.html#module-Princess.gwtools.htild">htild</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.gwtools.htild.GWk_no_ecc_pycbcwf"><code class="docutils literal notranslate"><span class="pre">GWk_no_ecc_pycbcwf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="doc.html#module-Princess.gwtools.waveform">waveform</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.gwtools.waveform.GWk_no_ecc_pycbcwf"><code class="docutils literal notranslate"><span class="pre">GWk_no_ecc_pycbcwf()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="doc.html#pkg-stochastic">Pkg stochastic</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="doc.html#module-Princess.stochastic.background">class background</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.background.Background"><code class="docutils literal notranslate"><span class="pre">Background</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.background.process_background_computation"><code class="docutils literal notranslate"><span class="pre">process_background_computation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="doc.html#module-Princess.stochastic.snr">snr</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.snr.SNR_Net_wf"><code class="docutils literal notranslate"><span class="pre">SNR_Net_wf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.snr.SNR_Omega"><code class="docutils literal notranslate"><span class="pre">SNR_Omega()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.snr.SNR_bkg"><code class="docutils literal notranslate"><span class="pre">SNR_bkg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.snr.SNR_bkg_1det"><code class="docutils literal notranslate"><span class="pre">SNR_bkg_1det()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.snr.SNR_bkgtrash"><code class="docutils literal notranslate"><span class="pre">SNR_bkgtrash()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.snr.SNR_run"><code class="docutils literal notranslate"><span class="pre">SNR_run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.snr.SNRwf"><code class="docutils literal notranslate"><span class="pre">SNRwf()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="doc.html#module-Princess.stochastic.utils">utils</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.utils.Compute_constant"><code class="docutils literal notranslate"><span class="pre">Compute_constant()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.utils.Cst_snr_bkg"><code class="docutils literal notranslate"><span class="pre">Cst_snr_bkg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.utils.Search_Omg"><code class="docutils literal notranslate"><span class="pre">Search_Omg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="doc.html#Princess.stochastic.utils.rho_c"><code class="docutils literal notranslate"><span class="pre">rho_c()</span></code></a></li>
 </ul>
 </li>
 </ul>

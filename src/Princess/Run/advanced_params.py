@@ -65,16 +65,10 @@ def clean():
 ##################################################
 #                   COSMOLOGY Add this part to a notebook for an extraction to the Princess paper
 ##################################################
-# Load the available cosmologies from presets.json
-with open("cosmology/presets.json", "r") as f:
-    preset_cosmologies = json.load(f)
-
-available_models = ", ".join(preset_cosmologies.keys())
-
 """ 
 Cosmology. Here you can choose an existing Cosmology or create a customized one.
-Current cosmologies available are: {}
-""".format(available_models)
+Current cosmologies available are: {Planck15, Planck18}
+"""
 
 # For a customized cosmology uncomment the following lines and add the reference paper,
 # and eventually the table and the model your data refers to. Save the model with reference information.

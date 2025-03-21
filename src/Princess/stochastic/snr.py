@@ -5,11 +5,15 @@ import itertools as iterT
 import pycbc.psd
 import pycbc.waveform
 import pycbc.filter
-import Princess.astrotools.detection as DET
-import Princess.stochastic.basic_functions as BF
+import importlib
 import joblib
-import Princess.stochastic.constants as K
+import json
 from scipy.interpolate import InterpolatedUnivariateSpline
+from Princess.gwtools.Detector import Detector
+from Princess.gwtools.Network import Network
+from Princess.cosmology.cosmology import Cosmology
+from Princess.stochastic.utils import Cst_snr_bkg
+
 
 
 def SNR_bkg(freq_omg, Omega, Network):
@@ -25,6 +29,15 @@ def SNR_bkg(freq_omg, Omega, Network):
     :return: Computed SNR value.
     :rtype: float
     """
+
+    # Import parameter file
+    with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+        params = json.load(f)
+
+    # Import cosmology
+    cosmology = Cosmology.load(params['Cosmo_model'])
+    cosmology.info()
+
     # Load overlap reduction functions (ORFs)
     gammafile = './AuxiliaryFiles/ORFs/ORF.dat'
     gamma = pd.read_csv('./AuxiliaryFiles/ORFs/ORF.dat', sep='\t', index_col=None)
@@ -43,10 +56,10 @@ def SNR_bkg(freq_omg, Omega, Network):
     compo = list(Network.compo.keys())
 
     for i, name_i in enumerate(compo):
-        di = DET.Detector.load(name=name_i)
+        di = Detector.load(name=name_i)
 
         for j in range(i + 1, len(compo)):
-            dj = DET.Detector.load(name = Network.compo[compo[j]]['name'])
+            dj = Detector.load(name = Network.compo[compo[j]]['name'])
 
             # Construct the ORF column name
             name1 = di.configuration + dj.configuration
@@ -76,7 +89,7 @@ def SNR_bkg(freq_omg, Omega, Network):
             # Compute SNR
             SNR += np.sum((Gammaij ** 2 * Omega_interp ** 2) / (freq ** 6 * Pi * Pj))
 
-    SNR = K.Cst_snr_bkg * np.sqrt(2 * Network.duration * Network.efficiency) * np.sqrt(SNR) / deltaF
+    SNR = Cst_snr_bkg(cosmology.H0) * np.sqrt(2 * Network.duration * Network.efficiency) * np.sqrt(SNR) / deltaF
 
     return SNR
 
@@ -88,6 +101,14 @@ def SNR_bkg_1det(freq_omg, Omega, Network):
     :param Network:
     :return:
     """
+    # Import parameter file
+    with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+        params = json.load(f)
+
+    # Import cosmology
+    cosmology = Cosmology.load(params['Cosmo_model'])
+    cosmology.info()
+
     freq = Network.freq
     deltaF = freq[1]-freq[0]
     print(deltaF)
@@ -103,8 +124,10 @@ def SNR_bkg_1det(freq_omg, Omega, Network):
     print(Pi)
     SNR += np.sum(Omega_interp**2. / (freq**6. * Pi * Pj))
     print('SNR = ',SNR,' ', Network.name)
-    SNR = K.Cst_snr_bkg* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR) / deltaF
-    return K.Cst_snr_bkg* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
+
+
+    SNR = Cst_snr_bkg(cosmology.H0)* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR) / deltaF
+    return Cst_snr_bkg(cosmology.H0)* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
 
 def SNR_bkgtrash(freq_omg, Omega, Network):
     """ Old function to compute the background
@@ -143,17 +166,24 @@ def SNR_bkgtrash(freq_omg, Omega, Network):
             for f in range(len(freq)) :
                 SNR2 +=np.power(Gammaij[f],2.) * np.power(Omega_interp[f],2.) / (np.power(f+1,6.) * Pi[f] * Pj[f])
             SNR += np.sum(np.square(Gammaij) * np.square(Omega_interp) / (np.power(freq,6.) * Pi * Pj))
-    SNR = K.Cst_snr_bkg* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR) / deltaF
-    SNR2 = K.Cst_snr_bkg* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR2) / deltaF
-    print('SNR1 = ',K.Cst_snr_bkg,' ','SNR2 = ',SNR2,' ', Network.name)
+    SNR = Cst_snr_bkg(cosmology.H0)* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR) / deltaF
+    SNR2 = Cst_snr_bkg(cosmology.H0)* np.sqrt(2.* Network.duration * Network.efficiency)*np.sqrt(SNR2) / deltaF
+    print('SNR1 = ',Cst_snr_bkg(cosmology.H0),' ','SNR2 = ',SNR2,' ', Network.name)
 
-    return K.Cst_snr_bkg* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
+    return Cst_snr_bkg(cosmology.H0)* np.sqrt(2* Network.duration * Network.efficiency* SNR) / deltaF
 
 
 def SNR_Omega(freq, Omega, Networks):
     ''' Calculate the SNR of a given spectrum Omega for each Network in Networks.
     Assuming one year of detection with a duty-cycle (ie. efficiency) of 0.5
     '''
+
+    # Import parameter file
+    with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+        params = json.load(f)
+    # Import cosmology
+    cosmology = Cosmology.load(params['Cosmo_model'])
+    cosmology.info()
 
     #Detectors = [GS.Net_compo[n] for n in Networks]
     fmin_list = np.array([])
@@ -235,6 +265,9 @@ def SNR_run(SNR_0, SNR_year, duration, tstart):
     :param tstart: starting time
     :return: dataframe with two columns 'Time' and 'SNR'
     '''
+    # Import parameter file
+    with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+        params = json.load(f)
     t=0
     SNR_cum = []
     Time = []
@@ -246,31 +279,7 @@ def SNR_run(SNR_0, SNR_year, duration, tstart):
     print(SNR_cum)
     return 0
 
-def SNRCat(Cat, Net) :
-    """Compute the SNR of each sources in each network in Net
-                Parameters
-                ----------
-                Net : str array
-                    {'HLV' , 'HLVIK', 'A+', 'ET', 'ET+2CE', 'LISA'}. More Network can be set up in "Oz/Networks.py".
-                model : str
-                    Name of the model, used to setup the folder
-                type : str
-                    {'BBH' , 'BNS', 'BHNS', 'mix'} type of binary compact objects in the initial catalogue.
-                    If mix is chosen fill the condition to distinguish the different type of binaries
 
-                Returns
-                -------
-                SNR : np.array, floats
-                    Array of SNR for each binary of the catalogue for the given Network.
-        """
-    path = 'AuxiliaryFiles/Joblib/'
-    Net_det = joblib.load(path+"rf_"+Net+"_SNR.joblib")
-    if 'inc' not in Cat.columns :
-        Cat['inc'] = np.random.uniform(0, 2*math.pi, len(Cat['Mc']))
-    features = ['Mc', 'zm', 'q', 'Dl', 'inc']
-    val_X = Cat[features]
-
-    return Net_det.predict(val_X)
 
 def SNRwf(df, cat_name) :
     approximant = "IMRPhenomPv2"

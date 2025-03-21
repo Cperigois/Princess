@@ -5,13 +5,13 @@ import pycbc.psd
 import pandas as pd
 import json
 import pickle
-from Princess.stochastic import basic_functions as BF
+from Princess.gwtools.utils import fcut_f
 import importlib.resources
 
-
-#Import parameter file
+# Import parameter file
 with importlib.resources.open_text("Princess.Run", "Params.json") as f:
     params = json.load(f)
+
 
 class Detector:
 
@@ -34,6 +34,8 @@ class Detector:
         reference (str): Reference to existing detectors.
         type (str): Optional, additional type information.
         """
+
+
         self.name = name
         # Check if the detector needs to be reloaded or created
         project_folder = os.path.join('Run', params['name_of_project_folder'])
@@ -181,7 +183,7 @@ class Detector:
         luminosity_distance = cosmology.luminosity_distance(z)
         m1 = mtot * q * (1. + z) / (1 + q)
         m2 = m1 / q
-        flim = BF.fcut_f(m1=m1, m2=m2, xsi=0, zm=z)
+        flim = fcut_f(m1=m1, m2=m2, xsi=0, zm=z)
         if flim > self.freq[0]+0.15:
             psd = self.Make_psd()
             hp, hc = pycbc.waveform.get_fd_waveform(approximant=waveform_approx, mass1=m1 * (1. + z), mass2 = m2 * (1. + z),

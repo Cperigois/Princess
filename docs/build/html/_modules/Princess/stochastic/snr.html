@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Princess.stochastic.snr &mdash; Princess 0.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=7026087e"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Princess
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../doc.html">Pkg astrotools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-cosmology">Pkg cosmology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-gwtools">Pkg gwtools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-stochastic">Pkg stochastic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doc.html#module-Princess.Run">Run</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Princess</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">Princess.stochastic.snr</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for Princess.stochastic.snr</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">iterT</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.psd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.waveform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.filter</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">joblib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">InterpolatedUnivariateSpline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Princess.gwtools.Detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Princess.gwtools.Network</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Princess.cosmology.cosmology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cosmology</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Princess.stochastic.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cst_snr_bkg</span>
+
+<span class="c1">#Import parameter file</span>
+<span class="k">with</span> <span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">open_text</span><span class="p">(</span><span class="s2">&quot;Princess.Run&quot;</span><span class="p">,</span> <span class="s2">&quot;Params.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SNR_bkg">
+<a class="viewcode-back" href="../../../doc.html#Princess.stochastic.snr.SNR_bkg">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">SNR_bkg</span><span class="p">(</span><span class="n">freq_omg</span><span class="p">,</span> <span class="n">Omega</span><span class="p">,</span> <span class="n">Network</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the signal-to-noise ratio (SNR) for a stochastic gravitational wave background.</span>
+
+<span class="sd">    :param freq_omg: Array of input frequencies for Omega.</span>
+<span class="sd">    :type freq_omg: numpy.ndarray</span>
+<span class="sd">    :param Omega: Normalized spectral energy density of the stochastic background.</span>
+<span class="sd">    :type Omega: numpy.ndarray</span>
+<span class="sd">    :param Network: Detector network containing frequency and composition information.</span>
+<span class="sd">    :type Network: object</span>
+<span class="sd">    :return: Computed SNR value.</span>
+<span class="sd">    :rtype: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Import cosmology</span>
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">Cosmology</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;Cosmo_model&#39;</span><span class="p">])</span>
+    <span class="n">cosmology</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+
+    <span class="c1"># Load overlap reduction functions (ORFs)</span>
+    <span class="n">gammafile</span> <span class="o">=</span> <span class="s1">&#39;./AuxiliaryFiles/ORFs/ORF.dat&#39;</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;./AuxiliaryFiles/ORFs/ORF.dat&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">Network</span><span class="o">.</span><span class="n">freq</span>
+    <span class="n">deltaF</span> <span class="o">=</span> <span class="n">freq</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">freq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Interpolate Omega over the network frequencies</span>
+    <span class="n">interp</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">freq_omg</span><span class="p">,</span> <span class="n">Omega</span><span class="p">)</span>
+    <span class="n">Omega_interp</span> <span class="o">=</span> <span class="n">interp</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+
+    <span class="c1">#Interpolate all psds</span>
+
+    <span class="n">SNR</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Retrieve detectors</span>
+    <span class="n">compo</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Network</span><span class="o">.</span><span class="n">compo</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name_i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">compo</span><span class="p">):</span>
+        <span class="n">di</span> <span class="o">=</span> <span class="n">Detector</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name_i</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">compo</span><span class="p">)):</span>
+            <span class="n">dj</span> <span class="o">=</span> <span class="n">Detector</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="n">Network</span><span class="o">.</span><span class="n">compo</span><span class="p">[</span><span class="n">compo</span><span class="p">[</span><span class="n">j</span><span class="p">]][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+
+            <span class="c1"># Construct the ORF column name</span>
+            <span class="n">name1</span> <span class="o">=</span> <span class="n">di</span><span class="o">.</span><span class="n">configuration</span> <span class="o">+</span> <span class="n">dj</span><span class="o">.</span><span class="n">configuration</span>
+            <span class="n">name2</span> <span class="o">=</span> <span class="n">dj</span><span class="o">.</span><span class="n">configuration</span> <span class="o">+</span> <span class="n">di</span><span class="o">.</span><span class="n">configuration</span>
+            <span class="k">if</span> <span class="n">name1</span> <span class="ow">in</span> <span class="n">gamma</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">gamma_ref</span> <span class="o">=</span> <span class="n">di</span><span class="o">.</span><span class="n">configuration</span> <span class="o">+</span> <span class="n">dj</span><span class="o">.</span><span class="n">configuration</span>
+            <span class="k">elif</span> <span class="n">name2</span> <span class="ow">in</span> <span class="n">gamma</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">gamma_ref</span> <span class="o">=</span> <span class="n">dj</span><span class="o">.</span><span class="n">configuration</span> <span class="o">+</span> <span class="n">di</span><span class="o">.</span><span class="n">configuration</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error : No configuration available for the couple (</span><span class="si">{</span><span class="n">di</span><span class="o">.</span><span class="n">configuration</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">dj</span><span class="o">.</span><span class="n">configuration</span><span class="si">}</span><span class="s1"> </span><span class="se">\n</span><span class="s1">&#39;</span>
+                      <span class="sa">f</span><span class="s1">&#39;Please check the ORF file : </span><span class="si">{</span><span class="n">gammafile</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Interpolate the overlap reduction function</span>
+            <span class="n">interp_ORF</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">gamma</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span> <span class="n">gamma</span><span class="p">[</span><span class="n">gamma_ref</span><span class="p">])</span>
+            <span class="n">Gammaij</span> <span class="o">=</span> <span class="n">interp_ORF</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+
+            <span class="c1"># Interpolate the PSDs</span>
+            <span class="n">df_Pi</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AuxiliaryFiles/PSDs/&#39;</span><span class="o">+</span><span class="n">di</span><span class="o">.</span><span class="n">psd_file</span><span class="o">+</span><span class="s1">&#39;.dat&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">interpPi</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">df_Pi</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span> <span class="n">df_Pi</span><span class="p">[</span><span class="s1">&#39;psd[1/Hz]&#39;</span><span class="p">])</span>
+
+            <span class="n">df_Pj</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AuxiliaryFiles/PSDs/&#39;</span><span class="o">+</span><span class="n">dj</span><span class="o">.</span><span class="n">psd_file</span><span class="o">+</span><span class="s1">&#39;.dat&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">interpPj</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">df_Pj</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span> <span class="n">df_Pj</span><span class="p">[</span><span class="s1">&#39;psd[1/Hz]&#39;</span><span class="p">])</span>
+
+            <span class="n">Pi</span> <span class="o">=</span> <span class="n">interpPi</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+            <span class="n">Pj</span> <span class="o">=</span> <span class="n">interpPj</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+
+            <span class="c1"># Compute SNR</span>
+            <span class="n">SNR</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">Gammaij</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Omega_interp</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">freq</span> <span class="o">**</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">Pi</span> <span class="o">*</span> <span class="n">Pj</span><span class="p">))</span>
+
+    <span class="n">SNR</span> <span class="o">=</span> <span class="n">Cst_snr_bkg</span><span class="p">(</span><span class="n">cosmology</span><span class="o">.</span><span class="n">H0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">duration</span> <span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">efficiency</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">SNR</span><span class="p">)</span> <span class="o">/</span> <span class="n">deltaF</span>
+
+    <span class="k">return</span> <span class="n">SNR</span></div>
+
+
+<div class="viewcode-block" id="SNR_bkg_1det">
+<a class="viewcode-back" href="../../../doc.html#Princess.stochastic.snr.SNR_bkg_1det">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">SNR_bkg_1det</span><span class="p">(</span><span class="n">freq_omg</span><span class="p">,</span> <span class="n">Omega</span><span class="p">,</span> <span class="n">Network</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Old function for SNR background computation</span>
+<span class="sd">    :param freq_omg:</span>
+<span class="sd">    :param Omega:</span>
+<span class="sd">    :param Network:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Import cosmology</span>
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">Cosmology</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;Cosmo_model&#39;</span><span class="p">])</span>
+    <span class="n">cosmology</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">Network</span><span class="o">.</span><span class="n">freq</span>
+    <span class="n">deltaF</span> <span class="o">=</span> <span class="n">freq</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">freq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">deltaF</span><span class="p">)</span>
+    <span class="n">interp</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">freq_omg</span><span class="p">,</span> <span class="n">Omega</span><span class="p">)</span>
+    <span class="n">Omega_interp</span> <span class="o">=</span> <span class="n">interp</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+    <span class="n">SNR</span> <span class="o">=</span><span class="mi">0</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">Network</span><span class="o">.</span><span class="n">compo</span><span class="p">:</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">Make_psd</span><span class="p">()</span>
+    <span class="n">interpPi</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="nb">float</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">di</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="nb">float</span><span class="p">))</span>
+    <span class="n">interpPj</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">dj</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span> <span class="n">dj</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span>
+    <span class="n">Pi</span> <span class="o">=</span> <span class="n">interpPi</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">Pj</span> <span class="o">=</span> <span class="n">interpPj</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">Pi</span><span class="p">)</span>
+    <span class="n">SNR</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Omega_interp</span><span class="o">**</span><span class="mf">2.</span> <span class="o">/</span> <span class="p">(</span><span class="n">freq</span><span class="o">**</span><span class="mf">6.</span> <span class="o">*</span> <span class="n">Pi</span> <span class="o">*</span> <span class="n">Pj</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SNR = &#39;</span><span class="p">,</span><span class="n">SNR</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">Network</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+
+    <span class="n">SNR</span> <span class="o">=</span> <span class="n">Cst_snr_bkg</span><span class="p">(</span><span class="n">cosmology</span><span class="o">.</span><span class="n">H0</span><span class="p">)</span><span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">duration</span> <span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">efficiency</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">SNR</span><span class="p">)</span> <span class="o">/</span> <span class="n">deltaF</span>
+    <span class="k">return</span> <span class="n">Cst_snr_bkg</span><span class="p">(</span><span class="n">cosmology</span><span class="o">.</span><span class="n">H0</span><span class="p">)</span><span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">duration</span> <span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">efficiency</span><span class="o">*</span> <span class="n">SNR</span><span class="p">)</span> <span class="o">/</span> <span class="n">deltaF</span></div>
+
+
+<div class="viewcode-block" id="SNR_bkgtrash">
+<a class="viewcode-back" href="../../../doc.html#Princess.stochastic.snr.SNR_bkgtrash">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">SNR_bkgtrash</span><span class="p">(</span><span class="n">freq_omg</span><span class="p">,</span> <span class="n">Omega</span><span class="p">,</span> <span class="n">Network</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Old function to compute the background</span>
+<span class="sd">    :param freq_omg:</span>
+<span class="sd">    :param Omega:</span>
+<span class="sd">    :param Network:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gamma</span> <span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;./AuxiliaryFiles/ORFs/ORF.dat&#39;</span><span class="p">,</span> <span class="n">sep</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">index_col</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">Network</span><span class="o">.</span><span class="n">freq</span>
+    <span class="n">deltaF</span> <span class="o">=</span> <span class="n">freq</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">freq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">deltaF</span><span class="p">)</span>
+    <span class="n">interp</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">freq_omg</span><span class="p">,</span> <span class="n">Omega</span><span class="p">)</span>
+    <span class="n">Omega_interp</span> <span class="o">=</span> <span class="n">interp</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+    <span class="n">SNR</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">SNR2</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">Network</span><span class="o">.</span><span class="n">compo</span><span class="p">:</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">Make_psd</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Network</span><span class="o">.</span><span class="n">compo</span><span class="p">)):</span>
+        <span class="n">di</span> <span class="o">=</span> <span class="n">Network</span><span class="o">.</span><span class="n">compo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">dj</span> <span class="o">=</span> <span class="n">Network</span><span class="o">.</span><span class="n">compo</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">gamma_ref</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">di</span><span class="o">.</span><span class="n">configuration</span><span class="o">+</span><span class="n">dj</span><span class="o">.</span><span class="n">configuration</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gamma_ref</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">gamma</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+                <span class="n">gamma_ref</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dj</span><span class="o">.</span><span class="n">configuration</span><span class="o">+</span><span class="n">di</span><span class="o">.</span><span class="n">configuration</span><span class="p">)</span>
+            <span class="n">interp_ORF</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">gamma</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span> <span class="n">gamma</span><span class="p">[</span><span class="n">gamma_ref</span><span class="p">])</span>
+            <span class="n">Gammaij</span> <span class="o">=</span> <span class="n">interp_ORF</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+            <span class="n">interpPi</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">di</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span> <span class="n">di</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span>
+            <span class="n">interpPj</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">dj</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span> <span class="n">dj</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span>
+            <span class="n">Pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">interpPi</span><span class="p">(</span><span class="n">freq</span><span class="p">))</span>
+            <span class="n">Pj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">interpPj</span><span class="p">(</span><span class="n">freq</span><span class="p">))</span>
+            <span class="n">Pi</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">Pi</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">Pj</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">Pj</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">Pi</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">freq</span><span class="p">))</span> <span class="p">:</span>
+                <span class="n">SNR2</span> <span class="o">+=</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">Gammaij</span><span class="p">[</span><span class="n">f</span><span class="p">],</span><span class="mf">2.</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">Omega_interp</span><span class="p">[</span><span class="n">f</span><span class="p">],</span><span class="mf">2.</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">f</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mf">6.</span><span class="p">)</span> <span class="o">*</span> <span class="n">Pi</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">*</span> <span class="n">Pj</span><span class="p">[</span><span class="n">f</span><span class="p">])</span>
+            <span class="n">SNR</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">Gammaij</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">Omega_interp</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span><span class="mf">6.</span><span class="p">)</span> <span class="o">*</span> <span class="n">Pi</span> <span class="o">*</span> <span class="n">Pj</span><span class="p">))</span>
+    <span class="n">SNR</span> <span class="o">=</span> <span class="n">Cst_snr_bkg</span><span class="p">(</span><span class="n">cosmology</span><span class="o">.</span><span class="n">H0</span><span class="p">)</span><span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">duration</span> <span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">efficiency</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">SNR</span><span class="p">)</span> <span class="o">/</span> <span class="n">deltaF</span>
+    <span class="n">SNR2</span> <span class="o">=</span> <span class="n">Cst_snr_bkg</span><span class="p">(</span><span class="n">cosmology</span><span class="o">.</span><span class="n">H0</span><span class="p">)</span><span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">duration</span> <span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">efficiency</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">SNR2</span><span class="p">)</span> <span class="o">/</span> <span class="n">deltaF</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SNR1 = &#39;</span><span class="p">,</span><span class="n">Cst_snr_bkg</span><span class="p">(</span><span class="n">cosmology</span><span class="o">.</span><span class="n">H0</span><span class="p">),</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;SNR2 = &#39;</span><span class="p">,</span><span class="n">SNR2</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">Network</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Cst_snr_bkg</span><span class="p">(</span><span class="n">cosmology</span><span class="o">.</span><span class="n">H0</span><span class="p">)</span><span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">duration</span> <span class="o">*</span> <span class="n">Network</span><span class="o">.</span><span class="n">efficiency</span><span class="o">*</span> <span class="n">SNR</span><span class="p">)</span> <span class="o">/</span> <span class="n">deltaF</span></div>
+
+
+
+<div class="viewcode-block" id="SNR_Omega">
+<a class="viewcode-back" href="../../../doc.html#Princess.stochastic.snr.SNR_Omega">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">SNR_Omega</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span> <span class="n">Omega</span><span class="p">,</span> <span class="n">Networks</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Calculate the SNR of a given spectrum Omega for each Network in Networks.</span>
+<span class="sd">    Assuming one year of detection with a duty-cycle (ie. efficiency) of 0.5</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Import cosmology</span>
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">Cosmology</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;Cosmo_model&#39;</span><span class="p">])</span>
+    <span class="n">cosmology</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+
+    <span class="c1">#Detectors = [GS.Net_compo[n] for n in Networks]</span>
+    <span class="n">fmin_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="n">fmax_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="n">SNR_final</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">({})</span>
+    <span class="c1"># for n in range(len(Networks)) :</span>
+    <span class="c1">#     for d in range(len(Compo)) :</span>
+    <span class="c1">#         det = GS.Detectors[Compo[d]] #names for orfs</span>
+    <span class="c1">#         fmin_list= np.append(fmin_list, det[4])</span>
+    <span class="c1">#         fmax_list = np.append(fmax_list, det[4]+det[2]*det[3])</span>
+    <span class="c1"># freq_min = np.min(fmin_list)</span>
+    <span class="c1"># freq_max = np.max(fmax_list)</span>
+
+
+
+    <span class="k">for</span> <span class="n">N</span> <span class="ow">in</span> <span class="n">Networks</span> <span class="p">:</span>
+        <span class="n">PSD</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">({})</span>
+        <span class="n">Freq_Lim</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">({})</span>
+        <span class="n">Compo</span> <span class="o">=</span> <span class="n">GS</span><span class="o">.</span><span class="n">Net_psd</span><span class="p">[</span><span class="n">N</span><span class="p">]</span>
+        <span class="n">combi</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">net_info</span> <span class="o">=</span> <span class="n">GS</span><span class="o">.</span><span class="n">Net_files</span><span class="p">[</span><span class="n">N</span><span class="p">]</span>
+        <span class="n">Gamma</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AuxiliaryFiles/ORFs/&#39;</span><span class="o">+</span><span class="n">net_info</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">delimiter</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1">#Omega = GW.Search_Omg(Omega, Gamma[&#39;freq&#39;])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Omega</span><span class="p">))</span>
+        <span class="n">SNR_pair</span> <span class="o">=</span>  <span class="nb">dict</span><span class="p">({})</span>
+        <span class="n">combi_orf</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">iterT</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">GS</span><span class="o">.</span><span class="n">Net_compo</span><span class="p">[</span><span class="n">N</span><span class="p">],</span> <span class="mi">2</span><span class="p">)]</span>
+        <span class="n">combi_orf</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">combi_orf</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx_det1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Compo</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">:</span>
+            <span class="k">for</span> <span class="n">idx_det2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Compo</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="n">idx_det1</span><span class="p">)</span> <span class="p">:</span>
+                <span class="n">idx_det2</span><span class="o">+=</span><span class="mi">1</span><span class="o">+</span><span class="n">idx_det1</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">Compo</span><span class="p">[</span><span class="n">idx_det1</span><span class="p">]</span><span class="o">+</span><span class="n">Compo</span><span class="p">[</span><span class="n">idx_det2</span><span class="p">])</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PSD</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">:</span>
+                    <span class="n">det1</span> <span class="o">=</span> <span class="n">GS</span><span class="o">.</span><span class="n">Detectors</span><span class="p">[</span><span class="n">Compo</span><span class="p">[</span><span class="n">idx_det1</span><span class="p">]]</span>
+                    <span class="n">det2</span> <span class="o">=</span> <span class="n">GS</span><span class="o">.</span><span class="n">Detectors</span><span class="p">[</span><span class="n">Compo</span><span class="p">[</span><span class="n">idx_det2</span><span class="p">]]</span>
+                    <span class="k">if</span> <span class="n">det1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Coba&#39;</span> <span class="p">:</span>
+                        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AuxiliaryFiles/PSDs/Coba/&#39;</span><span class="o">+</span><span class="n">det1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sep</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">index_col</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="n">PSD1</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">from_numpy_arrays</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;HF_LF&#39;</span><span class="p">],</span> <span class="n">length</span> <span class="o">=</span> <span class="n">det1</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">delta_f</span> <span class="o">=</span> <span class="n">det1</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">low_freq_cutoff</span><span class="o">=</span><span class="n">det1</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+                    <span class="k">else</span> <span class="p">:</span>
+                        <span class="n">PSD1</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">psd_name</span><span class="o">=</span><span class="n">det1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">length</span><span class="o">=</span><span class="n">det1</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">det1</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                                  <span class="n">low_freq_cutoff</span><span class="o">=</span><span class="n">det1</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="n">det2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Coba&#39;</span> <span class="p">:</span>
+                        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AuxiliaryFiles/PSDs/Coba/&#39;</span><span class="o">+</span><span class="n">det2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sep</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">index_col</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="n">PSD2</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">from_numpy_arrays</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;HF_LF&#39;</span><span class="p">],</span> <span class="n">length</span> <span class="o">=</span> <span class="n">det2</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">delta_f</span> <span class="o">=</span> <span class="n">det2</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">low_freq_cutoff</span><span class="o">=</span><span class="n">det2</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+                    <span class="k">else</span> <span class="p">:</span>
+                        <span class="n">PSD2</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">psd_name</span><span class="o">=</span><span class="n">det2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">length</span><span class="o">=</span><span class="n">det2</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">det2</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                                  <span class="n">low_freq_cutoff</span><span class="o">=</span><span class="n">det2</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="n">combi_orf</span><span class="p">[</span><span class="n">combi</span><span class="p">]</span>
+                    <span class="n">PSD</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">PSD1</span><span class="o">*</span><span class="n">PSD2</span>
+                    <span class="n">Freq_Lim</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">det1</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">det1</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">+</span><span class="n">det1</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="n">det1</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+            <span class="n">combi</span> <span class="o">+=</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="n">net_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;3G&#39;</span> <span class="p">:</span>
+            <span class="n">freq_min</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">freq_max</span> <span class="o">=</span> <span class="mi">2300</span>
+        <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">PSD</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="p">:</span>
+            <span class="n">SNR_pair</span><span class="p">[</span><span class="n">pair</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">pair</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fr</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">freq_max</span><span class="p">)</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">freq_min</span><span class="p">))</span> <span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">fr</span> <span class="o">+</span> <span class="n">freq_min</span>
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">PSD</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="p">:</span>
+                <span class="n">freqs</span> <span class="o">=</span> <span class="n">Freq_Lim</span><span class="p">[</span><span class="n">pair</span><span class="p">]</span>
+                <span class="n">psd</span> <span class="o">=</span> <span class="n">PSD</span><span class="p">[</span><span class="n">pair</span><span class="p">]</span>
+                <span class="n">gamma</span> <span class="o">=</span> <span class="n">Gamma</span><span class="p">[</span><span class="n">pair</span><span class="p">]</span>
+                <span class="n">freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">3</span>
+                <span class="k">if</span> <span class="p">((</span><span class="n">f</span> <span class="o">&lt;=</span> <span class="n">freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">f</span> <span class="o">&gt;=</span> <span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">psd</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">-</span> <span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+                        <span class="n">SNR_pair</span><span class="p">[</span><span class="n">pair</span><span class="p">]</span> <span class="o">+=</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">Omega</span><span class="p">[</span><span class="n">fr</span><span class="p">]</span> <span class="o">*</span> <span class="n">gamma</span><span class="p">[</span><span class="n">fr</span><span class="p">],</span> <span class="mf">2.</span><span class="p">)</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">psd</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">-</span> <span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                                                                                             <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="o">-</span><span class="mf">6.</span><span class="p">)</span>
+        <span class="n">SNR_fin</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">PSD</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="p">:</span>
+            <span class="n">SNR_fin</span> <span class="o">+=</span> <span class="n">SNR_pair</span><span class="p">[</span><span class="n">pair</span><span class="p">]</span>
+        <span class="n">SNR_final</span><span class="p">[</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="mf">8.13e-34</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">SNR_fin</span><span class="p">,</span><span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">SNR_final</span></div>
+
+
+<div class="viewcode-block" id="SNR_run">
+<a class="viewcode-back" href="../../../doc.html#Princess.stochastic.snr.SNR_run">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">SNR_run</span><span class="p">(</span><span class="n">SNR_0</span><span class="p">,</span> <span class="n">SNR_year</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">tstart</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; </span>
+<span class="sd">    :param SNR_0: Starting SNR (SNR at the end of a previous run for example) </span>
+<span class="sd">    :param SNR_year: SNR for one year of observation (careful to know what the duty-cycle is at this point) </span>
+<span class="sd">    :param duration: duration of the run in yr</span>
+<span class="sd">    :param tstart: starting time</span>
+<span class="sd">    :return: dataframe with two columns &#39;Time&#39; and &#39;SNR&#39;</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">t</span><span class="o">=</span><span class="mi">0</span>
+    <span class="n">SNR_cum</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">Time</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">t</span><span class="o">&lt;=</span><span class="p">(</span><span class="n">duration</span><span class="o">+</span><span class="mf">0.02</span><span class="p">))</span> <span class="p">:</span>
+        <span class="n">SNR_cum</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">SNR_0</span><span class="o">*</span><span class="n">SNR_0</span><span class="o">+</span><span class="n">t</span><span class="o">*</span><span class="n">SNR_year</span><span class="o">*</span><span class="n">SNR_year</span><span class="p">,</span><span class="mf">0.5</span><span class="p">))</span>
+        <span class="n">Time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tstart</span><span class="o">+</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span><span class="o">+=</span><span class="mf">0.02</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">Time</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">SNR_cum</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+
+
+<div class="viewcode-block" id="SNRwf">
+<a class="viewcode-back" href="../../../doc.html#Princess.stochastic.snr.SNRwf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">SNRwf</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cat_name</span><span class="p">)</span> <span class="p">:</span>
+    <span class="n">approximant</span> <span class="o">=</span> <span class="s2">&quot;IMRPhenomPv2&quot;</span>
+    <span class="n">Det_list</span> <span class="o">=</span> <span class="n">GS</span><span class="o">.</span><span class="n">Detectors</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="c1">#df = pd.read_csv(cat, delimiter=&#39;\t&#39;, index_col=False)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;inc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Mc&#39;</span><span class="p">]))</span>
+    <span class="c1">#df[&#39;m1&#39;], df[&#39;m2&#39;] = BF.mc_q_to_m1_m2(df[&#39;Mc&#39;], df[&#39;q&#39;])</span>
+    <span class="c1">#df[&#39;Dl&#39;] = cosmo.Planck15.luminosity_distance(df[&quot;zm&quot;]).value</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;Mc&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Mc&#39;</span><span class="p">],</span> <span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;q&#39;</span><span class="p">],</span> <span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;zm&#39;</span><span class="p">],</span> <span class="s1">&#39;inc&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;inc&#39;</span><span class="p">],</span> <span class="s1">&#39;Dl&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Dl&#39;</span><span class="p">]})</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">Det_list</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;SNR_&#39;</span> <span class="o">+</span> <span class="n">d</span>
+        <span class="n">det_info</span> <span class="o">=</span> <span class="n">Det_list</span><span class="p">[</span><span class="n">d</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">det_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;PyCBC&#39;</span> <span class="p">:</span>
+            <span class="n">PSD</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">psd_name</span><span class="o">=</span><span class="n">det_info</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">length</span><span class="o">=</span><span class="n">det_info</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">det_info</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                                    <span class="n">low_freq_cutoff</span><span class="o">=</span><span class="n">det_info</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">det_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Coba&#39;</span> <span class="p">:</span>
+            <span class="n">df_bis</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;AuxiliaryFiles/PSDs/Coba/&#39;</span><span class="o">+</span><span class="n">det_info</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sep</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">index_col</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">PSD</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">from_numpy_arrays</span><span class="p">(</span><span class="n">df_bis</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span> <span class="n">df_bis</span><span class="p">[</span><span class="s1">&#39;HF_LF&#39;</span><span class="p">],</span> <span class="n">length</span> <span class="o">=</span> <span class="n">det_info</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">delta_f</span> <span class="o">=</span> <span class="n">det_info</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">low_freq_cutoff</span><span class="o">=</span><span class="n">det_info</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+            <span class="c1">#interp = InterpolatedUnivariateSpline(dfbis[&#39;f&#39;], dfbis[&#39;HF_LF&#39;])</span>
+            <span class="c1">#freq = np.linspace(det_info[4],det_info[4] + det_info[3] * det_info[2],det_info[4] + det_info[3] * det_info[2])</span>
+            <span class="c1">#PSD = interp(freq)</span>
+        <span class="n">grid</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">pycbc</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">matchedfilter</span><span class="o">.</span><span class="n">sigma</span><span class="p">(</span><span class="n">pycbc</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">get_fd_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="n">approximant</span><span class="p">,</span>
+                                                                                      <span class="n">mass1</span><span class="o">=</span><span class="n">m1</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">z</span><span class="p">),</span>
+                                                                                      <span class="n">mass2</span><span class="o">=</span><span class="n">m2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">z</span><span class="p">),</span>
+                                                                                      <span class="n">spin1x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin1y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin1z</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                                                                                      <span class="n">spin2x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin2y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin2z</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                                                                                      <span class="n">delta_f</span><span class="o">=</span><span class="n">det_info</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                                                                                      <span class="n">f_lower</span><span class="o">=</span><span class="n">det_info</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+                                                                                      <span class="n">distance</span><span class="o">=</span><span class="n">ld</span><span class="p">,</span>
+                                                                                      <span class="n">inclination</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">f_ref</span><span class="o">=</span><span class="mf">20.</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                                                       <span class="n">psd</span><span class="o">=</span><span class="n">PSD</span><span class="p">,</span>
+                                                       <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">det_info</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+                                                       <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">det_info</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="n">det_info</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">det_info</span><span class="p">[</span>
+                                                           <span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">ld</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;m1&quot;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;m2&quot;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;Dl&quot;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;zm&quot;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;inc&#39;</span><span class="p">])]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="n">grid</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">cat_name</span> <span class="o">+</span> <span class="s1">&#39;3G_SNRs&#39;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;.dat&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">grid</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">cat_name</span><span class="o">+</span><span class="s1">&#39;3G_SNRs.dat&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">truc</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+    <span class="n">truc</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">cat_name</span><span class="o">+</span><span class="s1">&#39;_describe.dat&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">cat_name</span> <span class="o">+</span><span class="s1">&#39;3G_SNRs.dat&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SNR_Net_wf">
+<a class="viewcode-back" href="../../../doc.html#Princess.stochastic.snr.SNR_Net_wf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">SNR_Net_wf</span><span class="p">(</span><span class="n">cat</span><span class="p">,</span><span class="n">Net</span> <span class="p">)</span> <span class="p">:</span>
+    <span class="n">combi</span> <span class="o">=</span> <span class="n">GS</span><span class="o">.</span><span class="n">Net_psd</span><span class="p">[</span><span class="n">Net</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">cat</span><span class="p">,</span> <span class="n">index_col</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sep</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">describe</span><span class="p">())</span>
+    <span class="n">truc</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+    <span class="n">truc</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;Ana_indSNR_&#39;</span><span class="o">+</span><span class="n">cat</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">sep</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="n">Net</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Mc&#39;</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">combi</span> <span class="p">:</span>
+        <span class="n">df</span><span class="p">[</span><span class="n">Net</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">Net</span><span class="p">],</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;SNR_&#39;</span><span class="o">+</span><span class="n">det</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">Net</span><span class="p">]))</span></div>
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Carole Périgois.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

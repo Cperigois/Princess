@@ -16,62 +16,18 @@ def set_old(_projectFolder, _paramDictionnary, _advParamDictionnary):
     print("Done writing dict into Run/Params.json file and in Run/", str(_projectFolder), "/Params.json")
 
 
-def set(_projectFolder, _paramDictionnary, _advParamDictionnary):
-    try:
-        # Validate inputs
-        if not isinstance(_paramDictionnary, dict) or not isinstance(_advParamDictionnary, dict):
-            raise ValueError("Both _paramDictionnary and _advParamDictionnary must be dictionaries.")
 
-        # Merge dictionaries
-        output = {**_paramDictionnary, **_advParamDictionnary}
-        json_object = json.dumps(output, indent=4)  # Pretty print JSON with a standard indent level
-
-        # Define file paths
-        base_params_path = os.path.join('Run', 'Params.json')
-        project_folder_path = os.path.join('Run', _projectFolder)
-        project_params_path = os.path.join(project_folder_path, 'Params.json')
-
-        # Ensure 'Run' and project folder exist
-        os.makedirs('Run', exist_ok=True)
-        os.makedirs(project_folder_path, exist_ok=True)
-
-        # Write to base Params.json
-        with open(base_params_path, "w") as file:
-            file.write(json_object)
-
-        # Write to project-specific Params.json
-        with open(project_params_path, "w") as file:
-            file.write(json_object)
-
-        print(f"Successfully wrote Params.json to {base_params_path} and {project_params_path}.")
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-def clean():
-    params = json.load(open('Run/Params.json', 'r'))
-    for am in params['astro_model_list'].keys():
-        os.remove('Run/' + params['name_of_project_folder']+'/'+ am +'_AM.pickle')
-    for det in params['detector_list'].keys():
-        os.remove('Run/' + params['name_of_project_folder']+'/'+ det +'_DET.pickle')
-    for net in params['network_list'].keys():
-        os.remove('Run/' + params['name_of_project_folder'] + '/' + net + '_NET.pickle')
-    os.remove('Run/Params.json')
 
 
 ##################################################
 #                   COSMOLOGY Add this part to a notebook for an extraction to the Princess paper
 ##################################################
-# Load the available cosmologies from presets.json
-with open("cosmology/presets.json", "r") as f:
-    preset_cosmologies = json.load(f)
 
-available_models = ", ".join(preset_cosmologies.keys())
 
 """ 
 Cosmology. Here you can choose an existing Cosmology or create a customized one.
-Current cosmologies available are: {}
-""".format(available_models)
+Current cosmologies available are: {Planck15, Planck18}
+"""
 
 # For a customized cosmology uncomment the following lines and add the reference paper,
 # and eventually the table and the model your data refers to. Save the model with reference information.
@@ -113,6 +69,9 @@ input_parameters = {
     "m2": "m2",  # mass of compact object 2
     "mrem2": "m2",
     "Mass2": "m2",
+
+    "chirp_mass" : "Mc",
+    "mc" : "Mc",
 
     "chi1": "chi1",  # spin magnitude of compact object 1
     "th1": "theta1",  # angle between angular momentum and spin for compact object 1

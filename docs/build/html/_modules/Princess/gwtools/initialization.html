@@ -47,6 +47,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html">Pkg astrotools</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-cosmology">Pkg cosmology</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-gwtools">Pkg gwtools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-stochastic">Pkg stochastic</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html#module-Princess.Run">Run</a></li>
 </ul>
 
@@ -75,8 +76,8 @@
            <div itemprop="articleBody">
              
   <h1>Source code for Princess.gwtools.initialization</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">Princess.gwtools.Detector</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">DET</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">Princess.gwtools.Network</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">NET</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">Princess.gwtools.Detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Princess.gwtools.Network</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">importlib.resources</span>
 
@@ -89,14 +90,14 @@
 <a class="viewcode-back" href="../../../doc.html#Princess.gwtools.initialization.initialization">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">initialization</span><span class="p">():</span>
     <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;detector_list&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">detector</span> <span class="o">=</span> <span class="n">DET</span><span class="o">.</span><span class="n">Detector</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;detector_list&#39;</span><span class="p">][</span><span class="n">det</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+        <span class="n">detector</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;detector_list&#39;</span><span class="p">][</span><span class="n">det</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
                             <span class="n">configuration</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;detector_list&#39;</span><span class="p">][</span><span class="n">det</span><span class="p">][</span><span class="s1">&#39;configuration&#39;</span><span class="p">],</span>
                             <span class="n">origin</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;detector_list&#39;</span><span class="p">][</span><span class="n">det</span><span class="p">][</span><span class="s1">&#39;origin&#39;</span><span class="p">],</span>
                             <span class="n">reference</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;detector_list&#39;</span><span class="p">][</span><span class="n">det</span><span class="p">][</span><span class="s1">&#39;reference&#39;</span><span class="p">],</span>
                             <span class="nb">type</span><span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;detector_list&#39;</span><span class="p">][</span><span class="n">det</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>
         <span class="n">detector</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">net</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;network_list&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">network</span> <span class="o">=</span> <span class="n">NET</span><span class="o">.</span><span class="n">Network</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;network_list&#39;</span><span class="p">][</span><span class="n">net</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+        <span class="n">network</span> <span class="o">=</span> <span class="n">Network</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;network_list&#39;</span><span class="p">][</span><span class="n">net</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
                           <span class="n">compo</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;network_list&#39;</span><span class="p">][</span><span class="n">net</span><span class="p">][</span><span class="s1">&#39;compo&#39;</span><span class="p">],</span>
                           <span class="n">pic_file</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;network_list&#39;</span><span class="p">][</span><span class="n">net</span><span class="p">][</span><span class="s1">&#39;pic_file&#39;</span><span class="p">],</span>
                           <span class="n">efficiency</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;network_list&#39;</span><span class="p">][</span><span class="n">net</span><span class="p">][</span><span class="s1">&#39;efficiency&#39;</span><span class="p">],</span>

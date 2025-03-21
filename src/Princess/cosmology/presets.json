@@ -1,16 +1,16 @@
 {
   "Planck15": {
     "H0": 67.74,
-    "Omegam": 0.3089,
-    "OmegaLambda": 0.6911,
+    "Omega_m": 0.3089,
+    "Omega_Lambda": 0.6911,
     "reference": "https://inspirehep.net/literature/1343079",
     "model": "TT,TE,EE+lowP+lensing+ext",
     "table": "Table 5"
   },
   "Planck18": {
     "H0": 67.66,
-    "Omegam": 0.3111,
-    "OmegaLambda": 0.6889,
+    "Omega_m": 0.3111,
+    "Omega_Lambda": 0.6889,
     "reference": "https://inspirehep.net/literature/1682902",
     "model": "TT,TE,EE+lowE+lensing+BAO",
     "table": "Table 2"

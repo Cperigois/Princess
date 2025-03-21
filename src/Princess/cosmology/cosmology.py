@@ -6,16 +6,12 @@ import pandas as pd
 import json
 import importlib.resources
 
-#Import parameter file
-with importlib.resources.open_text("Princess.Run", "Params.json") as f:
-    params = json.load(f)
-
-#Import preset cosmologies
-with importlib.resources.open_text("Princess.cosmology","presets.json") as f:
+# Import preset cosmologies
+with importlib.resources.open_text("Princess.cosmology", "presets.json") as f:
     preset_cosmologies = json.load(f)
 
-
 class Cosmology :
+
     def __init__(self, name: str, Omega_m: float = 0.3, Omega_Lambda: float = 0.7, H0: float = 67):
         """Initializes an AstroModel instance and loads or creates necessary data.
 
@@ -24,6 +20,7 @@ class Cosmology :
         :param Omega_Lambda: (float) Refers to Omega_Lambda for a flat LambdaCDM model.
         :param H_0: (float): Planck constant in km s−1 Mpc−1
         """
+
 
         self.name = name
         self.Omega_m = Omega_m

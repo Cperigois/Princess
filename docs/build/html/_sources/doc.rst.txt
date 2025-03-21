@@ -1,6 +1,23 @@
 Pkg astrotools
 ======================================
 
+class astromodel
+--------------------
+
+.. automodule:: Princess.astrotools.astromodel
+    :members:
+    :undoc-members:
+
+
+catalogue_generation
+--------------------
+
+.. automodule:: Princess.astrotools.catalogue_generation
+    :members:
+    :undoc-members:
+
+
+
 Pkg cosmology
 ======================================
 class cosmology
@@ -44,14 +61,40 @@ class Network
     :show-inheritance:
 
 
-htild
+waveform
 --------------------
 
-.. automodule:: Princess.gwtools.htild
+.. automodule:: Princess.gwtools.waveform
     :members:
     :undoc-members:
     :private-members:
     :show-inheritance:
+
+
+Pkg stochastic
+======================================
+
+
+class background
+--------------------
+.. automodule:: Princess.stochastic.background
+    :members:
+    :undoc-members:
+
+
+snr
+--------------------
+.. automodule:: Princess.stochastic.snr
+    :members:
+    :undoc-members:
+
+
+utils
+--------------------
+.. automodule:: Princess.stochastic.utils
+    :members:
+    :undoc-members:
+
 
 
 Run
