@@ -1,16 +1,17 @@
 import os
 import json
-import Run.getting_started as GS # Initiate the file Params.json
-import astrotools.astromodel as AM
-import astrotools.detection as DET
-import stochastic.background as BKG
-import Run.advanced_params as AP
+from Princess.astrotools.astromodel import process_astromodel
+from Princess.gwtools.initialization import initialization
+from Princess.stochastic.background import process_background_computation
+from Princess.test.settings import Make_param_file, clean
 import shutil
 
 
 
 if __name__ == '__main__':
-    params = json.load(open('Params.json', 'r'))
+    # (Re)Build the file params.json
+    Make_param_file()
+    params = json.load(open('Run/Params.json', 'r'))
 
     # Make sure directories are created
     if not os.path.exists('Run/' + params['name_of_project_folder']):
@@ -24,13 +25,13 @@ if __name__ == '__main__':
 #    AM.initialization()
 
     #Read and reshape detectors and networks, save instances for each of them
-    DET.initialization()
+    initialization()
 
     #Compute SNR and individual analysis for the individual detection
-    AM.process_astromodel()
+    process_astromodel()
 
     #Compute backgrounds, residuals and the corresponding analysis
-    BKG.process_background_computation()
+    process_background_computation()
 
     #Copy the getting starter file to the project repository
     source_file = "Run/getting_started"
@@ -38,5 +39,5 @@ if __name__ == '__main__':
     shutil.copy(source_file, destination_folder)
 
     if params['results']['cleaning'] == True :
-        AP.clean()
+        clean()
 

@@ -1,7 +1,4 @@
-import os
 import sys
-import importlib.resources
-import Princess.test.advanced_params as AP
 
 """
 Parameters of the user input catalogue. Please do not change the right column.
