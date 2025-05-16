@@ -19,7 +19,7 @@ print("Sphinx is using sys.path:", sys.path)
 project = 'Princess'
 copyright = '2025, Carole Périgois'
 author = 'Carole Périgois'
-release = '0.0.0'
+release = '2.0.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -1,7 +1,7 @@
 Pkg astrotools
 ======================================
 
-class astromodel
+class AstroModel
 --------------------
 
 .. automodule:: Princess.astrotools.astromodel
@@ -18,8 +18,9 @@ catalogue_generation
 
 
 
-Pkg cosmology
+Pkg Cosmology
 ======================================
+
 class cosmology
 --------------------
 
@@ -71,6 +72,16 @@ waveform
     :show-inheritance:
 
 
+snr
+--------------------
+
+.. automodule:: Princess.gwtools.snr
+    :members:
+    :undoc-members:
+    :private-members:
+    :show-inheritance:
+
+
 Pkg stochastic
 ======================================
 
@@ -82,7 +93,7 @@ class background
     :undoc-members:
 
 
-snr
+background snr
 --------------------
 .. automodule:: Princess.stochastic.snr
     :members:

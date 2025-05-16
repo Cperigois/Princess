@@ -149,6 +149,6 @@ rerun_background = True
 """
         Choose if you want to compute multichannel analysis
 """
-run_data_cleaning = False
+run_data_cleaning = True
 run_plots = False
 

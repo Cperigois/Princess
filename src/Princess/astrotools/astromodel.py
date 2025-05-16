@@ -6,69 +6,19 @@ import pandas as pd
 import json
 import pickle
 from Princess.astrotools.utils import m1_m2_to_mc_q, mc_q_to_m1_m2
-from Princess.gwtools.waveform import GWk_no_ecc_pycbcwf
 from Princess.gwtools.Network import Network
 from Princess.gwtools.Detector import Detector
 from Princess.cosmology.cosmology import Cosmology
-import importlib.resources
+from Princess.gwtools.snr import SNR_catalog, compute_SNR_Networks_catalog
+from Princess.Run.settings import PARAMS_FILE
 
-# Import parameter file
-with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+# Check PARAMS_FILE value
+if not PARAMS_FILE or not os.path.exists(PARAMS_FILE):
+    raise FileNotFoundError(f"The file parameter {PARAMS_FILE} is missing,. Execute Run.settings.Make_params_file() first.")
+
+# Charge le fichier de paramètres
+with open(PARAMS_FILE, "r") as f:
     params = json.load(f)
-
-def process_astromodel():
-    """
-    Main function to process all astromodels defined in the configuration.
-    Loads existing models if available, otherwise initializes, saves,
-    generates catalogs, and computes SNR.
-    """
-
-    # Import parameter file
-    with importlib.resources.open_text("Princess.Run", "Params.json") as f:
-        params = json.load(f)
-
-    # Ensure necessary directories exist
-    base_path = f"Run/{params['name_of_project_folder']}"
-    astro_models_path = f"{base_path}/Astro_Models"
-    catalogs_path = f"{astro_models_path}/Catalogs"
-
-    os.makedirs(base_path, exist_ok=True)
-    os.makedirs(astro_models_path, exist_ok=True)
-    os.makedirs(catalogs_path, exist_ok=True)
-
-    # Process each astromodel defined in the parameter configuration
-    for model_key, model_params in params['astro_model_list'].items():
-        try:
-            model_name = model_params['name']
-            model_save_path = f"{base_path}/{model_name}_AM.pickle"
-
-            # Vérifier si le modèle existe déjà
-            if os.path.exists(model_save_path) and (not params['overwrite']['astromodel']) :
-                am = AstroModel.load(model_save_path)
-                print(f"Loaded existing AstroModel: {am.name}")
-            else:
-                # Initialisation d'un nouveau modèle
-                am = AstroModel(
-                    name=model_params['name'],
-                    original_path=model_params['original_path'],
-                    spin_model=model_params['spin_model'],
-                    duration=model_params['duration']
-                )
-                print(f"Initialized new AstroModel: {am.name}")
-
-                # Générer le catalogue pour le modèle
-                am.make_catalog()
-                am.compute_SNR()
-                # Sauvegarde du modèle pour un usage futur
-                am.save()
-                print('ICI')
-            # if the user ask for the rurun of SNR without rerunning the astromodel
-            if params['overwrite']['individual_snr'] and (not params['overwrite']['astromodel']):
-                am.check_SNR_reboot() # Set to False the computation of SNRs to ensure its recomputation
-                am.compute_SNR()
-
-        except Exception as e:
-            print(f"Error processing AstroModel '{model_key}': {e}")
 
 
 class AstroModel:
@@ -170,6 +120,7 @@ class AstroModel:
 
         # Rename input columns if specified in parameters
         Cat.rename(columns=params['AM_params'].get('input_parameters', {}), inplace=True)
+        # Load cosmology models (parameters from Advanced_params.py
         cosmology = Cosmology.load(params['Cosmo_model'])
         cosmology.info()
         # Handle redshift (z)
@@ -261,6 +212,7 @@ class AstroModel:
         self.SNR_3G = False
         self.SNR_LISA = False
         self.SNR_PTA = False
+
 
     def generate_spin(self, size:int)->tuple:
         """
@@ -386,168 +338,21 @@ class AstroModel:
         # catalog_path = f'./Run/{params["name_of_project_folder"]}/Astro_Models/Catalogs':
         # takes name of the model and RETURN the dataframe with the SNRs, and save the new catalogs
         if ((not self.SNR_2G) or params['overwrite']['individual_snr']) and len(det_list_2G)>0:
-            self.SNR(det_list = det_list_2G, waveform = params['detector_params']['types']['2G']['waveform'], freq = det_list_2G[0].freq )
+            SNR_catalog(catalog_name= self.name, det_list = det_list_2G, waveform = params['detector_params']['types']['2G']['waveform'], freq = det_list_2G[0].freq )
             self.SNR_2G = True
         elif self.SNR_2G :
             print('SNR for 2G detectors already computed')
         else :
             print("Possible error...Check values for SNR check point am.SNR_2G and the presence of 2G detectors in catalog columns")
         if ((not self.SNR_3G) or params['overwrite']['individual_snr']) and len(det_list_3G)>0:
-            self.SNR(det_list= det_list_3G, waveform = params['detector_params']['types']['3G']['waveform'], freq = det_list_3G[0].freq )
+            SNR_catalog(catalog_name= self.name, det_list= det_list_3G, waveform = params['detector_params']['types']['3G']['waveform'], freq = det_list_3G[0].freq )
             self.SNR_3G = True
         elif self.SNR_3G :
             print('SNR for 3G detectors already computed')
         else :
             print("Possible error...Check values for SNR check point am.SNR_3G and the presence of 2G detectors in catalog columns")
-        self.compute_SNR_Networks()
+        compute_SNR_Networks_catalog(catalog_name = self.name)
         self.save()
-
-
-
-    def SNR_old(self, det_list: list, waveform: str, freq: np.array):
-        """
-        Calculate the optimal SNR for each event of the catalogue and save it with additional columns.
-        """
-
-        for cat in self.catalogs:
-            Cat = pd.read_csv('./Run/' + params['name_of_project_folder'] + '/Astro_Models/Catalogs/' + cat, sep='\t',
-                              index_col=False)
-            print('SNR calculation for', cat)
-            ntot = len(Cat.z)
-
-            # Initialisation des colonnes SNR à zéro pour chaque détecteur
-            for i in det_list:
-                Cat[i.name] = 0.0
-
-            for evt in range(len(Cat)):
-                event = Cat.iloc[[evt]]  # Sélectionne une seule ligne sous forme de DataFrame
-                htildsq = GWk_no_ecc_pycbcwf(evt=event, freq=freq, approx=waveform, n=evt, size_catalogue=ntot,
-                                             inc_option=params['Inclination'])
-                if isinstance(htildsq, int):  # Si htildsq est un entier, erreur
-                    error_file = 'Catalogs/' + cat + '_errors.txt'
-                    with open(error_file, "a") as f:
-                        if os.path.getsize(error_file) == 0:
-                            f.write('m1 m2 z\n')
-                        f.write(f"{event['m1'].iloc[0]} {event['m2'].iloc[0]} {event['z'].iloc[0]}\n")
-                else:
-                    for d in det_list:
-                        Sn = d.psd
-                        comp = d.deltaf * 4. * htildsq / Sn
-                        comp = np.nan_to_num(comp, nan=0, posinf=0)
-                        SNR = np.sqrt(comp.sum())  # Calcul final de la SNR
-                        Cat.at[evt, d.name] = SNR  # Correction de l'affectation
-
-            # Sauvegarde du fichier avec les nouvelles colonnes
-            output_file = './Run/' + params['name_of_project_folder'] + '/Astro_Models/Catalogs/' + cat
-            Cat.to_csv(output_file, sep='\t', index=False)
-
-
-    def SNR(self, det_list: list, waveform: str, freq: np.array):
-        """
-        Computes the optimal Signal-to-Noise Ratio (SNR) for each event in the catalog
-        and saves the updated catalog with additional SNR columns.
-
-        Parameters
-        ----------
-        det_list : list
-            List of `Detector` objects used for SNR computation.
-        waveform : str
-            The waveform model used for gravitational wave signal generation.
-        freq : np.array
-            Frequency array used for the SNR computation.
-
-        Notes
-        -----
-        - If an event produces an invalid `htildsq` value, it is logged in an error file.
-        - The function modifies and saves the catalog with SNR values for each detector.
-        """
-
-        for cat in self.catalogs:
-            catalog_path = f'./Run/{params["name_of_project_folder"]}/Astro_Models/Catalogs'
-            Cat = pd.read_csv(f'{catalog_path}/{cat}', sep='\t', index_col=False)
-            print(f'SNR calculation for {cat}')
-            ntot = len(Cat.z)
-
-            # Initialize SNR columns to zero for each detector
-            for det in det_list:
-                Cat[det.name] = 0.0
-
-            error_file = f'{catalog_path}/{self.name}_errors.txt'
-
-            for evt in range(len(Cat)):
-                event = Cat.iloc[[evt]]  # Select a single event as a DataFrame
-                htildsq = GWk_no_ecc_pycbcwf(evt=event, freq=freq, approx=waveform, n=evt, size_catalogue=ntot,
-                                             inc_option=params['Inclination'])
-                if isinstance(htildsq, int):  # If htildsq is an integer, log an error
-                    if not os.path.exists(error_file):  # Check if file exists before writing
-                        with open(error_file, "w") as f:
-                            f.write('m1 m2 z\n')
-
-                    with open(error_file, "a") as f:
-                        f.write(f"{event['m1'].iloc[0]} {event['m2'].iloc[0]} {event['z'].iloc[0]}\n")
-                else:
-                    for det in det_list:
-                        Sn = det.psd
-                        comp = det.deltaf * 4. * htildsq / Sn
-                        comp = np.nan_to_num(comp, nan=0, posinf=0)
-                        SNR = np.sqrt(comp.sum())  # Compute final SNR
-                        Cat.at[evt, det.name] = SNR  # Assign the computed SNR to the event
-
-            # Save the updated catalog with new SNR columns
-            Cat.to_csv(f'{catalog_path}/{cat}', sep='\t', index=False)
-
-    def compute_SNR_Networks(self):
-        # Charger la table de facteurs
-        try:
-            fd_table = pd.read_csv('AuxiliaryFiles/factor_table.dat', sep='\t')
-        except FileNotFoundError:
-            raise FileNotFoundError("Le fichier 'factor_table.dat' est introuvable dans 'AuxiliaryFiles/'.")
-
-        # Parcourir les réseaux dans la liste des réseaux
-        for net in params['network_list'].keys():
-            network = Network(name=net)
-
-            # Parcourir chaque catalogue
-            for cat in self.catalogs:
-                catalog_path = f"./Run/{params['name_of_project_folder']}/Astro_Models/Catalogs/{cat}"
-
-                try:
-                    Cat = pd.read_csv(catalog_path, sep='\t')
-                except FileNotFoundError:
-                    print(f"Le fichier catalogue '{cat}' est introuvable.")
-                    continue
-
-                # Vérifier si les colonnes nécessaires existent
-                if 'm1' not in Cat.columns:
-                    raise KeyError(f"'m1' column is missing in {cat}.")
-
-                # Initialisation des colonnes pour les résultats
-                Cat[f'{net}_optimal'] = 0.0
-                Cat[net] = 0.0
-
-                # Sélectionner un facteur aléatoire dans la table des facteurs
-                fd = fd_table.iloc[np.random.randint(0, len(fd_table))]
-
-                # Calculer les contributions des détecteurs
-                for det in network.compo.keys():
-                    if det in Cat.columns:
-                        Cat[f'{net}_optimal'] += Cat[det] ** 2
-                        detector_object = Detector.load(name = det)
-                        config = detector_object.configuration
-                        Cat[net] += (Cat[det] * fd[config]) ** 2
-                    else:
-                        print(f"Detector '{det}' pre computations are missing in '{cat}'.")
-
-                # Finaliser les calculs des SNR pour le réseau
-                Cat[net] = np.sqrt(Cat[net])
-                Cat[f'{net}_optimal'] = np.sqrt(Cat[f'{net}_optimal'])
-
-                # Sauvegarder les résultats dans le fichier
-                output_path = f"./Run/{params['name_of_project_folder']}/Astro_Models/Catalogs/{cat}"
-                try:
-                    Cat.to_csv(output_path, sep='\t', index=False)
-                except Exception as e:
-                    print(f"Problem during the saving of file {cat}: {e}")
 
 
     def save(self):
@@ -561,46 +366,6 @@ class AstroModel:
             print(f"AstroModel '{self.name}' saved successfully.")
         except Exception as e:
             print(f"Error saving AstroModel '{self.name}': {e}")
-
-
-
-
-
-def load_detector(name_detector: str, project_folder: str = "Run") -> object:
-    """
-    Load a Detector instance from a pickle file.
-
-    Parameters
-    ----------
-    name_detector : str
-        The name of the detector.
-    project_folder : str, optional
-        The base directory where the detector pickle files are stored, by default 'Run'.
-
-    Returns
-    -------
-    object
-        The loaded Detector instance, or None if loading fails.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the specified detector file does not exist.
-    Exception
-        For any other issues during the loading process.
-    """
-    file_path = os.path.join(project_folder, f"{name_detector}_DET.pickle")
-    try:
-        with open(file_path, "rb") as file:
-            detector_instance = pickle.load(file)
-            print(f"Detector '{name_detector}' successfully loaded from {file_path}.")
-            return detector_instance
-    except FileNotFoundError:
-        print(f"Error: File '{file_path}' not found.")
-        return None
-    except Exception as e:
-        print(f"An error occurred while loading the detector: {e}")
-        return None
 
 
 

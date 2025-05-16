@@ -45,7 +45,7 @@
               <p class="caption" role="heading"><span class="caption-text">Documentation:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="doc.html">Pkg astrotools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="doc.html#pkg-cosmology">Pkg cosmology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doc.html#pkg-cosmology">Pkg Cosmology</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doc.html#pkg-gwtools">Pkg gwtools</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doc.html#pkg-stochastic">Pkg stochastic</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doc.html#module-Princess.Run">Run</a></li>
@@ -82,6 +82,7 @@
  | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
@@ -92,6 +93,7 @@
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
  | <a href="#W"><strong>W</strong></a>
  
 </div>
@@ -122,6 +124,10 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="doc.html#Princess.astrotools.astromodel.AstroModel.check_SNR_reboot">check_SNR_reboot() (AstroModel method)</a>
 </li>
+      <li><a href="doc.html#Princess.Run.clean">clean() (in module Princess.Run)</a>
+</li>
+      <li><a href="doc.html#Princess.gwtools.snr.combine_snr_detectors">combine_snr_detectors() (in module Princess.gwtools.snr)</a>
+</li>
       <li><a href="doc.html#Princess.cosmology.cosmology.Cosmology.comoving_volume">comoving_volume() (Cosmology method)</a>
 </li>
       <li><a href="doc.html#Princess.astrotools.astromodel.AstroModel.compute_chieff">compute_chieff() (AstroModel method)</a>
@@ -130,15 +136,15 @@
 </li>
       <li><a href="doc.html#Princess.stochastic.utils.Compute_constant">Compute_constant() (in module Princess.stochastic.utils)</a>
 </li>
-      <li><a href="doc.html#Princess.cosmology.cosmology.Cosmology.compute_dl">compute_dl() (Cosmology method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="doc.html#Princess.cosmology.cosmology.Cosmology.compute_dl">compute_dl() (Cosmology method)</a>
+</li>
       <li><a href="doc.html#Princess.stochastic.background.Background.compute_Omega">compute_Omega() (Background method)</a>
 </li>
       <li><a href="doc.html#Princess.astrotools.astromodel.AstroModel.compute_SNR">compute_SNR() (AstroModel method)</a>
 </li>
-      <li><a href="doc.html#Princess.astrotools.astromodel.AstroModel.compute_SNR_Networks">compute_SNR_Networks() (AstroModel method)</a>
+      <li><a href="doc.html#Princess.gwtools.snr.compute_SNR_Networks_catalog">compute_SNR_Networks_catalog() (in module Princess.gwtools.snr)</a>
 </li>
       <li><a href="doc.html#Princess.astrotools.astromodel.AstroModel.compute_spins">compute_spins() (AstroModel method)</a>
 </li>
@@ -159,6 +165,14 @@
   </ul></td>
 </tr></table>
 
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="doc.html#Princess.gwtools.Detector.Detector.evaluate_performance">evaluate_performance() (Detector method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -166,11 +180,13 @@
 </li>
       <li><a href="doc.html#Princess.astrotools.astromodel.AstroModel.generate_spin">generate_spin() (AstroModel method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="doc.html#Princess.gwtools.Network.Network.get_detectors_attributes">get_detectors_attributes() (Network method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="doc.html#Princess.gwtools.Detector.Detector.get_psd_file">get_psd_file() (Detector method)</a>
+</li>
+      <li><a href="doc.html#Princess.gwtools.Detector.Detector.get_psd_pycbc_compatible">get_psd_pycbc_compatible() (Detector method)</a>
 </li>
       <li><a href="doc.html#Princess.gwtools.waveform.GWk_no_ecc_pycbcwf">GWk_no_ecc_pycbcwf() (in module Princess.gwtools.waveform)</a>
 </li>
@@ -218,8 +234,6 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="doc.html#Princess.astrotools.astromodel.load_detector">load_detector() (in module Princess.astrotools.astromodel)</a>
-</li>
       <li><a href="doc.html#Princess.cosmology.cosmology.Cosmology.luminosity_distance">luminosity_distance() (Cosmology method)</a>
 </li>
       <li><a href="doc.html#Princess.cosmology.cosmology.Cosmology.luminosity_distance_table">luminosity_distance_table() (Cosmology method)</a>
@@ -235,6 +249,10 @@
       <li><a href="doc.html#Princess.astrotools.astromodel.AstroModel.make_catalog">make_catalog() (AstroModel method)</a>
 </li>
       <li><a href="doc.html#Princess.gwtools.Detector.Detector.make_frequency">make_frequency() (Detector method)</a>
+</li>
+      <li><a href="doc.html#Princess.Run.Make_param_file">Make_param_file() (in module Princess.Run)</a>
+</li>
+      <li><a href="doc.html#Princess.Run.make_params_template">make_params_template() (in module Princess.Run)</a>
 </li>
       <li><a href="doc.html#Princess.gwtools.Detector.Detector.make_psd">make_psd() (Detector method)</a>
 </li>
@@ -253,6 +271,8 @@
         <li><a href="doc.html#module-Princess.gwtools.initialization">Princess.gwtools.initialization</a>
 </li>
         <li><a href="doc.html#module-Princess.gwtools.Network">Princess.gwtools.Network</a>
+</li>
+        <li><a href="doc.html#module-Princess.gwtools.snr">Princess.gwtools.snr</a>
 </li>
         <li><a href="doc.html#module-Princess.gwtools.waveform">Princess.gwtools.waveform</a>
 </li>
@@ -344,6 +364,13 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li>
+    Princess.gwtools.snr
+
+      <ul>
+        <li><a href="doc.html#module-Princess.gwtools.snr">module</a>
+</li>
+      </ul></li>
+      <li>
     Princess.gwtools.waveform
 
       <ul>
@@ -378,8 +405,6 @@
         <li><a href="doc.html#module-Princess.stochastic.utils">module</a>
 </li>
       </ul></li>
-      <li><a href="doc.html#Princess.astrotools.astromodel.process_astromodel">process_astromodel() (in module Princess.astrotools.astromodel)</a>
-</li>
       <li><a href="doc.html#Princess.stochastic.background.process_background_computation">process_background_computation() (in module Princess.stochastic.background)</a>
 </li>
   </ul></td>
@@ -418,29 +443,41 @@
 </li>
       <li><a href="doc.html#Princess.stochastic.utils.Search_Omg">Search_Omg() (in module Princess.stochastic.utils)</a>
 </li>
-      <li><a href="doc.html#Princess.astrotools.astromodel.AstroModel.SNR">SNR() (AstroModel method)</a>
+      <li><a href="doc.html#Princess.Run.set">set() (in module Princess.Run)</a>
 </li>
       <li><a href="doc.html#Princess.stochastic.snr.SNR_bkg">SNR_bkg() (in module Princess.stochastic.snr)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="doc.html#Princess.stochastic.snr.SNR_bkg_1det">SNR_bkg_1det() (in module Princess.stochastic.snr)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="doc.html#Princess.stochastic.snr.SNR_bkgtrash">SNR_bkgtrash() (in module Princess.stochastic.snr)</a>
+</li>
+      <li><a href="doc.html#Princess.gwtools.snr.SNR_catalog">SNR_catalog() (in module Princess.gwtools.snr)</a>
 </li>
       <li><a href="doc.html#Princess.gwtools.Network.Network.SNR_individual">SNR_individual() (Network method)</a>
 </li>
       <li><a href="doc.html#Princess.stochastic.snr.SNR_Net_wf">SNR_Net_wf() (in module Princess.stochastic.snr)</a>
 </li>
-      <li><a href="doc.html#Princess.astrotools.astromodel.AstroModel.SNR_old">SNR_old() (AstroModel method)</a>
-</li>
       <li><a href="doc.html#Princess.stochastic.snr.SNR_Omega">SNR_Omega() (in module Princess.stochastic.snr)</a>
 </li>
+      <li><a href="doc.html#Princess.gwtools.snr.SNR_pycbc_catalog">SNR_pycbc_catalog() (in module Princess.gwtools.snr)</a>
+</li>
       <li><a href="doc.html#Princess.stochastic.snr.SNR_run">SNR_run() (in module Princess.stochastic.snr)</a>
+</li>
+      <li><a href="doc.html#Princess.gwtools.snr.SNR_single">SNR_single() (in module Princess.gwtools.snr)</a>
 </li>
       <li><a href="doc.html#Princess.gwtools.Detector.Detector.SNR_source">SNR_source() (Detector method)</a>
 </li>
       <li><a href="doc.html#Princess.stochastic.snr.SNRwf">SNRwf() (in module Princess.stochastic.snr)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="doc.html#Princess.gwtools.Detector.Detector.train_model_if_needed">train_model_if_needed() (Detector method)</a>
 </li>
   </ul></td>
 </tr></table>

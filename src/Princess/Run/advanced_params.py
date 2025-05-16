@@ -1,10 +1,6 @@
 print(f"Loading {__name__}")
-import pandas
-from Princess.cosmology.cosmology import Cosmology
 import os
 import json
-print(f"Loading {__name__}")
-
 
 def set_old(_projectFolder, _paramDictionnary, _advParamDictionnary):
 
@@ -89,7 +85,7 @@ cosmo_model = "Planck18"
     - 'refs' stands for the reference frequency for Omega compotation.
 """
 
-types = {"2G": {'freq': {'min': 10., 'max' : 2000., 'scale': 'lin', 'ref': [25.], 'min_fsize' : 1990}, 'waveform': "IMRPhenomD"},
+types = {"2G": {'freq': {'min': 10., 'max' : 1000., 'scale': 'lin', 'ref': [25.], 'min_fsize' : 990}, 'waveform': "IMRPhenomD"},
          "3G": {'freq':{'min': 1., 'max' : 2500., 'scale': 'lin', 'ref': [10.,25.], 'min_fsize' : 2500}, 'waveform': "IMRPhenomD"},
          'LISA': { 'freq':{'min': 1.e-4, 'max' : 0.1, 'scale': 'log', 'ref': 0.001}, 'waveform': "Ajith"},
          'PTA': {  'freq':{'min': 1.e-10, 'max' : 1.e-7, 'scale': 'log', 'ref': 1.e-9},'waveform': "Inspiral"}
@@ -137,7 +133,7 @@ input_parameters = {
     "tSN2": "tsn2"
 }
 
-Inclination = 'Rand' # To be chosen among {'InCat', 'Rand', 'Optimal'}
+Inclination = 'Optimal' # To be chosen among {'InCat', 'Rand', 'Optimal'}
 Position = 'Optimal'
 orbit_evo = False
 keepID = False

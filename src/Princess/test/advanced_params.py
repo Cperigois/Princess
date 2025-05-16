@@ -1,24 +1,3 @@
-import pandas
-from cosmology import Cosmology
-import os
-import json
-
-def set_old(_projectFolder, _paramDictionnary, _advParamDictionnary):
-
-    output = {**_paramDictionnary, **_advParamDictionnary}
-    json_object = json.dumps(output, indent=len(output.keys()))
-    with open('Run/Params.json', "w") as file:
-        file.write(json_object)  # encode dict into JSON
-    if not os.path.exists('Run/' + _projectFolder):
-        os.mkdir('Run/' + _projectFolder)
-    with open('Run/' + _projectFolder + '/Params.json', "w") as file:
-        file.write(json_object)  # encode dict into JSON
-    print("Done writing dict into Run/Params.json file and in Run/", str(_projectFolder), "/Params.json")
-
-
-
-
-
 ##################################################
 #                   COSMOLOGY Add this part to a notebook for an extraction to the Princess paper
 ##################################################
@@ -48,8 +27,8 @@ cosmo_model = "Planck18"
     - 'refs' stands for the reference frequency for Omega compotation.
 """
 
-types = {"2G": {'freq': {'min': 10., 'max' : 2000., 'scale': 'lin', 'ref': [25.], 'min_fsize' : 1990}, 'waveform': "IMRPhenomD"},
-         "3G": {'freq':{'min': 1., 'max' : 2500., 'scale': 'lin', 'ref': [10.,25.], 'min_fsize' : 2500}, 'waveform': "IMRPhenomD"},
+types = {"2G": {'freq': {'min': 10., 'max' : 4000., 'scale': 'lin', 'ref': [25.], 'min_fsize' : 1990}, 'waveform': "IMRPhenomD"},
+         "3G": {'freq':{'min': 1., 'max' : 5000., 'scale': 'lin', 'ref': [10.,25.], 'min_fsize' : 2500}, 'waveform': "IMRPhenomD"},
          'LISA': { 'freq':{'min': 1.e-4, 'max' : 0.1, 'scale': 'log', 'ref': 0.001}, 'waveform': "Ajith"},
          'PTA': {  'freq':{'min': 1.e-10, 'max' : 1.e-7, 'scale': 'log', 'ref': 1.e-9},'waveform': "Inspiral"}
         }

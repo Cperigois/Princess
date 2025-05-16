@@ -158,6 +158,211 @@ def Check_models() :
             plt.close()
 
 
+    def create_AI_model(self, data_lenght):
+
+        import optuna
+
+        from sklearn.ensemble import HistGradientBoostingRegressor
+        from sklearn.metrics import mean_absolute_error
+        from sklearn.model_selection import train_test_split
+
+        path = 'AuxiliaryFiles/SNR_pre_computation/' + self.reference
+
+        # Make sure directories are created
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+        # Create a huge uniform fake population
+        mass_params = {"low": 2, "high": 200}  # Masse in Msun
+        z_params = {"low": 0.01, "high": 25}  # Redshift
+
+        # Generate training dataset of 1 000 000 merging binaries
+        population = generate_population(
+            num_sources=data_lenght,
+            mass_method="m1_m2",
+            mass_distribution="uniform",
+            z_distribution="uniform",
+            mass_params=mass_params,
+            z_params=z_params
+        )
+        save_population(population, "Run/temp/Training_dataset.dat")
+
+        print(f"Start the SNR computation for {self.reference}")
+        SNR_pycbc_catalog('Training_dataset', det_list=params['detector_list'].keys(),
+                          waveform=params['detector_params']['types'][self.type]['waveform'], catalogue_path="Run/temp")
+
+        X1_params = ['m1', 'm2', 'Dl', 'Mc_5-6', 'Dl-1', 'fmerg', 'Mcz_5-6', 'Dlz-1']
+
+        # Training dataset
+        Train_ds = pd.read_csv("Run/temp/Training_dataset.dat", sep='\t', index_col=None)
+        Train_ds['Mc_5-6'] = Train_ds['Mc'] ** (5 / 6)
+        Train_ds['Mcz_5-6'] = (Train_ds['Mc'] * (1 + Train_ds['z'])) ** (5 / 6)
+        Train_ds['Dl-1'] = 1 / Train_ds['Dl']
+        Train_ds['Dlz-1'] = (1 + Train_ds['z']) / (Train_ds['Dl'])
+
+        print('Training dataset loaded!')
+
+        X_train, X_test, y_train, y_test = train_test_split(Train_ds[X1_params], Train_ds[f'{self.reference}_pycbc'], test_size=0.2, random_state=42)
+
+        # List to store results of all trials
+        results_list = []
+
+        # Run Optuna optimization
+        study = optuna.create_study(direction="minimize")  # We want to minimize MAE
+        study.optimize(objective, n_trials=100)  # Run 50 trials
+
+        # Convert results to DataFrame
+        results_df = pd.DataFrame(results_list)
+
+        # Sort results by MAE (Best first)
+        results_df = results_df.sort_values(by="mae", ascending=True)
+
+        # Save results to a CSV file
+        results_df.to_csv(f"{path}/Optuna_output.csv", index=False)
+        print(f"\nOptimization results saved to '{path}/Optuna_output.csv'.")
+
+        # Display top 5 best parameter sets
+        print("\nTop 5 Best Trials:")
+        print(results_df.head())
+
+        # Train the final model with the best found parameters
+        best_params = study.best_params
+        best_model = HistGradientBoostingRegressor(**best_params)
+        best_model.fit(X_train, y_train)
+
+        # Generate validation dataset of 3 000 merging binaries
+        population = generate_population(
+            num_sources=3000,
+            mass_method="m1_m2",
+            mass_distribution="uniform",
+            z_distribution="uniform",
+            mass_params=mass_params,
+            z_params=z_params
+        )
+        save_population(population, f"{path}/Validation_dataset.dat")
+
+        print(f"Start the SNR computation for {self.reference} with pycbc")
+        SNR_pycbc_catalog(f'Validation_dataset.dat', det_list=[self.name],
+                          waveform=params['detector_params']['types'][self.type]['waveform'], catalogue_path=path)
+
+        # Training dataset
+        Test_ds = pd.read_csv(f"{path}/Test_dataset.dat", sep='\t', index_col=None)
+        Test_ds['Mc_5-6'] = Test_ds['Mc'] ** (5 / 6)
+        Test_ds['Mcz_5-6'] = (Test_ds['Mc'] * (1 + Test_ds['z'])) ** (5 / 6)
+        Test_ds['Dl-1'] = 1 / Test_ds['Dl']
+        Test_ds['Dlz-1'] = (1 + Test_ds['z']) / (Test_ds['Dl'])
+
+        # Evaluate final model
+        y_final_pred = best_model.predict(Test_ds[X1_params])
+        final_mae = mean_absolute_error(Test_ds[f'{self.reference}_pycbc'], y_final_pred)
+
+        Test_ds['perdicted_SNR'] = y_final_pred
+
+        Test_ds.to_csv(f'{path}/Validation_dataset.dat', index = None, sep = '\t')
+
+        model_path_L1 = f'{path}/{self.reference}.joblib'
+        # Save the trained model
+        joblib.dump(best_model, model_path_L1)
+        print(f"Model saved as {model_path_L1}")
+
+        self.training_report()
+        #Remove training dataset
+        os.remove('Run/temp/Training_dataset.csv')
+
+
+
+
+    def training_report(self):
+
+        from matplotlib.backends.backend_pdf import PdfPages
+        import matplotlib.pyplot as plt
+        from sklearn.metrics import mean_absolute_error
+
+        path = 'AuxiliaryFiles/SNR_pre_computation/' + self.reference
+        results = pd.read_csv(f'{path}/Validation_dataset.dat', sep='\t', index_col=None)
+
+        snr_thresholds = [8, 20, 50, 100]
+
+        with PdfPages(f'{path}/Evaluation.pdf') as pdf:
+            for snr in snr_thresholds:
+                results[f"detect_{snr}"] = results[f"SNR_pycbc"] > snr
+                results[f"predict_{snr}"] = results[f"predicted_SNR"] > snr
+                results[f"error_{snr}"] = results[f"detect_{snr}"] != results[
+                    f"predict_{snr}"]
+
+                # Create scatter plot
+                plt.figure(figsize=(10, 8))
+                plt.xlabel(r"$\mathcal{M}_c$ (M$_\odot$)")
+                plt.ylabel("Distance Dl (Mpc)")
+                plt.title(f"Prediction Performance for SNR > {snr} ({self.reference})")
+
+                # Correct predictions (green)
+                plt.scatter(
+                    results.loc[~results[f"error_{snr}"], "Mc"],
+                    results.loc[~results[f"error_{snr}"], "Dl"],
+                    color="green",
+                    label="Correct Prediction",
+                    alpha=0.5
+                )
+
+                # Misclassified predictions (red)
+                plt.scatter(
+                    results.loc[results[f"error_{snr}"], "Mc"],
+                    results.loc[results[f"error_{snr}"], "Dl"],
+                    color="red",
+                    label="Misclassified",
+                    alpha=0.5
+                )
+
+                plt.legend()
+                plt.grid(True)
+
+                # Save the figure to the PDF
+                pdf.savefig()
+                plt.close()
+                # Additional plot: Mc vs. Distance with relative error coloring
+            plt.figure(figsize=(8, 6))
+
+            # Compute relative error on SNR prediction
+            results[f"rel_error"] = np.abs(
+                (results[f"predicted_SNR"] - results["SNR_pycbc"])
+                / results["SNR_pycbc"]
+            )
+
+            # Scatter plot with color map based on relative error
+            sc = plt.scatter(
+                results["Mc"], results["Dl_Gpc"],
+                c=results[f"rel_error"], cmap="plasma", alpha=0.7
+            )
+
+            # Add color bar
+            cbar = plt.colorbar(sc)
+            cbar.set_label("Relative SNR Prediction Error")
+
+            # Labels and title
+            plt.xlabel(r"$\mathcal{M}_c$ in M$_\odot$")
+            plt.ylabel("Distance Dl in Gpc")
+            plt.title("Relative SNR Error")
+            plt.grid(True)
+
+            # Save plot to PDF
+            pdf.savefig()
+            plt.close()
+
+        print(f"Performance plots saved as {path}/evaluation.pdf")
+
+        # Write performance report
+        with open(f'{path}/performance_report.txt', "w") as f:
+            f.write(f"Model Evaluation: {self.reference}\n")
+            error = mean_absolute_error(results[f"predicted_SNR"], results[f"SNR_pycbc"])
+            f.write(f"Mean Absolute Error (MAE): {error:.2f}\n\n")
+            for snr in snr_thresholds:
+                error_rate = results[f"error_{snr}"].mean() * 100
+                size = len(results[results[f"detect_{snr}"] > snr])
+                f.write(f"Error rate for SNR > {snr}: {error_rate:.2f}% among {size} events truly detected\n")
+
+        print(f"Performance report saved as {path}/performance_report.txt")
+
 
 if __name__ == "__main__":
     try:

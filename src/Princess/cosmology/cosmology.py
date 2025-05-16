@@ -5,6 +5,17 @@ import numpy as np
 import pandas as pd
 import json
 import importlib.resources
+from Princess.Run.settings import PARAMS_FILE
+
+print(PARAMS_FILE)
+
+# Check PARAMS_FILE value
+if not PARAMS_FILE or not os.path.exists(PARAMS_FILE):
+    raise FileNotFoundError(f"The file parameter {PARAMS_FILE} is missing,. Execute Run.settings.Make_params_file() first.")
+
+# Charge le fichier de paramètres
+with open(PARAMS_FILE, "r") as f:
+    params = json.load(f)
 
 # Import preset cosmologies
 with importlib.resources.open_text("Princess.cosmology", "presets.json") as f:

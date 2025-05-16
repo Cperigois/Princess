@@ -5,13 +5,18 @@ import pycbc.psd
 import pandas as pd
 import json
 import pickle
-from Princess.gwtools.utils import fcut_f
-import importlib.resources
+from scipy.interpolate import InterpolatedUnivariateSpline
+from Princess.Run.settings import PARAMS_FILE
+from Princess.gwtools.waveform import Ajith_waveform
 
-# Import parameter file
-with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+
+# Check PARAMS_FILE value
+if not PARAMS_FILE or not os.path.exists(PARAMS_FILE):
+    raise FileNotFoundError(f"The file parameter {PARAMS_FILE} is missing,. Execute Run.settings.Make_params_file() first.")
+
+# Charge le fichier de paramètres
+with open(PARAMS_FILE, "r") as f:
     params = json.load(f)
-
 
 class Detector:
 
@@ -102,7 +107,7 @@ class Detector:
         scale = params['detector_params']['types'][self.type]['freq']['scale']
 
         if scale =='log':
-            self.freq = np.logspace(numpy.log10(frequency_min), numpy.log10(frequency_max), num = n)
+            self.freq = np.logspace(np.log10(frequency_min), np.log10(frequency_max), num = n)
 
         elif scale =='lin':
             self.freq = np.linspace(frequency_min, frequency_max, n)
@@ -142,7 +147,7 @@ class Detector:
 
             self.psd = self.psd[1:]
         elif self.origin == 'User' :
-            self.psd = pycbc.psd.read.from_txt(psd_file, length=len(self.freq)+1,
+            self.psd = pycbc.psd.read.from_txt(self.psd_file, length=len(self.freq)+1,
                                                delta_f=max(int(self.freq[1] - self.freq[0]),1),
                                                low_freq_cutoff=int(self.freq[0]), is_asd_file=False)
             self.psd = self.psd[1:]
@@ -163,39 +168,11 @@ class Detector:
 
         sens = pd.read_csv(self.psd_name, names = ['f','sens'], sep = delimiter, header = have_header , index_col = have_index)
         interp = InterpolatedUnivariateSpline(sens['f'], sens['sens'])
-        df_out = pd.DataFrame({'f' :freq, 'asd' : interp(freq)})
+        df_out = pd.DataFrame({'f' :self.freq, 'asd' : interp(self.freq)})
         df_out.to_csv('../AuxiliaryFiles/PSDs/'+self.name+'.dat', header = None, index = None, sep = '\t')
         self.psd_file = '../AuxiliaryFiles/PSDs/'+self.name+'.dat'
 
-    def SNR_source(self, mtot:float, z:float, q:float, waveform_approx:str)->float:
-        """
-        TEST FUNCTION USE ONLY FOR TESTS
-        Compute the snr of one specific source, assuming spins are 0 and the best sky location.
-        Parameters
-        ----------
-        :param mtot (float): Total mass of the system in Msun.
-        :param z (float): Redshift of the merger.
-        :param q (float): Mass ratio of the system. By convention q<1.
-        :param waveform_approx (str): Waveform to use for the computation of the SNR.
-        :return (snr): Signal-to-noise ration of the soure in the detector.
-        """
-        cosmology = Cosmology.load(params['Cosmo_model'])
-        luminosity_distance = cosmology.luminosity_distance(z)
-        m1 = mtot * q * (1. + z) / (1 + q)
-        m2 = m1 / q
-        flim = fcut_f(m1=m1, m2=m2, xsi=0, zm=z)
-        if flim > self.freq[0]+0.15:
-            psd = self.Make_psd()
-            hp, hc = pycbc.waveform.get_fd_waveform(approximant=waveform_approx, mass1=m1 * (1. + z), mass2 = m2 * (1. + z),
-                                                spin1x=0., spin1y=0., spin1z=0, spin2x=0., spin2y=0., spin2z=0,
-                                                delta_f=float(self.freq[1]-self.freq[0]), f_lower=float(self.freq[0]), distance=luminosity_distance, f_ref=20.,
-                                                inclinaison=0)
-            snr_l = pycbc.filter.matchedfilter.sigma(np.sqrt(2) * hp, psd=psd,
-                                                 low_frequency_cutoff=float(self.freq[0]),
-                                                 high_frequency_cutoff=float(np.max(self.freq)))
-        else :
-            snr_l = 0
-        return snr_l
+
 
     @classmethod
     def load(cls, name):
@@ -221,8 +198,74 @@ class Detector:
         else:
             raise TypeError("Loaded data is not a valid Detector instance or dictionary.")
 
+    def get_psd_pycbc_compatible(self, path_dir_psd = None):
+        """This function sets the values for the PSE on the interval of frequency chosen.
+
+        Parameters
+        ----------
+        path_dir_psd : str
+            Path towards the PSD file if the PSD is imported from a file
+        """
+
+        # Set the path towards psd files
+        if path_dir_psd is None:
+            path_dir_psd = './AuxiliaryFiles/PSDs/'
+        else:
+            path_dir_psd = clean_path(path_dir_psd)
+
+        # Check that file exists
+        namefile = path_dir_psd + self.psd_file + "_pycbc_compatible.dat"
+        if not os.path.isfile(namefile):
+            raise FileNotFoundError(f"Psd file was not found at {namefile}")
+
+        # Read psd file
+        psd_data = pycbc.psd.read.from_txt(filename=namefile, length=1000, delta_f=1,
+                                           low_freq_cutoff=10, is_asd_file=False)
+
+        return psd_data
+
+
     def save(self):
         path = './Run/' + params['name_of_project_folder'] + '/'
         file = open(path + self.name + '_DET.pickle', 'wb')
         file.write(pickle.dumps(self.__dict__))
         file.close()
+
+
+    def reshape_analytical_waveforms(self, htildSQ, wf_freq):
+
+        interp = InterpolatedUnivariateSpline(wf_freq,htildSQ)
+        htildSQ = interp(self.freq)
+
+        return htildSQ
+
+    def compute_LISA_SNR(self, catalog_name):
+
+        catalog_path = f'./Run/{params["name_of_project_folder"]}/Astro_Models/Catalogs'
+        Cat = pd.read_csv(f'{catalog_path}/{catalog_name}.dat', sep='\t', index_col=False)
+        print(f'LISA SNR calculation for {catalog_name}')
+        ntot = len(Cat.z)
+
+        # Initialize SNR columns to zero for each detector
+        Cat['LISA'] = 0.0
+
+        for evt in range(len(Cat)):
+            event = Cat.iloc[[evt]] # Select a single event as a DataFrame
+            htildSQ = self.reshape_analytical_waveforms(Ajith_waveform(event))
+            Sn = self.psd
+            comp =  4. * np.trapz(htildsq / Sn, self.freq)
+            comp = np.nan_to_num(comp, nan=0, posinf=0)
+            SNR = np.sqrt(comp.sum())  # Compute final SNR
+            Cat.at[evt, det.name] = SNR  # Assign the computed SNR to the event
+
+            # Save the updated catalog with new SNR columns
+        Cat.to_csv(f'{catalog_path}/{catalog_name}.dat', sep='\t', index=False)
+
+
+
+
+
+
+
+
+

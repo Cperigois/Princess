@@ -1,18 +1,26 @@
 import os
-import json
-from Princess.astrotools.astromodel import process_astromodel
-from Princess.gwtools.initialization import initialization
-from Princess.stochastic.background import process_background_computation
-from Princess.astrotools.catalogue_generation import generate_population, save_population
-from Princess.test.settings import Make_param_file, clean
 import shutil
-
-
 
 if __name__ == '__main__':
 
-    Make_param_file()
-    params = json.load(open('test/Params.json', 'r'))
+    #Make the parameter file. Has to be done before importing anything else!
+    import json
+    from Princess.Run.settings import Make_param_file, clean, PARAMS_FILE
+    print(PARAMS_FILE)
+    Make_param_file(getting_started_path= 'test/getting_started.py', advanced_params_path= 'test/advanced_params.py')
+    # Check PARAMS_FILE value
+    if not PARAMS_FILE or not os.path.exists(PARAMS_FILE):
+        raise FileNotFoundError(
+            f"The file parameter {PARAMS_FILE} is missing,. Execute Run.settings.Make_params_file() first.")
+
+    # Charge le fichier de paramètres
+    with open(PARAMS_FILE, "r") as f:
+        params = json.load(f)
+
+    from Princess.astrotools.process_astromodel import process_astromodel
+    from Princess.gwtools.initialization import initialization
+    from Princess.stochastic.background import process_background_computation
+    from Princess.astrotools.catalogue_generation import generate_population, save_population
 
     # Make sure directories are created
     if not os.path.exists('Run/' + params['name_of_project_folder']):

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: Princess
-Version: 1.0.0
+Version: 2.0.0
 Summary: Overlay of PyTorch to generalize trainning and inference processes for detection & instance segmentation tasks.
 Author-email: Carole Périgois <caroleperigois@outlook.com>
 Maintainer-email: Carole Périgois <caroleperigois@outlook.com>
@@ -8,8 +8,10 @@ Classifier: Development Status :: 3 - Alpha
 Classifier: Programming Language :: Python :: 3.11
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
+Requires-Dist: optuna
 Requires-Dist: joblib
-Requires-Dist: numpy==1.26
+Requires-Dist: scikit-learn
+Requires-Dist: numpy==1.24.0
 Requires-Dist: pycbc
 Requires-Dist: pandas
 Requires-Dist: scipy

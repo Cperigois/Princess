@@ -9,6 +9,8 @@ import importlib
 import joblib
 import json
 from scipy.interpolate import InterpolatedUnivariateSpline
+
+from Princess.Plots.plots import PIC_CE
 from Princess.gwtools.Detector import Detector
 from Princess.gwtools.Network import Network
 from Princess.cosmology.cosmology import Cosmology
@@ -36,7 +38,6 @@ def SNR_bkg(freq_omg, Omega, Network):
 
     # Import cosmology
     cosmology = Cosmology.load(params['Cosmo_model'])
-    cosmology.info()
 
     # Load overlap reduction functions (ORFs)
     gammafile = './AuxiliaryFiles/ORFs/ORF.dat'
@@ -107,7 +108,6 @@ def SNR_bkg_1det(freq_omg, Omega, Network):
 
     # Import cosmology
     cosmology = Cosmology.load(params['Cosmo_model'])
-    cosmology.info()
 
     freq = Network.freq
     deltaF = freq[1]-freq[0]
@@ -183,7 +183,6 @@ def SNR_Omega(freq, Omega, Networks):
         params = json.load(f)
     # Import cosmology
     cosmology = Cosmology.load(params['Cosmo_model'])
-    cosmology.info()
 
     #Detectors = [GS.Net_compo[n] for n in Networks]
     fmin_list = np.array([])
@@ -334,5 +333,11 @@ def SNR_Net_wf(cat,Net ) :
     for det in combi :
         df[Net] = np.add(df[Net],df['SNR_'+det]**2 )
     return(np.sqrt(df[Net]))
+
+def SNR_LISA(spectrum) :
+    load LIsA as a network to extract the PIC
+    compute the LISA SNR as ratio between PIC and spectrum check biblio. Saesana
+
+
 
 

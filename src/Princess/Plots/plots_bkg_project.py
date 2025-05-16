@@ -94,3 +94,5 @@ for model_key, model_params in pop3_param["astro_model_list"].items():
         model_name = model_params["name"]
         AGN_data[model_name] = pd.read_csv(f"{AGN_ana['omega_path']}/{model_name}.dat", sep="\t", index_col=None)
 
+        
+

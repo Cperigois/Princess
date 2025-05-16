@@ -1,10 +1,8 @@
 import pandas as pd
-import Princess.stochastic.basic_functions as BF
 import matplotlib.pyplot as plt
 import numpy as np
 import json
-from astropy.cosmology import Planck15
-import Princess.gwtools.tools as gwt
+
 
 
 def plasma_palette(n):
@@ -73,6 +71,9 @@ def horizon_network(network, det_list, zmax=200):
     pd.DataFrame
         DataFrame containing total mass and corresponding redshift horizons for different mass ratios.
     """
+    from Princess.astrotools.utils import mt_q_to_m1_m2
+    from astropy.cosmology import Planck15
+    import Princess.gwtools.snr as gwt
 
     # Define the parameter space
     total_mass = np.logspace(0, 4, 50)
@@ -85,7 +86,7 @@ def horizon_network(network, det_list, zmax=200):
         horizon = np.array([])  # Array to store horizon values for current mass ratio
 
         # Convert total mass and mass ratio to component masses
-        M1, M2 = BF.mt_q_to_m1_m2(total_mass, q * np.ones(len(total_mass)))
+        M1, M2 = mt_q_to_m1_m2(total_mass, q * np.ones(len(total_mass)))
 
         # Loop over each mass pair
         for m1, m2, mt in zip(M1, M2, total_mass):
@@ -156,13 +157,17 @@ def horizon_network_old(network, det_list, zmax = 200) :
         Dataframe of two columns, Mt and z
     """
 
+    from Princess.astrotools.utils import mt_q_to_m1_m2
+    from astropy.cosmology import Planck15
+    import Princess.gwtools.snr as gwt
+
     total_mass = np.logspace(0, 4, 100)
     mass_ratio = np.array([0.5, 0.7, 0.8, 0.9, 1])
     output = pd.DataFrame({'Mt' : total_mass})
 
     for q in mass_ratio :
         horizon = np.array([])
-        M1,M2 = BF.mt_q_to_m1_m2(total_mass, q*np.ones(len(total_mass)))
+        M1,M2 = mt_q_to_m1_m2(total_mass, q*np.ones(len(total_mass)))
         for m1, m2, mt in zip(M1, M2, total_mass):
             deltaz = 10
             z = 0.00001

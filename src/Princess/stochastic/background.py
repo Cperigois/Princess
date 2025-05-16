@@ -6,13 +6,19 @@ from Princess.gwtools.waveform import GWk_no_ecc_pycbcwf
 from Princess.astrotools.astromodel import AstroModel as AM
 from Princess.gwtools.Detector import Detector
 from Princess.gwtools.Network import Network
+from Princess.gwtools.waveform import Ajith_waveform
+from Princess.horizon import detector
 from Princess.stochastic.utils import Search_Omg, Compute_constant
 from Princess.cosmology.cosmology import Cosmology
 from Princess.stochastic.snr import SNR_Omega, SNR_bkg
-import importlib.resources
+from Princess.Run.settings import PARAMS_FILE
 
-# Import parameter file
-with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+# Check PARAMS_FILE value
+if not PARAMS_FILE or not os.path.exists(PARAMS_FILE):
+    raise FileNotFoundError(f"The file parameter {PARAMS_FILE} is missing,. Execute Run.settings.Make_params_file() first.")
+
+# Charge le fichier de paramètres
+with open(PARAMS_FILE, "r") as f:
     params = json.load(f)
 
 def process_background_computation():
@@ -324,6 +330,32 @@ class Background:
             result_path = f'Run/{project_folder}/Results/Omega/{cat_path}'
             Omega_e0.to_csv(result_path, index=False, sep='\t')
             print(f'Written: {result_path}')
+
+    def Omega_LISA(self, catalog_name):
+
+        detector = Detector('LISA')
+        htildSQ = 0
+
+        catalog_path = f'./Run/{params["name_of_project_folder"]}/Astro_Models/Catalogs'
+        Cat = pd.read_csv(f'{catalog_path}/{catalog_name}.dat', sep='\t', index_col=False)
+        print(f'SNR calculation for {catalog_name}')
+        ntot = len(Cat.z)
+
+        # Initialize SNR columns to zero for each detector
+        for evt in range(len(Cat)):
+            event = Cat.iloc[[evt]]  # Select a single event as a DataFrame
+            htildSQ += detector.reshape_analytical_waveforms(Ajith_waveform(evt))
+
+        cosmology = Cosmology.load(params['Cosmo_model'])
+        cosmology.info()
+        Omega = Compute_constant(cosmology.H0) * htildSQ * detector.freq ** 3
+
+        result_path = f'Run/{params["name_of_project_folder"]}/Results/Omega/LISA_{catalog_name}.dat'
+        Omega_LISA = pd.DataFrame({'f' : detector.freq , 'Total' : Omega })
+        Omega_LISA.to_csv(result_path, index = None, sep = '\t')
+
+        return Omega
+
 
 
 

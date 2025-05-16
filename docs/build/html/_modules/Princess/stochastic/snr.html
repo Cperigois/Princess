@@ -45,7 +45,7 @@
               <p class="caption" role="heading"><span class="caption-text">Documentation:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html">Pkg astrotools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-cosmology">Pkg cosmology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-cosmology">Pkg Cosmology</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-gwtools">Pkg gwtools</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-stochastic">Pkg stochastic</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html#module-Princess.Run">Run</a></li>
@@ -92,9 +92,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">Princess.cosmology.cosmology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cosmology</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">Princess.stochastic.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cst_snr_bkg</span>
 
-<span class="c1">#Import parameter file</span>
-<span class="k">with</span> <span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">open_text</span><span class="p">(</span><span class="s2">&quot;Princess.Run&quot;</span><span class="p">,</span> <span class="s2">&quot;Params.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="n">params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="SNR_bkg">
 <a class="viewcode-back" href="../../../doc.html#Princess.stochastic.snr.SNR_bkg">[docs]</a>
@@ -112,9 +110,12 @@
 <span class="sd">    :rtype: float</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="c1"># Import parameter file</span>
+    <span class="k">with</span> <span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">open_text</span><span class="p">(</span><span class="s2">&quot;Princess.Run&quot;</span><span class="p">,</span> <span class="s2">&quot;Params.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
     <span class="c1"># Import cosmology</span>
     <span class="n">cosmology</span> <span class="o">=</span> <span class="n">Cosmology</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;Cosmo_model&#39;</span><span class="p">])</span>
-    <span class="n">cosmology</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
 
     <span class="c1"># Load overlap reduction functions (ORFs)</span>
     <span class="n">gammafile</span> <span class="o">=</span> <span class="s1">&#39;./AuxiliaryFiles/ORFs/ORF.dat&#39;</span>
@@ -182,10 +183,12 @@
 <span class="sd">    :param Network:</span>
 <span class="sd">    :return:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Import parameter file</span>
+    <span class="k">with</span> <span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">open_text</span><span class="p">(</span><span class="s2">&quot;Princess.Run&quot;</span><span class="p">,</span> <span class="s2">&quot;Params.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
     <span class="c1"># Import cosmology</span>
     <span class="n">cosmology</span> <span class="o">=</span> <span class="n">Cosmology</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;Cosmo_model&#39;</span><span class="p">])</span>
-    <span class="n">cosmology</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
 
     <span class="n">freq</span> <span class="o">=</span> <span class="n">Network</span><span class="o">.</span><span class="n">freq</span>
     <span class="n">deltaF</span> <span class="o">=</span> <span class="n">freq</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">freq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -262,9 +265,11 @@
 <span class="sd">    Assuming one year of detection with a duty-cycle (ie. efficiency) of 0.5</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
+    <span class="c1"># Import parameter file</span>
+    <span class="k">with</span> <span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">open_text</span><span class="p">(</span><span class="s2">&quot;Princess.Run&quot;</span><span class="p">,</span> <span class="s2">&quot;Params.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="c1"># Import cosmology</span>
     <span class="n">cosmology</span> <span class="o">=</span> <span class="n">Cosmology</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;Cosmo_model&#39;</span><span class="p">])</span>
-    <span class="n">cosmology</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
 
     <span class="c1">#Detectors = [GS.Net_compo[n] for n in Networks]</span>
     <span class="n">fmin_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
@@ -349,6 +354,9 @@
 <span class="sd">    :param tstart: starting time</span>
 <span class="sd">    :return: dataframe with two columns &#39;Time&#39; and &#39;SNR&#39;</span>
 <span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># Import parameter file</span>
+    <span class="k">with</span> <span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">open_text</span><span class="p">(</span><span class="s2">&quot;Princess.Run&quot;</span><span class="p">,</span> <span class="s2">&quot;Params.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="n">t</span><span class="o">=</span><span class="mi">0</span>
     <span class="n">SNR_cum</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">Time</span> <span class="o">=</span> <span class="p">[]</span>

@@ -5,11 +5,14 @@ import pycbc.psd
 import pandas as pd
 import json
 import pickle
-from Princess.gwtools.utils import zmaximal
-import importlib.resources
+from Princess.Run.settings import PARAMS_FILE
 
-# Import parameter file
-with importlib.resources.open_text("Princess.Run", "Params.json") as f:
+# Check PARAMS_FILE value
+if not PARAMS_FILE or not os.path.exists(PARAMS_FILE):
+    raise FileNotFoundError(f"The file parameter {PARAMS_FILE} is missing,. Execute Run.settings.Make_params_file() first.")
+
+# Charge le fichier de paramètres
+with open(PARAMS_FILE, "r") as f:
     params = json.load(f)
 
 
@@ -121,36 +124,6 @@ class Network:
         cat[self.name] = SNR
         return SNR
 
-
-
-    def horizon(self, SNR_threshold:float = 9., mmin:float = 1., mmax:float = 10000., waveform:str = "IMRPhenomD", zmax:float = 150., mratio:float = 1.):
-        deltaz = [10,1,0.1,0.01, 0.001]
-        Mtot = np.logspace(np.log10(mmin),np.log10(mmax),100)
-        Hori  = np.zeros(len(Mtot))
-        print(Mtot[0])
-
-        for m in range(len(Mtot)):
-            print(m)
-            z = 0.001
-            m1 = Mtot[m] * mratio / (1 + mratio)
-            m2 = m1 / mratio
-            zmax_1Hz = np.maximum(zmaximal(m1,m2,0,1.2),0.001)
-            for dz in deltaz :
-                snr = SNR_threshold+0.001
-                print(snr,' ',SNR_threshold,' ',zmax_1Hz,' ', zmax)
-                while ((snr > SNR_threshold)&((z+dz)<np.minimum(zmax_1Hz,zmax))) :
-                    z = z + dz
-                    snr_net = 0
-                    for d in self.compo:
-                        snr_net += np.power(d.SNR_source(Mtot[m],z, mratio, waveform),2.)
-                    snr = np.sqrt(snr_net)
-                z = np.maximum(z - dz, 0.001)
-            Hori[m] = z+dz
-        output =  pd.DataFrame({'Mtot':Mtot, 'Horizon':Hori})
-        filename = 'Horizon_'+self.name +'_'+ str(mmax)+ str(zmax)+'_'+waveform
-        if os.path.exists('Horizon') ==False :
-            os.mkdir('Horizon')
-        output.to_csv('Horizon/'+filename+'.dat', sep = '\t', index = None)
 
     def load(self):
         """try load self.name.txt"""

@@ -45,7 +45,7 @@
               <p class="caption" role="heading"><span class="caption-text">Documentation:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html">Pkg astrotools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-cosmology">Pkg cosmology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-cosmology">Pkg Cosmology</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-gwtools">Pkg gwtools</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html#pkg-stochastic">Pkg stochastic</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../doc.html#module-Princess.Run">Run</a></li>
@@ -83,19 +83,26 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">importlib.resources</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Princess.Run.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">PARAMS_FILE</span>
 
-<span class="c1">#Import parameter file</span>
-<span class="k">with</span> <span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">open_text</span><span class="p">(</span><span class="s2">&quot;Princess.Run&quot;</span><span class="p">,</span> <span class="s2">&quot;Params.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">PARAMS_FILE</span><span class="p">)</span>
+
+<span class="c1"># Check PARAMS_FILE value</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">PARAMS_FILE</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">PARAMS_FILE</span><span class="p">):</span>
+    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The file parameter </span><span class="si">{</span><span class="n">PARAMS_FILE</span><span class="si">}</span><span class="s2"> is missing,. Execute Run.settings.Make_params_file() first.&quot;</span><span class="p">)</span>
+
+<span class="c1"># Charge le fichier de paramètres</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">PARAMS_FILE</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
-<span class="c1">#Import preset cosmologies</span>
-<span class="k">with</span> <span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">open_text</span><span class="p">(</span><span class="s2">&quot;Princess.cosmology&quot;</span><span class="p">,</span><span class="s2">&quot;presets.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="c1"># Import preset cosmologies</span>
+<span class="k">with</span> <span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">open_text</span><span class="p">(</span><span class="s2">&quot;Princess.cosmology&quot;</span><span class="p">,</span> <span class="s2">&quot;presets.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">preset_cosmologies</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-
 
 <div class="viewcode-block" id="Cosmology">
 <a class="viewcode-back" href="../../../doc.html#Princess.cosmology.cosmology.Cosmology">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Cosmology</span> <span class="p">:</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Omega_m</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">Omega_Lambda</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span> <span class="n">H0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">67</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes an AstroModel instance and loads or creates necessary data.</span>
 
@@ -104,6 +111,7 @@
 <span class="sd">        :param Omega_Lambda: (float) Refers to Omega_Lambda for a flat LambdaCDM model.</span>
 <span class="sd">        :param H_0: (float): Planck constant in km s−1 Mpc−1</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
 
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Omega_m</span> <span class="o">=</span> <span class="n">Omega_m</span>

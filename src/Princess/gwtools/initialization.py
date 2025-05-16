@@ -1,13 +1,20 @@
 from Princess.gwtools.Detector import Detector
 from Princess.gwtools.Network import Network
 import json
-import importlib.resources
+import os
+
+from Princess.Run.settings import PARAMS_FILE
+
+# Check PARAMS_FILE value
+if not PARAMS_FILE or not os.path.exists(PARAMS_FILE):
+    raise FileNotFoundError(f"The file parameter {PARAMS_FILE} is missing,. Execute Run.settings.Make_params_file() first.")
+
+# Charge le fichier de paramètres
+with open(PARAMS_FILE, "r") as f:
+    params = json.load(f)
 
 
 def initialization():
-    # Import parameter file
-    with importlib.resources.open_text("Princess.Run", "Params.json") as f:
-        params = json.load(f)
 
     for det in params['detector_list'].keys():
         detector = Detector(name=params['detector_list'][det]['name'],
