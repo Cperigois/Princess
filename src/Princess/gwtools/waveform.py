@@ -1,9 +1,13 @@
+import pandas as pd
 print(f"Loading {__name__}")
 import pycbc.waveform
 import numpy as np
 from Princess.gwtools.progress_bar import bar_peach
-from Princess.gwtools.utils import fcut_f, fmerg_f, Mc, fring_f, sigma_f
+from Princess.gwtools.utils import fcut_f, fmerg_f, Mc, fring_f, sigma_f, eccentricity_evolution, \
+    interpolate_with_zeros_outside, orbital_frequency
 import warnings
+from scipy.special import jv
+
 from scipy.interpolate import InterpolatedUnivariateSpline
 
 
@@ -90,17 +94,25 @@ def GWk_no_ecc_pycbcwf(evt, freq, approx, n, size_catalogue, inc_option='InCat',
     return htildSQ, freq
 
 
-def Ajith_waveform(evt, n, size_catalogue, disable_progress_bar = False):
+def Ajith_waveform(evt, freq_gw, n, size_catalogue, eccentricity_computation = False, disable_progress_bar = False):
 
     hinsp ,finsp  = inspiral_waveform(evt =evt)
     hmerger ,fmerger  = merger_waveform(evt =evt)
     hringdown ,fringdown  = inspiral_waveform(evt =evt)
 
-    htildSQ = np.concatenate((hinsp, hmerger, hringdown))
+    htildSQ_raw = np.concatenate((hinsp, hmerger, hringdown))
     freq = np.concatenate((finsp, fmerger, fringdown))
 
-    #Do interpolation of htildsq over the frequency range given for LISA.
-    #Check and eventually fill the array with zeros for low/high frequencies.
+    if eccentricity_computation == True:
+        e0 = evt['e0']
+        a0 = evt['a0']
+        ecc_spectrum = eccentricity_spectrum(evt['m1'], evt['m2'], e0, a0, freq_gw=freq)
+
+    else:
+        ecc_spectrum = np.ones(len(freq))
+
+    htildSQ = ecc_spectrum * interpolate_with_zeros_outside(freq, htildSQ_raw, freq_gw)
+
 
     if disable_progress_bar == False:
         bar_peach(n, size_catalogue)
@@ -119,7 +131,10 @@ def inspiral_waveform(evt):
 
     inc = 0
 
-    fstart = 1.e-6
+    if evt['a0'] :
+        fstart = 2*orbital_frequency(m1, m2,evt['a0'])
+    else :
+        fstart = 1e-6
     fend = fmerg_f(m1 = m1, m2 = m2, xsi = 0, zm = z)
 
     freq = np.logspace(fstart, fend, 200)
@@ -137,7 +152,7 @@ def inspiral_waveform(evt):
 
     htildSQ = np.array(hptild * np.conjugate(hptild) + hctild * np.conjugate(hctild), dtype=float)
 
-    return htildSQ
+    return htildSQ, freq
 
 def merger_waveform(evt):
 
@@ -176,7 +191,7 @@ def merger_waveform(evt):
 
     htildSQ = np.array(hptild * np.conjugate(hptild) + hctild * np.conjugate(hctild), dtype=float)
 
-    return htildSQ
+    return htildSQ, freq
 
 def ringdown_waveform(evt):
 
@@ -218,7 +233,7 @@ def ringdown_waveform(evt):
 
     htildSQ = np.array(hptild * np.conjugate(hptild) + hctild * np.conjugate(hctild), dtype=float)
 
-    return htildSQ
+    return htildSQ, freq
 
 def hz(m1, m2, z, dl):
     G = 6.674e-8  # cm3 g-1 s-2
@@ -229,5 +244,49 @@ def hz(m1, m2, z, dl):
     return np.sqrt(5 / 24) *  GMcz5_6/ (np.pi ** (2 / 3) * c ** (3/2) * dl)
 
 
+def eccentricity_spectrum(m1, m2, e0, a0, freq_gw) :
+
+    f0 = orbital_frequency(m1, m2, a0)
+    forb, e = eccentricity_evolution(e0, f0)
+    ecc_spectrum = np.zeros(len(freq_gw))
+    # for eccntricity paper
+    df = pd.DataFrame({'freq_gw' : freq_gw})
+    for m in range (19) :
+        n = m+2
+        fgw, factorn = harmonic_factor(n, e, forb)
+        df[f'n={n}'] = interpolate_with_zeros_outside(fgw, factorn, freq_gw) # to be remove after paper publication
+        ecc_spectrum += interpolate_with_zeros_outside(fgw, factorn, freq_gw)
+
+    df.to_csv(f'AuxiliaryFiles/eccentricity_impact/ecc_spectrum_m1_{m1}_m2_{m2}_e0_{e0}_') # to be removed after paper publication
+
+    return ecc_spectrum
+
+
+def harmonic_factor(n, e_array, forb):
+
+    fgw = n*forb
+
+    # psi_e
+    denom_psi = np.power(1 - e_array * e_array, 7. / 2.)
+    psi_e = (1 + 73. * e_array ** 2 / 74. + 37. * e_array ** 4 / 96.) / denom_psi
+
+    # g_ne
+    A = jv(n - 2, n * e_array) - 2 * e_array * jv(n - 1, n * e_array) + 2 / n * jv(n, n * e_array) \
+        + 2 * e_array * jv(n + 1, n * e_array) - jv(n + 2, n * e_array)
+    B = jv(n - 2, n * e_array) - 2 * jv(n, n * e_array) + jv(n + 2, n * e_array)
+
+    C = jv(n, n * e_array)
+
+    g_ne = (np.power(4. / (n * n), 1. / 3.) *
+                np.power(n, 4.) / 32 *
+                (np.power(A, 2.) +
+                 (1 - e_array * e_array) * np.power(B, 2.) +
+                 4 / (3 * (n * n)) * C * C)
+        )
+
+    # factor
+    factor = np.power(4. / (n * n), 1. / 3.) * g_ne / psi_e
+
+    return fgw, factor
 
 

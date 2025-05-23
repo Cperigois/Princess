@@ -2,15 +2,13 @@ import os
 import numpy as np
 import pandas as pd
 import json
-
 from pycbc.waveform import get_fd_waveform
 from pycbc.filter.matchedfilter import sigma
-
 from Princess.gwtools.Network import Network
 from Princess.gwtools.Detector import Detector
-from Princess.gwtools.waveform import GWk_no_ecc_pycbcwf
+from Princess.gwtools.waveform import GWk_no_ecc_pycbcwf, Ajith_waveform
 from Princess.cosmology.cosmology import Cosmology
-from Princess.gwtools.utils import fmerg_f
+from Princess.gwtools.utils import fmerg_f, fcut_f
 from Princess.Run.settings import PARAMS_FILE
 
 # Check PARAMS_FILE value
@@ -21,35 +19,35 @@ if not PARAMS_FILE or not os.path.exists(PARAMS_FILE):
 with open(PARAMS_FILE, "r") as f:
     params = json.load(f)
     
-    def SNR_source(detector, mtot:float, z:float, q:float, waveform_approx:str)->float:
-        """
-        TEST FUNCTION USE ONLY FOR TESTS
-        Compute the snr of one specific source, assuming spins are 0 and the best sky location.
-        Parameters
-        ----------
-        :param mtot (float): Total mass of the system in Msun.
-        :param z (float): Redshift of the merger.
-        :param q (float): Mass ratio of the system. By convention q<1.
-        :param waveform_approx (str): Waveform to use for the computation of the SNR.
-        :return (snr): Signal-to-noise ration of the soure in the detector.
-        """
-        cosmology = Cosmology.load(params['Cosmo_model'])
-        luminosity_distance = cosmology.luminosity_distance(z)
-        m1 = mtot * q * (1. + z) / (1 + q)
-        m2 = m1 / q
-        flim = fcut_f(m1=m1, m2=m2, xsi=0, zm=z)
-        if flim > detector.freq[0]+0.15:
-            psd = detector.Make_psd()
-            hp, hc = pycbc.waveform.get_fd_waveform(approximant=waveform_approx, mass1=m1 * (1. + z), mass2 = m2 * (1. + z),
-                                                spin1x=0., spin1y=0., spin1z=0, spin2x=0., spin2y=0., spin2z=0,
-                                                delta_f=float(detector.freq[1]-detector.freq[0]), f_lower=float(detector.freq[0]), distance=luminosity_distance, f_ref=20.,
-                                                inclinaison=0)
-            snr_l = pycbc.filter.matchedfilter.sigma(np.sqrt(2) * hp, psd=psd,
-                                                 low_frequency_cutoff=float(detector.freq[0]),
-                                                 high_frequency_cutoff=float(np.max(detector.freq)))
-        else :
-            snr_l = 0
-        return snr_l
+def SNR_source(detector, mtot:float, z:float, q:float, waveform_approx:str)->float:
+    """
+    TEST FUNCTION USE ONLY FOR TESTS
+    Compute the snr of one specific source, assuming spins are 0 and the best sky location.
+    Parameters
+    ----------
+    :param mtot (float): Total mass of the system in Msun.
+    :param z (float): Redshift of the merger.
+    :param q (float): Mass ratio of the system. By convention q<1.
+    :param waveform_approx (str): Waveform to use for the computation of the SNR.
+    :return (snr): Signal-to-noise ration of the soure in the detector.
+    """
+    cosmology = Cosmology.load(params['Cosmo_model'])
+    luminosity_distance = cosmology.luminosity_distance(z)
+    m1 = mtot * q * (1. + z) / (1 + q)
+    m2 = m1 / q
+    flim = fcut_f(m1=m1, m2=m2, xsi=0, zm=z)
+    if flim > detector.freq[0]+0.15:
+        psd = detector.Make_psd()
+        hp, hc = get_fd_waveform(approximant=waveform_approx, mass1=m1 * (1. + z), mass2 = m2 * (1. + z),
+                                            spin1x=0., spin1y=0., spin1z=0, spin2x=0., spin2y=0., spin2z=0,
+                                            delta_f=float(detector.freq[1]-detector.freq[0]), f_lower=float(detector.freq[0]), distance=luminosity_distance, f_ref=20.,
+                                            inclinaison=0)
+        snr_l = sigma(np.sqrt(2) * hp, psd=psd,
+                                             low_frequency_cutoff=float(detector.freq[0]),
+                                             high_frequency_cutoff=float(np.max(detector.freq)))
+    else :
+        snr_l = 0
+    return snr_l
 
 
 def SNR_catalog( catalog_name:str, det_list: list, waveform: str, freq: np.array):
@@ -85,7 +83,11 @@ def SNR_catalog( catalog_name:str, det_list: list, waveform: str, freq: np.array
 
     for evt in range(len(Cat)):
         event = Cat.iloc[[evt]]  # Select a single event as a DataFrame
-        htildsq, freqency = GWk_no_ecc_pycbcwf(evt=event, freq=freq, approx=waveform, n=evt, size_catalogue=ntot,
+        # Compute the squared waveform for the event
+        if waveform == 'Ajith':
+            htildsq, frequency = Ajith_waveform(evt=event, freq_gw=freq, n=evt, size_catalogue=ntot )
+        else :
+            htildsq, frequency = GWk_no_ecc_pycbcwf(evt=event, freq=freq, approx=waveform, n=evt, size_catalogue=ntot,
                                      inc_option=params['Inclination'])
         if isinstance(htildsq, int):  # If htildsq is an integer, log an error
             if not os.path.exists(error_file):  # Check if file exists before writing
@@ -96,6 +98,7 @@ def SNR_catalog( catalog_name:str, det_list: list, waveform: str, freq: np.array
                 f.write(f"{event['m1'].iloc[0]} {event['m2'].iloc[0]} {event['z'].iloc[0]}\n")
         else:
             for det in det_list:
+                #Update the computation of SNR with real integration to flex the deltaf and allow log scales.
                 Sn = det.psd
                 comp = det.deltaf * 4. * htildsq / Sn
                 comp = np.nan_to_num(comp, nan=0, posinf=0)
@@ -205,6 +208,8 @@ def SNR_single(event, det_list: list, network: Network, waveform: str, freq: np.
     SNRs = pd.DataFrame(index=[0])  # Single row for this event
 
     # Compute the squared waveform for the event
+    if waveform == 'Ajith' :
+        htildsq, frequency = Ajith_waveform(evt = event, freq_gw = freq, n = event, )
     htildsq, frequency = GWk_no_ecc_pycbcwf(evt=event, freq=freq, approx=waveform, n=event, size_catalogue=1,
                                  inc_option='Optimal', disable_progress_bar=True)
 
@@ -332,12 +337,12 @@ def compute_SNR_Networks_catalog(catalog_name: str):
         try:
             Cat = pd.read_csv(catalog_path, sep='\t')
         except FileNotFoundError:
-            print(f"Le fichier catalogue '{cat}' est introuvable.")
+            print(f"Le fichier catalogue '{catalog_path}' est introuvable.")
             continue
 
         # Vérifier si les colonnes nécessaires existent
         if 'm1' not in Cat.columns:
-            raise KeyError(f"'m1' column is missing in {cat}.")
+            raise KeyError(f"'m1' column is missing in {catalog_path}.")
 
         # Initialisation des colonnes pour les résultats
         Cat[f'{net}_optimal'] = 0.0
@@ -354,7 +359,7 @@ def compute_SNR_Networks_catalog(catalog_name: str):
                 config = detector_object.configuration
                 Cat[net] += (Cat[det] * fd[config]) ** 2
             else:
-                print(f"Detector '{det}' pre computations are missing in '{cat}'.")
+                print(f"Detector '{det}' pre computations are missing in '{catalog_path}'.")
 
         # Finaliser les calculs des SNR pour le réseau
         Cat[net] = np.sqrt(Cat[net])
@@ -365,12 +370,12 @@ def compute_SNR_Networks_catalog(catalog_name: str):
         try:
             Cat.to_csv(output_path, sep='\t', index=False)
         except Exception as e:
-            print(f"Problem during the saving of file {cat}: {e}")
+            print(f"Problem during the saving of file {catalog_path}: {e}")
 
 
 
 
-def SNR_LISA( catalog_name:str, det_list: list, freq: np.array):
+def SNR_LISA( catalog_name:str, det_list: list, waveform : str, freq: np.array):
     """
     Computes the optimal Signal-to-Noise Ratio (SNR) for each event in the catalog
     and saves the updated catalog with additional SNR columns.

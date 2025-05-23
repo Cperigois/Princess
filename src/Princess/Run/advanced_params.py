@@ -82,13 +82,14 @@ cosmo_model = "Planck18"
 """ Types of detectors notes : 
     - LISA and PTA types are not available
     - min_fsize stands to ensure that the delta_f stads below or equal to 1. Otherwise Pycbc interpolation crashes.
-    - 'refs' stands for the reference frequency for Omega compotation.
+    - 'refs' stands for the reference frequency for Omega computation.
 """
 
 types = {"2G": {'freq': {'min': 10., 'max' : 1000., 'scale': 'lin', 'ref': [25.], 'min_fsize' : 990}, 'waveform': "IMRPhenomD"},
          "3G": {'freq':{'min': 1., 'max' : 2500., 'scale': 'lin', 'ref': [10.,25.], 'min_fsize' : 2500}, 'waveform': "IMRPhenomD"},
          'LISA': { 'freq':{'min': 1.e-4, 'max' : 0.1, 'scale': 'log', 'ref': 0.001}, 'waveform': "Ajith"},
-         'PTA': {  'freq':{'min': 1.e-10, 'max' : 1.e-7, 'scale': 'log', 'ref': 1.e-9},'waveform': "Inspiral"}
+         'PTA': {  'freq':{'min': 1.e-10, 'max' : 1.e-7, 'scale': 'log', 'ref': 1.e-9},'waveform': "Inspiral"},
+         'Customized network': {  'freq':{'min': 1.e-6, 'max' : 1.e3, 'scale': 'log', 'ref': [1.e-3, 10., 25], 'min_size' : 2000},'waveform': "Ajith"}
         }
 
 """             *** ASTROMODEL ***           """

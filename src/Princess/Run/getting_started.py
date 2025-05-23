@@ -40,9 +40,7 @@ astro_model_1 = {
 }
 
 
-
 astro_model_list = {astro_model_1['name']: astro_model_1}
-
 
 rerun_snr_computation = True
 
